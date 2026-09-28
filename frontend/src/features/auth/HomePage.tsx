@@ -2,14 +2,10 @@ import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@/app/AuthProvider'
 import { Button } from '@/components/ui/button'
 import { apiFetch } from '@/lib/api'
+import type { components } from '@/lib/api-types'
 import { supabase } from '@/lib/supabase'
 
-// TODO(gen:api): replace with generated type
-interface Me {
-  id: string
-  email: string | null
-  isAnonymous: boolean
-}
+type Me = components['schemas']['MeResponse']
 
 export function HomePage() {
   const { session, loading } = useAuth()
