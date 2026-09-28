@@ -206,7 +206,7 @@ namespace AsikaGo.Api.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "requirement_progresses",
+                name: "requirement_progress",
                 columns: table => new
                 {
                     roadmap_id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -216,15 +216,15 @@ namespace AsikaGo.Api.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_requirement_progresses", x => new { x.roadmap_id, x.requirement_id });
+                    table.PrimaryKey("pk_requirement_progress", x => new { x.roadmap_id, x.requirement_id });
                     table.ForeignKey(
-                        name: "fk_requirement_progresses_requirements_requirement_id",
+                        name: "fk_requirement_progress_requirements_requirement_id",
                         column: x => x.requirement_id,
                         principalTable: "requirements",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_requirement_progresses_user_roadmaps_roadmap_id",
+                        name: "fk_requirement_progress_user_roadmaps_roadmap_id",
                         column: x => x.roadmap_id,
                         principalTable: "user_roadmaps",
                         principalColumn: "id",
@@ -232,7 +232,7 @@ namespace AsikaGo.Api.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "roadmap_progresses",
+                name: "roadmap_progress",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -244,15 +244,15 @@ namespace AsikaGo.Api.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_roadmap_progresses", x => x.id);
+                    table.PrimaryKey("pk_roadmap_progress", x => x.id);
                     table.ForeignKey(
-                        name: "fk_roadmap_progresses_registration_steps_step_id",
+                        name: "fk_roadmap_progress_registration_steps_step_id",
                         column: x => x.step_id,
                         principalTable: "registration_steps",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_roadmap_progresses_user_roadmaps_roadmap_id",
+                        name: "fk_roadmap_progress_user_roadmaps_roadmap_id",
                         column: x => x.roadmap_id,
                         principalTable: "user_roadmaps",
                         principalColumn: "id",
@@ -307,8 +307,8 @@ namespace AsikaGo.Api.Data.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_requirement_progresses_requirement_id",
-                table: "requirement_progresses",
+                name: "ix_requirement_progress_requirement_id",
+                table: "requirement_progress",
                 column: "requirement_id");
 
             migrationBuilder.CreateIndex(
@@ -322,14 +322,14 @@ namespace AsikaGo.Api.Data.Migrations
                 column: "step_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_roadmap_progresses_roadmap_id_step_id",
-                table: "roadmap_progresses",
+                name: "ix_roadmap_progress_roadmap_id_step_id",
+                table: "roadmap_progress",
                 columns: new[] { "roadmap_id", "step_id" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_roadmap_progresses_step_id",
-                table: "roadmap_progresses",
+                name: "ix_roadmap_progress_step_id",
+                table: "roadmap_progress",
                 column: "step_id");
 
             migrationBuilder.CreateIndex(
@@ -356,7 +356,6 @@ namespace AsikaGo.Api.Data.Migrations
                 name: "ix_user_roadmaps_business_id",
                 table: "user_roadmaps",
                 column: "business_id");
-
             migrationBuilder.Sql(
                 "ALTER TABLE profiles ADD CONSTRAINT fk_profiles_auth_users FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE;");
 
@@ -371,20 +370,19 @@ namespace AsikaGo.Api.Data.Migrations
             migrationBuilder.Sql("ALTER TABLE requirements ENABLE ROW LEVEL SECURITY;");
             migrationBuilder.Sql("ALTER TABLE roadmap_rules ENABLE ROW LEVEL SECURITY;");
             migrationBuilder.Sql("ALTER TABLE user_roadmaps ENABLE ROW LEVEL SECURITY;");
-            migrationBuilder.Sql("ALTER TABLE roadmap_progresses ENABLE ROW LEVEL SECURITY;");
-            migrationBuilder.Sql("ALTER TABLE requirement_progresses ENABLE ROW LEVEL SECURITY;");
+            migrationBuilder.Sql("ALTER TABLE roadmap_progress ENABLE ROW LEVEL SECURITY;");
+            migrationBuilder.Sql("ALTER TABLE requirement_progress ENABLE ROW LEVEL SECURITY;");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql("ALTER TABLE profiles DROP CONSTRAINT fk_profiles_auth_users;");
+            migrationBuilder.DropTable(
+                name: "requirement_progress");
 
             migrationBuilder.DropTable(
-                name: "requirement_progresses");
-
-            migrationBuilder.DropTable(
-                name: "roadmap_progresses");
+                name: "roadmap_progress");
 
             migrationBuilder.DropTable(
                 name: "roadmap_rules");

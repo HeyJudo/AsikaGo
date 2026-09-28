@@ -14,8 +14,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Requirement> Requirements => Set<Requirement>();
     public DbSet<RoadmapRule> RoadmapRules => Set<RoadmapRule>();
     public DbSet<UserRoadmap> UserRoadmaps => Set<UserRoadmap>();
-    public DbSet<RoadmapProgress> RoadmapProgresses => Set<RoadmapProgress>();
-    public DbSet<RequirementProgress> RequirementProgresses => Set<RequirementProgress>();
+    public DbSet<RoadmapProgress> RoadmapProgress => Set<RoadmapProgress>();
+    public DbSet<RequirementProgress> RequirementProgress => Set<RequirementProgress>();
 
     // Fixed seed ids so the InitialSchema migration is reproducible.
     private static readonly Guid QuezonCityId = new("11111111-1111-1111-1111-111111111101");

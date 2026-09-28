@@ -283,12 +283,12 @@ namespace AsikaGo.Api.Data.Migrations
                         .HasColumnName("updated_at");
 
                     b.HasKey("RoadmapId", "RequirementId")
-                        .HasName("pk_requirement_progresses");
+                        .HasName("pk_requirement_progress");
 
                     b.HasIndex("RequirementId")
-                        .HasDatabaseName("ix_requirement_progresses_requirement_id");
+                        .HasDatabaseName("ix_requirement_progress_requirement_id");
 
-                    b.ToTable("requirement_progresses", (string)null);
+                    b.ToTable("requirement_progress", (string)null);
                 });
 
             modelBuilder.Entity("AsikaGo.Api.Data.Entities.RoadmapProgress", b =>
@@ -321,16 +321,16 @@ namespace AsikaGo.Api.Data.Migrations
                         .HasColumnName("step_id");
 
                     b.HasKey("Id")
-                        .HasName("pk_roadmap_progresses");
+                        .HasName("pk_roadmap_progress");
 
                     b.HasIndex("StepId")
-                        .HasDatabaseName("ix_roadmap_progresses_step_id");
+                        .HasDatabaseName("ix_roadmap_progress_step_id");
 
                     b.HasIndex("RoadmapId", "StepId")
                         .IsUnique()
-                        .HasDatabaseName("ix_roadmap_progresses_roadmap_id_step_id");
+                        .HasDatabaseName("ix_roadmap_progress_roadmap_id_step_id");
 
-                    b.ToTable("roadmap_progresses", (string)null);
+                    b.ToTable("roadmap_progress", (string)null);
                 });
 
             modelBuilder.Entity("AsikaGo.Api.Data.Entities.RoadmapRule", b =>
@@ -494,14 +494,14 @@ namespace AsikaGo.Api.Data.Migrations
                         .HasForeignKey("RequirementId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("fk_requirement_progresses_requirements_requirement_id");
+                        .HasConstraintName("fk_requirement_progress_requirements_requirement_id");
 
                     b.HasOne("AsikaGo.Api.Data.Entities.UserRoadmap", "Roadmap")
                         .WithMany()
                         .HasForeignKey("RoadmapId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_requirement_progresses_user_roadmaps_roadmap_id");
+                        .HasConstraintName("fk_requirement_progress_user_roadmaps_roadmap_id");
 
                     b.Navigation("Requirement");
 
@@ -515,14 +515,14 @@ namespace AsikaGo.Api.Data.Migrations
                         .HasForeignKey("RoadmapId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_roadmap_progresses_user_roadmaps_roadmap_id");
+                        .HasConstraintName("fk_roadmap_progress_user_roadmaps_roadmap_id");
 
                     b.HasOne("AsikaGo.Api.Data.Entities.RegistrationStep", "Step")
                         .WithMany()
                         .HasForeignKey("StepId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
-                        .HasConstraintName("fk_roadmap_progresses_registration_steps_step_id");
+                        .HasConstraintName("fk_roadmap_progress_registration_steps_step_id");
 
                     b.Navigation("Roadmap");
 
