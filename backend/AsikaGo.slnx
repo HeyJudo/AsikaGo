@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AsikaGo.Api/AsikaGo.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AsikaGo.Tests/AsikaGo.Tests.csproj" />
+  </Folder>
+</Solution>
