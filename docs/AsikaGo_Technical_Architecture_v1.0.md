@@ -458,13 +458,9 @@ Future expansion:
 
 ## Additional Cities
 
-Current:
+Current (MVP): Pasig City only.
 
--   Quezon City
--   Manila
--   Pasig
-
-Future:
+Future (e.g., Quezon City, Manila):
 
 Additional LGUs can be added through the knowledge base.
 

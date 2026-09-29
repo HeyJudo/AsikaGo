@@ -108,11 +108,8 @@ tracking incomplete requirements.
 
 ## Geographic Scope
 
-Initial pilot coverage:
-
--   Quezon City
--   Manila
--   Pasig
+MVP coverage: Pasig City only. The design scales to more LGUs (e.g.,
+Quezon City, Manila) later.
 
 This scope allows accurate research and location-specific guidance.
 
@@ -448,7 +445,7 @@ Mitigation: Maintain documented sources.
 
 Supporting too many cities or businesses may increase complexity.
 
-Mitigation: Start with three cities and selected categories.
+Mitigation: Start with Pasig City only and selected categories.
 
 ------------------------------------------------------------------------
 

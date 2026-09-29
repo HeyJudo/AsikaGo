@@ -34,6 +34,7 @@ docs are updated.
 | D5 | Step order lives on `roadmap_rules.sort_order` (copied to `roadmap_progress.sort_order`), not `registration_steps`. | Order can differ per city. |
 | D6 | Knowledge-base data is authored as SQL in `database/seed/` and applied through EF migrations. | Reviewed, versioned, reproducible. |
 | D7 | `business_profiles` is 1:M in the schema; 1:1 enforced in the app for the MVP. | Multi-business later needs no migration. |
+| D8 | MVP scope is Pasig City only. The `cities` table and `city_id` columns stay; only Pasig is seeded, and the QC/Manila seed rows are removed by a new migration (ScopeToPasig). The assessment form has no City field; the backend sets Pasig. Non-Pasig users see a landing-page scope notice and are not blocked. | Narrower research load for Sprint 2, one LGU's rules to verify, and expansion is seed-data only. |
 | — | `users` becomes `profiles`, keyed by `auth.users.id`; `auth_provider` dropped (Supabase stores it). | Supabase Auth owns identities. |
 | — | `roadmap_progress` rows are a snapshot of the generated roadmap. | Research updates don't silently change a user's existing roadmap. |
 
@@ -41,3 +42,6 @@ docs are updated.
 
 Backlog v1.1 moved US-002 (Preview) to Should Have and US-014 (Offices) to
 Could Have; the PRD still lists the old priorities. The backlog wins.
+
+The PRD, Tech Architecture, DB Design Spec, Backlog and README were updated in
+place for D8 (Pasig-only MVP).
