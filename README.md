@@ -92,3 +92,4 @@ Rules:
 - `main` is protected. Branch as `feature/123-short-name`.
 - Put the Azure Boards ticket in commit/PR messages as `AB#123`.
 - PRs need green CI and one review.
+- Building with AI? Follow [`docs/AI_Workflow.md`](docs/AI_Workflow.md).
