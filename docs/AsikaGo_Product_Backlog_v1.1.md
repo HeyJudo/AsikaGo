@@ -120,7 +120,7 @@ Every backlog item contains:
   ID       Story                                   Points   Sprint
   -------- --------------------------------------- -------- ----------
   RS-001   Research Registration Workflow          5        Sprint 2
-  RS-002   Research City Requirements              5        Sprint 2
+  RS-002   Research Pasig City Requirements        5        Sprint 2
   RS-003   Research Business Category Variations   5        Sprint 3
 
 ------------------------------------------------------------------------

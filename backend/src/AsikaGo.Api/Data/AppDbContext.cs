@@ -18,8 +18,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<RequirementProgress> RequirementProgress => Set<RequirementProgress>();
 
     // Fixed seed ids so the InitialSchema migration is reproducible.
-    private static readonly Guid QuezonCityId = new("11111111-1111-1111-1111-111111111101");
-    private static readonly Guid ManilaId = new("11111111-1111-1111-1111-111111111102");
+    // MVP is Pasig-only (D8); ...101 (QC) and ...102 (Manila) were removed by ScopeToPasig.
     private static readonly Guid PasigId = new("11111111-1111-1111-1111-111111111103");
 
     private static readonly Guid FoodAndBeverageId = new("22222222-2222-2222-2222-222222222201");
@@ -37,10 +36,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<City>(e =>
         {
             e.HasIndex(c => c.Name).IsUnique();
-            e.HasData(
-                new City { Id = QuezonCityId, Name = "Quezon City", Region = "NCR" },
-                new City { Id = ManilaId, Name = "Manila", Region = "NCR" },
-                new City { Id = PasigId, Name = "Pasig", Region = "NCR" });
+            e.HasData(new City { Id = PasigId, Name = "Pasig", Region = "NCR" });
         });
 
         modelBuilder.Entity<BusinessCategory>(e =>

@@ -1,7 +1,7 @@
 # AsikaGo
 
 A web app that turns Philippine business registration into a personalized,
-step-by-step roadmap for micro-entrepreneurs (pilot: Quezon City, Manila, Pasig).
+step-by-step roadmap for micro-entrepreneurs (MVP: Pasig City only; designed to scale to more LGUs later).
 
 | Part | Stack | Hosting |
 |---|---|---|

@@ -211,11 +211,8 @@ Purpose:
 
 Stores supported locations.
 
-Initial records:
-
--   Quezon City
--   Manila
--   Pasig
+Initial records (MVP): only Pasig City is seeded. Other LGUs (e.g., Quezon
+City, Manila) can be added later through seed data alone.
 
 ## Fields
 
