@@ -182,8 +182,8 @@ By the end of Sprint 2, the team should have:
   RS-001                  Research Registration   Map registration
                           Workflow                process
 
-  RS-002                  Research City           Collect QC, Manila, and
-                          Requirements            Pasig requirements
+  RS-002                  Research City           Collect Pasig City
+                          Requirements            requirements
   -----------------------------------------------------------------------
 
 ------------------------------------------------------------------------
@@ -339,13 +339,13 @@ Then: The team has a documented registration flow.
 
 ------------------------------------------------------------------------
 
-# RS-002 --- Research City Requirements
+# RS-002 --- Research Pasig City Requirements
 
 ## User Story
 
 **As a** researcher,\
-**I want to** collect requirements for Quezon City, Manila, and Pasig,\
-**So that** the roadmap can adapt based on location.
+**I want to** collect requirements for Pasig City (the MVP scope),\
+**So that** the roadmap can adapt to Pasig business categories and barangays.
 
 ------------------------------------------------------------------------
 
@@ -353,11 +353,11 @@ Then: The team has a documented registration flow.
 
 ### AC-RS002-01
 
-Given: A city is included in the MVP scope.
+Given: Pasig City is the only city in the MVP scope.
 
 When: Research is conducted.
 
-Then: Requirements and references are documented.
+Then: Pasig requirements (BPLO process, barangay clearance differences, and per-category requirements) and references are documented.
 
 ------------------------------------------------------------------------
 
@@ -387,7 +387,7 @@ At the end of Sprint 2:
 ## Research Deliverables
 
 -   Registration workflow document
--   Initial QC/Manila/Pasig requirements database
+-   Initial Pasig City requirements database
 
 ------------------------------------------------------------------------
 

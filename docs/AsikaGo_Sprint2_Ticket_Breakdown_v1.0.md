@@ -69,12 +69,14 @@ The scope below builds on this. Don't build these again:
 | React app with Supabase sign-in (Google + guest) | `frontend/src/features/auth/HomePage.tsx` |
 | `GET /api/me` creates or updates the user's profile | `backend/src/AsikaGo.Api/Features/Me/` |
 | `business_profiles` table with the columns `business_name` (optional), `business_type`, `category_id`, `city_id`, `registration_status` (`Planning` / `Started`) | `Data/Entities/BusinessProfile.cs` |
-| **Cities already seeded:** Quezon City, Manila, Pasig | `AppDbContext.cs` (`HasData`) |
+| **Cities:** the schema stays multi-city, but the MVP scope is **Pasig City only** (decision of 2026-09-29). Only Pasig is seeded. A new migration removes the Quezon City and Manila seed rows. | `AppDbContext.cs` (`HasData`) + new migration |
 | **Categories already seeded:** Food and Beverage, Retail, Services | `AppDbContext.cs` (`HasData`) |
 | Button component only (shadcn) | `frontend/src/components/ui/` |
 | API client that attaches the login token | `frontend/src/lib/api.ts` |
 
 The dropdown data already exists, so the form is **not** blocked by research.
+There is **no City field** on the form: the MVP covers Pasig City only, and the
+backend sets `city_id` to Pasig automatically.
 The research tickets decide whether that data is **correct and complete**.
 
 ---
@@ -141,14 +143,15 @@ options, and rules.
 - **Option B:** a free-text description, like "milk tea stall". This is useful
   for the AI in Sprint 5, but the roadmap engine can't use it.
 
-**Proposed field specification** (the Product Owner confirms or edits it):
+**Proposed field specification** (the Product Owner confirms or edits it). There
+is **no City field**: the MVP scope is Pasig City only, and the backend sets
+`city_id` to Pasig on save.
 
 | Field | Input | Required | Options / rules |
 |---|---|---|---|
 | Business name | Text | No | Max 100 characters. Trim the spaces at both ends. |
 | Business type | Radio / select | Yes | Sole Proprietorship, Partnership, Corporation, One Person Corporation |
 | Business category | Select | Yes | From `business_categories` (currently 3) |
-| City | Select | Yes | From `cities` (QC, Manila, Pasig) |
 | Registration status | Radio | Yes | `Planning` = "I haven't started registering yet"; `Started` = "I've already started some steps" |
 
 **Acceptance criteria.**
@@ -182,7 +185,6 @@ backend can work at the same time.
 GET /api/assessment/options
 200 OK
 {
-  "cities":               [{ "id": "uuid", "name": "Quezon City" }],
   "categories":           [{ "id": "uuid", "name": "Food and Beverage", "description": "..." }],
   "businessTypes":        ["Sole Proprietorship", "Partnership", "Corporation", "One Person Corporation"],
   "registrationStatuses": ["Planning", "Started"]
@@ -194,10 +196,12 @@ GET /api/business-profile
 
 PUT /api/business-profile            (create or replace; one profile per user, see D7)
 Request:  { "businessName": "string|null", "businessType": "string",
-            "categoryId": "uuid", "cityId": "uuid", "registrationStatus": "Planning|Started" }
+            "categoryId": "uuid", "registrationStatus": "Planning|Started" }
 200 OK  -> BusinessProfileResponse
-400     -> ValidationProblem: { "errors": { "cityId": ["Please choose a city."] } }
+400     -> ValidationProblem: { "errors": { "categoryId": ["Please choose a business category."] } }
 401     -> not signed in
+
+The request has no `cityId`. The backend sets `city_id` = Pasig on create and update.
 
 BusinessProfileResponse:
 { "id", "businessName", "businessType", "categoryId", "categoryName",
@@ -226,8 +230,8 @@ feel intimidated by government processes. The screen must feel short and safe.
 
 **The design must cover:**
 
-1. **Layout:** one page with all 5 fields. Keep it to a single page, with no
-   multi-step wizard for 5 fields.
+1. **Layout:** one page with all 4 fields (no City field; the MVP is Pasig City only). Keep it to a single page, with no
+   multi-step wizard for 4 fields.
 2. **Header copy:** a title plus one supporting sentence. Example: "Tell us
    about your business. We'll use this to build your registration roadmap."
 3. **Every field:** its label, help text (where it helps), placeholder, and an
@@ -243,7 +247,7 @@ feel intimidated by government processes. The screen must feel short and safe.
 
 **Acceptance criteria.**
 
-- [ ] Mobile (360 px) and desktop (1280 px) frames exist for all 5 states.
+- [ ] Mobile (360 px) and desktop (1280 px) frames exist for all 5 states, and the form has no City field.
 - [ ] Every label, help text, and error message is written out. No lorem ipsum.
 - [ ] Only shadcn/ui components are used (Card, Input, Label, Select,
       RadioGroup, Button, Alert), so the design can be built without custom
@@ -299,18 +303,17 @@ being written.
 | Depends on | US-001-BE-01 |
 | Blocks | US-001-FE-01 (real data) |
 
-**Description.** Return the dropdown data. Cities and categories come from the
-database. Business types and registration statuses come from the list
-confirmed in US-001-PM-01.
+**Description.** Return the dropdown data. Categories come from the
+database. There is no `cities` list, because the MVP covers Pasig City only. Business types and
+registration statuses come from the list confirmed in US-001-PM-01.
 
 **Acceptance criteria.**
 
-- [ ] The endpoint returns the 3 seeded cities and 3 seeded categories,
-      sorted by name.
+- [ ] The endpoint returns the 3 seeded categories, sorted by name, and no cities.
 - [ ] `registrationStatuses` comes from the `RegistrationStatus` enum, so
       adding a new value to the enum updates the response automatically.
 - [ ] An anonymous (guest) user can call it. They count as signed in.
-- [ ] A test checks that the response contains the 3 cities.
+- [ ] A test checks that the response contains the 3 categories and has no `cities` field.
 
 ---
 
@@ -333,6 +336,8 @@ user** (decision D7):
 - If they already have one, update it. Never create a second profile.
 
 The user id always comes from the login token, **never from the request body**.
+The request has **no `cityId`**: the backend sets `city_id` to the Pasig city id
+on every create and update (the MVP scope is Pasig City only).
 
 **Validation rules** (return a 400 ValidationProblem with a message for each field):
 
@@ -340,7 +345,6 @@ The user id always comes from the login token, **never from the request body**.
 |---|---|---|
 | businessType | Required, and must be one of the allowed values | "Please choose a business type." |
 | categoryId | Required, and must exist in `business_categories` | "Please choose a business category." |
-| cityId | Required, and must exist in `cities` | "Please choose a city." |
 | registrationStatus | Required, and must be `Planning` or `Started` | "Please tell us where you are in the process." |
 | businessName | Optional, at most 100 characters after trimming | "Business name must be 100 characters or less." |
 
@@ -354,8 +358,10 @@ The user id always comes from the login token, **never from the request body**.
 - [ ] A request without a login token returns 401.
 - [ ] One user can never change another user's profile, because the user id
       only comes from the token.
-- [ ] The response includes `categoryName` and `cityName`, so the frontend
-      doesn't need a second call to show them.
+- [ ] `city_id` is set to Pasig automatically on create and update, and the
+      request DTO has no `cityId`. A `cityId` sent in the body is ignored.
+- [ ] The response includes `categoryName` and `cityName` (always "Pasig"), so
+      the frontend doesn't need a second call to show them.
 
 ---
 
@@ -433,8 +439,8 @@ options from `GET /api/assessment/options` using TanStack Query.
 **Acceptance criteria.**
 
 - [ ] It matches the wireframe at 360 px and 1280 px.
-- [ ] The dropdowns show the data from the API (3 cities, 3 categories). The
-      options are never hardcoded in the final PR.
+- [ ] The form has **no City field**. The category dropdown shows the data from
+      the API (3 categories). The options are never hardcoded in the final PR.
 - [ ] A loading state shows while the options load, and an error message with a
       Retry button shows if they fail.
 - [ ] You can fill in the whole form using only the keyboard.
@@ -464,7 +470,7 @@ real source of truth; the browser checks only make the form faster to use.
       under each missing field and sends **no** request.
 - [ ] The error messages are the same wording as in US-001-BE-03.
 - [ ] A 400 from the backend shows each error under its field, using the
-      `errors` object (`cityId` → the City field).
+      `errors` object (`categoryId` → the Category field).
 - [ ] After a failed submit, the first field with an error gets focus.
 - [ ] Each error clears as soon as the user fixes that field.
 
@@ -524,17 +530,20 @@ what "guest" means.
 **The design must cover:**
 
 1. **Value statement:** a headline plus one line. Example: "Register your
-   business step by step, made for Quezon City, Manila, and Pasig."
-2. **Sign-in buttons:** keep the **Continue with Google** button (it must follow
+   business step by step, made for Pasig City."
+2. **Scope notice:** a visible line that says "Currently for Pasig City
+   businesses." Users outside Pasig are **not** blocked; they can still sign in.
+3. **Sign-in buttons:** keep the **Continue with Google** button (it must follow
    Google's branding rules) and the **Continue as guest** button.
-3. **Guest note:** a small line under the guest button. Example: "Your answers
+4. **Guest note:** a small line under the guest button. Example: "Your answers
    are saved. Sign in with Google later to keep them on any device."
-4. **Responsive:** mobile (360 px) and desktop (1280 px) frames.
+5. **Responsive:** mobile (360 px) and desktop (1280 px) frames.
 
 **Acceptance criteria.**
 
 - [ ] Mobile and desktop frames are in `docs/design/`.
-- [ ] All the copy is final.
+- [ ] All the copy is final, including the notice "Currently for Pasig City
+      businesses."
 - [ ] The Google button follows Google's sign-in branding guidelines.
 
 ---
@@ -558,7 +567,7 @@ is where the Sprint 3 roadmap will appear later.
 **The design must cover:**
 
 1. **Summary card:** business name (or "Unnamed business"), type, category,
-   city, and registration status.
+   city (always Pasig), and registration status.
 2. **Edit button:** an "Edit details" button that goes to `/assessment`.
 3. **Roadmap placeholder:** a card that says "Your registration roadmap is
    coming soon". This is where US-005 will go in Sprint 3.
@@ -587,7 +596,8 @@ is where the Sprint 3 roadmap will appear later.
 | Depends on | US-003-UI-01, SH-FE-01 |
 | Blocks | None |
 
-**Description.** Update `features/auth/HomePage.tsx` to match US-003-UI-01. Take
+**Description.** Update `features/auth/HomePage.tsx` to match US-003-UI-01, including the Pasig
+scope notice. Take
 out the debug `<dl>` (id / email / isAnonymous). Once a user is signed in, this
 page should never show; SH-FE-01 redirects them instead.
 
@@ -595,6 +605,7 @@ page should never show; SH-FE-01 redirects them instead.
 
 - [ ] It matches the design at 360 px and 1280 px.
 - [ ] The debug values no longer appear anywhere in the app.
+- [ ] The Pasig scope notice shows on the page, and it does not block sign-in.
 - [ ] Google sign-in and guest sign-in both still work.
 
 ---
@@ -699,6 +710,7 @@ doesn't make up its own.
 
 | Field | Value |
 |---|---|
+| Scope | **Pasig City only** |
 | Type | Research |
 | Assignee | `[TBD]` (suggested: Research + AI Engineer) |
 | Priority | Must |
@@ -708,7 +720,7 @@ doesn't make up its own.
 | Blocks | RS-001-02, and Sprint 3 TE-004 (the roadmap rule engine) |
 
 **Description.** Write down the full registration process for a new micro
-business in Metro Manila, in order. Save it as
+business in Pasig City, in order (scope: Pasig City only). Save it as
 `docs/research/registration-workflow.md`.
 
 **For each step, record:**
@@ -747,6 +759,7 @@ Fire Safety Inspection Certificate. Say which ones apply to which category.
 
 | Field | Value |
 |---|---|
+| Scope | **Pasig City only** |
 | Type | Research / Review |
 | Assignee | `[TBD]` (suggested: Product Owner + Scrum Master) |
 | Priority | Must |
@@ -764,25 +777,40 @@ Fire Safety Inspection Certificate. Say which ones apply to which category.
 
 ---
 
-### RS-002-01, RS-002-02, RS-002-03: City requirements for Quezon City, Manila, and Pasig
+### RS-002-01, RS-002-02: DROPPED (Quezon City and Manila)
 
-This is **one ticket per city**, each with the same scope, so they can be split
-between people or tracked separately.
+**Descoped on 2026-09-29.** The MVP covers Pasig City only, so the Quezon City
+(RS-002-01) and Manila (RS-002-02) research tickets are removed. Do not start
+them. The IDs are not reused. Adding more cities is a later-sprint decision.
+
+---
+
+### RS-002-03: Pasig City requirements (deep dive)
 
 | Field | Value |
 |---|---|
 | Type | Research |
-| Assignee | `[TBD]` for each city (suggested: Research + AI Engineer; bring in a helper if needed) |
-| Priority | Must: QC and Manila. Should: Pasig, if time runs short. |
-| Estimate | 3 h per city |
-| Due | QC Sep 30 · Manila Oct 1 · Pasig Oct 2 |
+| Scope | **Pasig City only** |
+| Assignee | `[TBD]` (suggested: Research + AI Engineer) |
+| Priority | **Must** (raised from Should; it is now the only city ticket) |
+| Estimate | 5 h |
+| Due | Oct 2 |
 | Depends on | RS-001-01 (the step list). You can start collecting sources before it's done. |
 | Blocks | Closing RS-002, and the Sprint 3 seed data for `requirements` |
 
-**Description.** For each city, list the documents needed at each **local**
-step, such as the Barangay Clearance and the Mayor's Permit. Also record
-anything unique to that city (online portals, special forms, office locations).
-Save it as `docs/research/requirements-<city>.md`.
+**Description.** Scope: **Pasig City only.** Research the local registration
+requirements in depth and save them as `docs/research/requirements-pasig.md`.
+It must cover three areas:
+
+1. **Pasig BPLO process and online portal:** the steps of the Business Permits
+   and Licensing Office, how to apply for a new permit, the online portal (if
+   any), special forms, and office locations.
+2. **Barangay clearance differences across Pasig barangays:** where the
+   requirements, fees, or forms differ from barangay to barangay, and where
+   they are the same.
+3. **Per-business-category requirements in Pasig:** what changes for Food and
+   Beverage, Retail, and Services (for example, the Sanitary Permit and Fire
+   Safety Inspection Certificate).
 
 **For each requirement, record:**
 
@@ -790,17 +818,24 @@ Save it as `docs/research/requirements-<city>.md`.
 - The document name
 - Whether it applies to every category or only some (such as Food and
   Beverage only)
+- Whether it is the same in every Pasig barangay or differs (name the barangay)
 - Notes (number of copies, needs notarizing, and so on)
 - The source URL and the date it was accessed
 
 **Acceptance criteria.**
 
-- [ ] Every requirement has an official source link (the city government
+- [ ] The document states at the top that its scope is Pasig City.
+- [ ] The Pasig BPLO process is written step by step, and the online portal
+      (or the fact that there is none) is recorded with its URL.
+- [ ] Barangay clearance is documented for Pasig, and the barangays that differ
+      are listed by name. At least 5 barangays are checked, or it is stated why
+      fewer were found.
+- [ ] Requirements for each of the 3 categories (Food and Beverage, Retail,
+      Services) are tagged with the category name used in the database.
+- [ ] Every requirement has an official source link (the Pasig City government
       website or its official Facebook page). Unconfirmed ones are marked
       **"Unverified"**.
 - [ ] Every requirement uses the step names from RS-001.
-- [ ] Requirements for specific categories are tagged with the category name
-      used in the database (Food and Beverage, Retail, Services).
 - [ ] The document is committed to `docs/research/`, and RS-002 meets
       AC-RS002-01.
 
@@ -810,6 +845,7 @@ Save it as `docs/research/requirements-<city>.md`.
 
 | Field | Value |
 |---|---|
+| Scope | **Pasig City only** |
 | Type | Research |
 | Assignee | `[TBD]` (suggested: Research + AI Engineer) |
 | Priority | Could |
@@ -818,9 +854,9 @@ Save it as `docs/research/requirements-<city>.md`.
 | Depends on | None |
 | Blocks | None this sprint. It feeds into RS-003 in Sprint 3. |
 
-**Description.** The database has only 3 categories: Food and Beverage, Retail,
+**Description.** Scope: Pasig City only. The database has only 3 categories: Food and Beverage, Retail,
 and Services. Check whether they are enough for the MVP, based on how the
-permit requirements actually change between types of business.
+permit requirements in Pasig City actually change between types of business.
 
 **Acceptance criteria.**
 
@@ -863,6 +899,10 @@ can run by hand. Save them in `docs/qa/sprint2-test-cases.md`.
 - AC-003-01, AC-003-02
 - The route redirects in SH-FE-01
 - Guest → Google linking keeps the data
+- The form has no City field, a saved profile always has `city_id` = Pasig, and
+  a `cityId` in the request body is ignored
+- The landing page shows "Currently for Pasig City businesses.", and a user
+  outside Pasig can still sign in
 - Mobile layout at 360 px
 
 **Acceptance criteria.**
@@ -949,14 +989,14 @@ the team.
 | US-003-FE-02 | "My Business" screen | FE | Must | 3 h | Oct 1 | US-003-UI-02, BE-04, SH-FE-01 |
 | RS-001-01 | Registration workflow document | RS | Must | 5 h | Oct 1 | None |
 | RS-001-02 | Review the workflow document | RS | Must | 1 h | Oct 2 | RS-001-01 |
-| RS-002-01 | Quezon City requirements | RS | Must | 3 h | Sep 30 | RS-001-01 (step names) |
-| RS-002-02 | Manila requirements | RS | Must | 3 h | Oct 1 | RS-001-01 (step names) |
-| RS-002-03 | Pasig requirements | RS | Should | 3 h | Oct 2 | RS-001-01 (step names) |
+| ~~RS-002-01~~ | ~~Quezon City requirements~~ (dropped) | RS | n/a | 0 h | n/a | n/a |
+| ~~RS-002-02~~ | ~~Manila requirements~~ (dropped) | RS | n/a | 0 h | n/a | n/a |
+| RS-002-03 | Pasig City requirements (deep dive) | RS | Must | 5 h | Oct 2 | RS-001-01 (step names) |
 | RS-002-04 | Check the categories list | RS | Could | 1 h | Oct 1 | None |
 | US-001-QA-01 | Write the test cases | QA | Must | 2 h | Sep 30 | PM-01 |
 | US-001-QA-02 | Run the tests end to end, log bugs | QA | Must | 3 h | Oct 2 | FE-02, FE-03, US-003-FE-02, QA-01 |
 
-**Total:** 26 tickets, about 63 hours (plus 1 h per member for S2-QA-01).
+**Total:** 24 tickets (RS-002-01 and RS-002-02 were dropped), about 59 hours (plus 1 h per member for S2-QA-01).
 Over 4 days with 5 people this is **tight but doable**, as long as no one waits
 for someone else.
 
@@ -976,7 +1016,7 @@ Sep 29  US-001-PM-01 (fields) ──┬──► US-001-BE-01 (contract) ──�
                                                   Oct 2  US-001-QA-02 ──► Sprint Review
 
         RS-001-01 ──► RS-001-02
-             └──(step names)──► RS-002-01 QC · RS-002-02 Manila · RS-002-03 Pasig
+             └──(step names)──► RS-002-03 Pasig City
 ```
 
 **Critical path:** PM-01 → BE-01 → BE-03 → FE-03 → QA-02. If any of these
@@ -993,14 +1033,16 @@ and the team decides what to cut.
 | Scrum Master / QA Lead | S2-PM-01, US-001-QA-01, US-001-QA-02, RS-001-02, tracks S2-QA-01 | ≈ 6.5 h |
 | Backend Developer | US-001-BE-01 → BE-05 | ≈ 11 h |
 | Frontend / UI-UX Lead | US-001-UI-01, US-003-UI-01, US-003-UI-02, S2-UI-01, US-001-FE-01, US-001-FE-02, US-003-FE-01 | ≈ 17 h ⚠️ |
-| Research + AI Engineer | RS-001-01, RS-002-01 → 04 | ≈ 15 h ⚠️ |
+| Research + AI Engineer | RS-001-01, RS-002-03, RS-002-04 | ≈ 11 h |
 
-⚠️ **Two people are overloaded. Rebalance in the meeting:**
+⚠️ **One person is overloaded (Frontend / UI-UX Lead). Rebalance in the meeting:**
 
 - Move **US-003-UI-01** and **S2-UI-01** (the Should tickets) to Sprint 3, or
   give US-003-FE-01 to the Product Owner.
-- Give **RS-002-03 (Pasig)** to the Scrum Master or Backend Developer once
-  their tickets are done, or accept Pasig as carry-over.
+
+The Research + AI Engineer is no longer overloaded: the Pasig-only scope
+(2026-09-29) dropped RS-002-01 and RS-002-02, cutting their load from ≈ 15 h to
+≈ 11 h. Keep RS-002-03 (Pasig, Must) with them.
 
 ---
 
@@ -1009,6 +1051,8 @@ and the team decides what to cut.
 These are listed so nobody starts building them early:
 
 - Roadmap generation and the rule engine (US-005, TE-004), which are Sprint 3
+- Adding more cities (Quezon City, Manila, and others) and their research. The
+  schema is already multi-city, so this can be scaled later
 - Loading the researched requirements into the `requirements` and
   `roadmap_rules` tables, which is Sprint 3 and comes from the RS-001 and
   RS-002 output

@@ -55,7 +55,7 @@ Walk through each item. Show the repo or run the app if you can
 | US-003 | Create User Account | 5 | Member 3 | 🟡 Mostly done (see note) |
 | US-001 | Provide Business Information | 5 | Member 1 + Member 4 | ⬜ Not started |
 | RS-001 | Research Registration Workflow | 5 | Member 5 | ❓ Ask Member 5 |
-| RS-002 | Research City Requirements | 5 | Member 5 | ❓ Ask Member 5 |
+| RS-002 | Research Pasig City Requirements | 5 | Member 5 | ❓ Ask Member 5 |
 
 **Points:** 13 of 28 are built (46%). US-001 (5) and the two research stories (10) are left.
 
@@ -128,7 +128,7 @@ About 2 minutes per person. Everyone answers the same three questions:
 has no research output yet (`database/seed/` is empty). Ask:
 
 - Where does the registration workflow document (RS-001) stand?
-- Which cities are done for RS-002: QC, Manila, Pasig?
+- RS-002 is **decided: MVP scope = Pasig City only** (QC and Manila dropped). How far along is the Pasig research (BPLO process, barangay clearance differences, per-category requirements)?
 - Do we have the source links (official LGU / DTI / BIR pages) for each requirement?
 
 ---
@@ -165,7 +165,7 @@ Acceptance criteria to meet:
 | Task | Owner | Due |
 |---|---|---|
 | RS-001: registration flow document (steps in order: DTI/SEC → Barangay → Mayor's Permit → BIR, etc.) in `docs/` | Member 5 | Oct 1 |
-| RS-002: requirements per city with a source link for each | Member 5 | Oct 2 |
+| RS-002: Pasig City requirements with a source link for each | Member 5 | Oct 2 |
 | Review research for completeness | Member 1 + Member 2 | Oct 2 |
 
 If Member 5 is overloaded, **decide today** who helps. Don't wait until Friday.
