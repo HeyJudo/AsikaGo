@@ -42,6 +42,71 @@
           }
         }
       }
+    },
+    "/api/business-profile": {
+      "get": {
+        "tags": [
+          "AssessmentEndpoints"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessProfileResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AssessmentEndpoints"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveBusinessProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusinessProfileResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assessment/options": {
+      "get": {
+        "tags": [
+          "AssessmentEndpoints"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentOptionsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -53,6 +118,107 @@
         "type": "object",
         "properties": {
           "status": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "AssessmentOptionsResponse": {
+        "required": [
+          "categories",
+          "businessTypes",
+          "registrationStatuses"
+        ],
+        "type": "object",
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryOption"
+            }
+          },
+          "businessTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "registrationStatuses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "BusinessProfileResponse": {
+        "required": [
+          "id",
+          "businessName",
+          "businessType",
+          "categoryId",
+          "categoryName",
+          "cityId",
+          "cityName",
+          "registrationStatus",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "businessName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "businessType": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "cityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "registrationStatus": {
+            "$ref": "#/components/schemas/RegistrationStatus"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CategoryOption": {
+        "required": [
+          "id",
+          "name",
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
             "type": [
               "null",
               "string"
@@ -82,6 +248,46 @@
             "type": "boolean"
           }
         }
+      },
+      "RegistrationStatus": {
+        "enum": [
+          "Planning",
+          "Started"
+        ]
+      },
+      "SaveBusinessProfileRequest": {
+        "required": [
+          "businessName",
+          "businessType",
+          "categoryId",
+          "registrationStatus"
+        ],
+        "type": "object",
+        "properties": {
+          "businessName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "businessType": {
+            "type": "string"
+          },
+          "categoryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "registrationStatus": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RegistrationStatus"
+              }
+            ]
+          }
+        }
       }
     }
   },
@@ -91,6 +297,9 @@
     },
     {
       "name": "MeEndpoints"
+    },
+    {
+      "name": "AssessmentEndpoints"
     }
   ]
 }
