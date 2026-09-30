@@ -1,14 +1,10 @@
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.DependencyInjection;
-using System.Security.Claims;
-using System.Text.Encodings.Web;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using AsikaGo.Api.Data;
 using AsikaGo.Api.Data.Entities;
 
@@ -18,70 +14,71 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Set the environment to Development for testing
         builder.UseEnvironment("Development");
 
         builder.ConfigureServices(services =>
         {
-            var descriptors = services.Where(d => d.ServiceType == typeof(DbContextOptions<AppDbContext>)).ToList();
-            foreach (var descriptor in descriptors)
-            {
-                services.Remove(descriptor);
-            }
+            // Remove the app's Npgsql registration so only InMemory is used
+            services.RemoveAll<DbContextOptions<AppDbContext>>();
+            services.RemoveAll<IDbContextOptionsConfiguration<AppDbContext>>();
 
+            // Every request is a signed-in guest (see TestAuthHandler)
+            services.AddAuthentication(o =>
+            {
+                o.DefaultScheme = TestAuthHandler.SchemeName;
+                o.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
+                o.DefaultChallengeScheme = TestAuthHandler.SchemeName;
+            }).AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
+
+            // Add InMemory database for testing
             services.AddDbContext<AppDbContext>(options =>
             {
                 options.UseInMemoryDatabase("InMemoryDbForTesting");
                 options.UseSnakeCaseNamingConvention();
             });
 
-            services.AddAuthentication("TestScheme")
-                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>("TestScheme", options => { });
-
-            services.AddAuthorization();
-
-            // Ensure DB is created and seed data applied
+            // Build the service provider and create the database
             var sp = services.BuildServiceProvider();
             using var scope = sp.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Database.EnsureCreated();
+
+            // Seed test data
+            InitializeTestData(db);
         });
     }
 
-    protected override void ConfigureClient(HttpClient client)
+    private void InitializeTestData(AppDbContext db)
     {
-        client.BaseAddress = new Uri("https://localhost");
-    }
-}
-
-public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
-{
-    public TestAuthHandler(
-        IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger,
-        UrlEncoder urlEncoder)
-        : base(options, logger, urlEncoder) { }
-
-    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
-    {
-        // Only authenticate when a Bearer token is actually present.
-        if (!Request.Headers.TryGetValue("Authorization", out var authHeader)
-            || !authHeader.ToString().StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        if (db.BusinessCategories.Any())
         {
-            return Task.FromResult(AuthenticateResult.NoResult());
+            return;
         }
 
-        var userId = "11111111-1111-1111-1111-111111111001";
-        var claims = new[]
+        var categories = new List<BusinessCategory>
         {
-            new Claim("sub", userId),
-            new Claim(ClaimTypes.NameIdentifier, userId),
-            new Claim(ClaimTypes.Name, "Test User"),
-            new Claim("auth.uid", userId)
+            new BusinessCategory
+            {
+                Id = Guid.NewGuid(),
+                Name = "Food and Beverage",
+                Description = "Restaurants, cafes, and food stalls."
+            },
+            new BusinessCategory
+            {
+                Id = Guid.NewGuid(),
+                Name = "Retail",
+                Description = "Selling goods directly to consumers."
+            },
+            new BusinessCategory
+            {
+                Id = Guid.NewGuid(),
+                Name = "Services",
+                Description = "Offering skills or labor rather than goods."
+            }
         };
-        var identity = new ClaimsIdentity(claims, "TestScheme");
-        var principal = new ClaimsPrincipal(identity);
-        var ticket = new AuthenticationTicket(principal, "TestScheme");
 
-        return Task.FromResult(AuthenticateResult.Success(ticket));
+        db.BusinessCategories.AddRange(categories);
+        db.SaveChanges();
     }
 }

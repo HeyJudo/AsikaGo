@@ -3,29 +3,18 @@ using AsikaGo.Api.Features.Assessment;
 using AsikaGo.Api.Features.Me;
 using AsikaGo.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.InMemory;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddProblemDetails();
+builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddOpenApi();
 builder.Services.AddSupabaseAuth(builder.Configuration);
 
-// Use InMemory database for testing
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddDbContext<AppDbContext>(options =>
-    {
-        options.UseInMemoryDatabase("InMemoryDbForTesting");
-        options.UseSnakeCaseNamingConvention();
-    });
-}
-else
-{
-    builder.Services.AddDbContext<AppDbContext>(options => options
-        .UseNpgsql(builder.Configuration.GetConnectionString("Default"))
-        .UseSnakeCaseNamingConvention());
-}
+builder.Services.AddDbContext<AppDbContext>(options => options
+    .UseNpgsql(builder.Configuration.GetConnectionString("Default"))
+    .UseSnakeCaseNamingConvention());
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? ["http://localhost:5173"];
@@ -54,6 +43,7 @@ app.MapGet("/health", () => TypedResults.Ok(new { status = "ok" })).AllowAnonymo
 var api = app.MapGroup("/api").RequireAuthorization();
 api.MapMeEndpoints();
 api.MapAssessmentEndpoints();
+api.MapBusinessProfileEndpoints();
 
 app.Run();
 

@@ -43,26 +43,7 @@
         }
       }
     },
-    "/api/assessment/options": {
-      "get": {
-        "tags": [
-          "AssessmentEndpoints"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssessmentOptionsResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/assessment/business-profile": {
+    "/api/business-profile": {
       "get": {
         "tags": [
           "AssessmentEndpoints"
@@ -101,6 +82,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BusinessProfileResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assessment/options": {
+      "get": {
+        "tags": [
+          "AssessmentEndpoints"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentOptionsResponse"
                 }
               }
             }
@@ -250,7 +250,10 @@
         }
       },
       "RegistrationStatus": {
-        "type": "integer"
+        "enum": [
+          "Planning",
+          "Started"
+        ]
       },
       "SaveBusinessProfileRequest": {
         "required": [
@@ -275,7 +278,14 @@
             "format": "uuid"
           },
           "registrationStatus": {
-            "$ref": "#/components/schemas/RegistrationStatus"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RegistrationStatus"
+              }
+            ]
           }
         }
       }
