@@ -91,11 +91,13 @@ public static class AssessmentEndpoints
         if (request.RegistrationStatus is not RegistrationStatus.Planning and not RegistrationStatus.Started)
             errors["registrationStatus"] = new[] { "Please tell us where you are in the process." };
 
-        if (request.BusinessName is null || request.BusinessName.Trim().Length > 100)
+        if (request.BusinessName is not null && request.BusinessName.Trim().Length > 100)
             errors["businessName"] = new[] { "Business name must be 100 characters or less." };
 
         if (errors.Count > 0)
             return TypedResults.ValidationProblem(errors);
+
+        var name = string.IsNullOrWhiteSpace(request.BusinessName) ? null : request.BusinessName.Trim();
 
         var existing = await db.BusinessProfiles.FirstOrDefaultAsync(b => b.UserId == userId.Value, ct);
 
@@ -105,7 +107,7 @@ public static class AssessmentEndpoints
             {
                 Id = Guid.NewGuid(),
                 UserId = userId.Value,
-                BusinessName = request.BusinessName,
+                BusinessName = name,
                 BusinessType = request.BusinessType!,
                 CategoryId = request.CategoryId,
                 CityId = PasigId,
@@ -115,7 +117,7 @@ public static class AssessmentEndpoints
         }
         else
         {
-            existing.BusinessName = request.BusinessName;
+            existing.BusinessName = name;
             existing.BusinessType = request.BusinessType!;
             existing.CategoryId = request.CategoryId;
             existing.CityId = PasigId;

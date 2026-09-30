@@ -15,7 +15,9 @@ public class TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> option
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var identity = new ClaimsIdentity([new Claim("sub", GuestId.ToString()), new Claim("is_anonymous", "true")], SchemeName);
+        // X-Test-User lets a test act as a different user.
+        var sub = Guid.TryParse(Request.Headers["X-Test-User"], out var id) ? id : GuestId;
+        var identity = new ClaimsIdentity([new Claim("sub", sub.ToString()), new Claim("is_anonymous", "true")], SchemeName);
         return Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName)));
     }
 }
