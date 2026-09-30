@@ -1,8 +1,10 @@
 using System.Net;
 using System.Text.Json;
+using AsikaGo.Api.Data;
 using AsikaGo.Api.Data.Entities;
 using AsikaGo.Api.Features.Assessment;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Xunit;
 
 namespace AsikaGo.Tests;
 
@@ -69,5 +71,54 @@ public class AssessmentTests : IClassFixture<CustomWebApplicationFactory>
             var errorContent = await response.Content.ReadAsStringAsync();
             Assert.Fail($"Expected OK but got {response.StatusCode}. Content: {errorContent}");
         }
+    }
+
+    [Fact]
+    public async Task PutBusinessProfile_CreatesProfileWhenNoneExists()
+    {
+        using var client = _factory.CreateClient();
+        var userToken = "11111111-1111-1111-1111-111111111001";  // Valid GUID matching test user sub
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {userToken}");
+
+        var request = new SaveBusinessProfileRequest(
+            BusinessName: "Test Business",
+            BusinessType: "Sole Proprietorship",
+            CategoryId: Guid.Parse("22222222-2222-2222-2222-222222222201"), // FoodAndBeverageId from seed data
+            RegistrationStatus: RegistrationStatus.Planning
+        );
+
+        var content = JsonSerializer.Serialize(request);
+        var response = await client.PutAsync("/api/assessment/business-profile",
+            new StringContent(content, System.Text.Encoding.UTF8, "application/json"));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var businessProfile = JsonSerializer.Deserialize<BusinessProfileResponse>(
+            responseContent, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        Assert.NotNull(businessProfile);
+        Assert.NotEqual(default, businessProfile.Id);
+        Assert.Equal("Test Business", businessProfile.BusinessName);
+        Assert.Equal("Sole Proprietorship", businessProfile.BusinessType);
+        Assert.Equal("Pasig", businessProfile.CityName);
+    }
+
+    [Fact]
+    public async Task PutBusinessProfile_Returns401WithoutLoginToken()
+    {
+        using var client = _factory.CreateClient();
+
+        var request = new SaveBusinessProfileRequest(
+            BusinessName: "Test Business",
+            BusinessType: "Sole Proprietorship",
+            CategoryId: Guid.Parse("11111111-1111-1111-1111-111111111001"),
+            RegistrationStatus: RegistrationStatus.Planning
+        );
+
+        var content = JsonSerializer.Serialize(request);
+        var response = await client.PutAsync("/api/assessment/business-profile",
+            new StringContent(content, System.Text.Encoding.UTF8, "application/json"));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }

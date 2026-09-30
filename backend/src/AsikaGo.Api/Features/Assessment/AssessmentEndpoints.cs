@@ -85,7 +85,7 @@ public static class AssessmentEndpoints
         if (request.RegistrationStatus is not RegistrationStatus.Planning and not RegistrationStatus.Started)
             errors["registrationStatus"] = new[] { "Please tell us where you are in the process." };
 
-        if (request.BusinessName is not null && request.BusinessName.Length > 100)
+        if (request.BusinessName is null || request.BusinessName.Trim().Length > 100)
             errors["businessName"] = new[] { "Business name must be 100 characters or less." };
 
         if (errors.Count > 0)
