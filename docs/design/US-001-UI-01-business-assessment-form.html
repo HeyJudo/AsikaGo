@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AsikaGo – Business Assessment Form (US-001-UI-01 Wireframe)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── DESIGN TOKENS ─────────────────────────────────────── */
+    :root {
+      --asika-blue:        #1a3a6b;
+      --asika-yellow:      #f5a623;
+      --asika-yellow-dark: #d4891a;
+      --asika-dark:        #0f1f3d;
+      --asika-text:        #1c2b3a;
+      --asika-muted:       #6b7a8d;
+      --asika-border:      #dde3ec;
+      --asika-bg:          #f7f9fc;
+      --asika-white:       #ffffff;
+      --asika-error:       #d93025;
+      --asika-error-bg:    #fef2f2;
+      --asika-error-border:#fca5a5;
+      --asika-disabled:    #9aabc0;
+
+      --radius-sm:  6px;
+      --radius-md:  10px;
+      --radius-lg:  16px;
+
+      --shadow-sm:  0 1px 3px rgba(0,0,0,.08);
+      --shadow-md:  0 4px 16px rgba(0,0,0,.10);
+      --shadow-lg:  0 8px 32px rgba(0,0,0,.14);
+
+      --transition: 180ms ease;
+    }
+
+    /* ─── RESET ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--asika-bg);
+      color: var(--asika-text);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    a { color: var(--asika-blue); text-decoration: underline; }
+
+    /* ─── NAV ────────────────────────────────────────────────── */
+    .nav {
+      background: var(--asika-blue);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-md);
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--asika-white);
+      text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+    .nav-logo span { color: var(--asika-yellow); }
+    .nav-badge {
+      background: var(--asika-yellow);
+      color: var(--asika-dark);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 4px;
+      letter-spacing: 0.3px;
+      vertical-align: middle;
+    }
+    .nav-step {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.7);
+    }
+    .nav-step strong { color: var(--asika-white); }
+
+    /* ─── PAGE WRAPPER ───────────────────────────────────────── */
+    .page-wrapper {
+      min-height: calc(100vh - 56px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 90px;
+    }
+
+    /* ─── CARD ───────────────────────────────────────────────── */
+    .card {
+      background: var(--asika-white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--asika-border);
+      padding: 40px 40px 36px;
+      width: 100%;
+      max-width: 600px;
+    }
+    @media (max-width: 480px) {
+      .card { padding: 28px 20px 28px; border-radius: var(--radius-md); }
+      .page-wrapper { padding: 24px 12px 80px; }
+    }
+
+    /* ─── HEADING ────────────────────────────────────────────── */
+    .form-header { margin-bottom: 32px; }
+    .form-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--asika-dark);
+      line-height: 1.25;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+    }
+    .form-subtitle {
+      font-size: 14px;
+      color: var(--asika-muted);
+    }
+
+    /* ─── FORM FIELDS ────────────────────────────────────────── */
+    .field { margin-bottom: 24px; }
+
+    .field-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--asika-text);
+      margin-bottom: 4px;
+    }
+    .field-optional {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--asika-muted);
+      margin-left: 6px;
+    }
+    .field-required {
+      color: var(--asika-error);
+      margin-left: 2px;
+    }
+    .field-help {
+      font-size: 12px;
+      color: var(--asika-muted);
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+
+    /* Text Input */
+    .input {
+      width: 100%;
+      height: 44px;
+      padding: 0 14px;
+      border: 1.5px solid var(--asika-border);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--asika-text);
+      background: var(--asika-white);
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .input::placeholder { color: #a0b0c4; }
+    .input:focus {
+      border-color: var(--asika-blue);
+      box-shadow: 0 0 0 3px rgba(26,58,107,0.12);
+    }
+    .input.is-error {
+      border-color: var(--asika-error);
+      box-shadow: 0 0 0 3px rgba(217,48,37,0.10);
+    }
+    .input:disabled {
+      background: #f0f4f8;
+      color: var(--asika-muted);
+      cursor: not-allowed;
+    }
+
+    /* Select */
+    .select-wrapper { position: relative; }
+    .select {
+      width: 100%;
+      height: 44px;
+      padding: 0 36px 0 14px;
+      border: 1.5px solid var(--asika-border);
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--asika-text);
+      background: var(--asika-white);
+      appearance: none;
+      outline: none;
+      cursor: pointer;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .select:focus {
+      border-color: var(--asika-blue);
+      box-shadow: 0 0 0 3px rgba(26,58,107,0.12);
+    }
+    .select.is-error { border-color: var(--asika-error); }
+    .select:disabled { background: #f0f4f8; cursor: not-allowed; color: var(--asika-muted); }
+    .select-icon {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: var(--asika-muted);
+    }
+
+    /* Radio Group */
+    .radio-group { display: flex; flex-direction: column; gap: 10px; }
+    .radio-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--asika-border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
+      user-select: none;
+      min-height: 44px;
+    }
+    .radio-item:hover { border-color: var(--asika-blue); background: #f0f5ff; }
+    .radio-item.is-selected {
+      border-color: var(--asika-blue);
+      background: #eef3ff;
+      box-shadow: 0 0 0 2px rgba(26,58,107,0.10);
+    }
+    .radio-item.is-error { border-color: var(--asika-error) !important; background: var(--asika-error-bg); }
+    .radio-circle {
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--asika-border);
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color var(--transition), background var(--transition);
+    }
+    .radio-item.is-selected .radio-circle {
+      border-color: var(--asika-blue);
+      background: var(--asika-blue);
+    }
+    .radio-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: white;
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .radio-item.is-selected .radio-dot { opacity: 1; }
+    .radio-text-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--asika-text);
+      display: block;
+      margin-bottom: 2px;
+    }
+    .radio-text-desc {
+      font-size: 12px;
+      color: var(--asika-muted);
+      line-height: 1.45;
+    }
+
+    /* Field Error */
+    .field-error {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--asika-error);
+      margin-top: 6px;
+    }
+
+    /* Divider */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--asika-border);
+      margin: 28px 0;
+    }
+
+    /* ─── PRIMARY BUTTON ─────────────────────────────────────── */
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      height: 50px;
+      background: var(--asika-blue);
+      color: var(--asika-white);
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+      letter-spacing: 0.1px;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: #142f5b;
+      box-shadow: 0 6px 20px rgba(26,58,107,0.3);
+      transform: translateY(-1px);
+    }
+    .btn-primary:active:not(:disabled) { transform: translateY(0); }
+    .btn-primary:disabled {
+      background: var(--asika-disabled);
+      cursor: not-allowed;
+    }
+
+    /* Spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.35);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    /* ─── ALERT BANNER ───────────────────────────────────────── */
+    .alert {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 24px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .alert-error {
+      background: var(--asika-error-bg);
+      border: 1px solid var(--asika-error-border);
+      color: #991b1b;
+    }
+    .alert-icon { flex-shrink: 0; margin-top: 1px; }
+    .alert-body { flex: 1; }
+    .alert-title { font-weight: 700; margin-bottom: 3px; }
+    .alert-retry {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--asika-error);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      font-family: inherit;
+      text-decoration: underline;
+    }
+    .alert-retry:hover { opacity: 0.75; }
+
+    /* ─── FORM NOTE ──────────────────────────────────────────── */
+    .form-note {
+      font-size: 12px;
+      color: var(--asika-muted);
+      text-align: center;
+      margin-top: 16px;
+      line-height: 1.5;
+    }
+
+    /* ─── STATE SWITCHER ─────────────────────────────────────── */
+    .state-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--asika-dark);
+      border-top: 2px solid var(--asika-yellow);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      z-index: 200;
+      justify-content: center;
+    }
+    .state-bar-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--asika-yellow);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .state-btn {
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 11px;
+      border-radius: 20px;
+      border: 1.5px solid rgba(255,255,255,0.2);
+      color: rgba(255,255,255,0.7);
+      background: transparent;
+      cursor: pointer;
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+    .state-btn:hover { border-color: var(--asika-yellow); color: var(--asika-yellow); }
+    .state-btn.is-active {
+      background: var(--asika-yellow);
+      border-color: var(--asika-yellow);
+      color: var(--asika-dark);
+    }
+
+    /* Screen-reader only */
+    .sr-only {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVIGATION -->
+  <nav class="nav" aria-label="Main navigation">
+    <a class="nav-logo" href="#" aria-label="AsikaGo home">
+      Asika<span>Go</span>
+      <span class="nav-badge">®</span>
+    </a>
+    <span class="nav-step">
+      Business assessment
+    </span>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="page-wrapper" id="main-content">
+
+    <div class="card">
+
+      <!-- Save Failed Banner -->
+      <div class="alert alert-error" id="alertBanner" role="alert" aria-live="assertive" hidden>
+        <span class="alert-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </span>
+        <div class="alert-body">
+          <div class="alert-title">We couldn't save your answers.</div>
+          <div>Something went wrong on our end. Your answers are still here — don't refresh the page.</div>
+          <button class="alert-retry" id="retryBtn" type="button">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/>
+            </svg>
+            Try again
+          </button>
+        </div>
+      </div>
+
+      <!-- Form Header -->
+      <header class="form-header">
+        <h1 class="form-title">Tell us about your business.</h1>
+        <p class="form-subtitle">We'll use this to build your registration roadmap — it only takes a minute.</p>
+      </header>
+
+      <!-- Assessment Form -->
+      <form id="assessmentForm" novalidate aria-label="Business assessment">
+
+        <!-- Field 1: Business Name (optional) -->
+        <div class="field">
+          <label class="field-label" for="businessName">
+            Business Name
+            <span class="field-optional">(optional)</span>
+          </label>
+          <p class="field-help" id="businessNameHelp">
+            You can use your own name if you haven't picked one yet. This won't be your official registered name.
+          </p>
+          <input
+            class="input"
+            id="businessName"
+            name="businessName"
+            type="text"
+            placeholder="e.g. Maria's Karinderya, Juan's Bakery…"
+            aria-describedby="businessNameHelp"
+            autocomplete="organization"
+          />
+        </div>
+
+        <!-- Field 2: Business Type -->
+        <div class="field">
+          <span class="field-label" id="businessTypeLabel">
+            Business Type <span class="field-required" aria-hidden="true">*</span>
+          </span>
+          <p class="field-help" id="businessTypeHelp">
+            Choose the structure that best fits how you run your business.
+          </p>
+          <div
+            class="radio-group"
+            id="businessTypeGroup"
+            role="radiogroup"
+            aria-labelledby="businessTypeLabel"
+            aria-describedby="businessTypeHelp businessTypeError"
+            aria-required="true"
+          >
+            <!-- Sole Proprietorship -->
+            <div class="radio-item" data-group="businessType" data-value="Sole Proprietorship" tabindex="0" role="radio" aria-checked="false" aria-describedby="descSoleProp">
+              <span class="radio-circle" aria-hidden="true"><span class="radio-dot"></span></span>
+              <span>
+                <span class="radio-text-label">Sole Proprietorship</span>
+                <span class="radio-text-desc" id="descSoleProp">You own the business alone. Most small businesses and sari-sari stores start here.</span>
+              </span>
+            </div>
+            <!-- Partnership -->
+            <div class="radio-item" data-group="businessType" data-value="Partnership" tabindex="0" role="radio" aria-checked="false" aria-describedby="descPartnership">
+              <span class="radio-circle" aria-hidden="true"><span class="radio-dot"></span></span>
+              <span>
+                <span class="radio-text-label">Partnership</span>
+                <span class="radio-text-desc" id="descPartnership">Two or more people run the business together and share profits and responsibilities.</span>
+              </span>
+            </div>
+            <!-- Corporation -->
+            <div class="radio-item" data-group="businessType" data-value="Corporation" tabindex="0" role="radio" aria-checked="false" aria-describedby="descCorporation">
+              <span class="radio-circle" aria-hidden="true"><span class="radio-dot"></span></span>
+              <span>
+                <span class="radio-text-label">Corporation</span>
+                <span class="radio-text-desc" id="descCorporation">A separate legal entity owned by shareholders. Common for larger or investor-backed businesses.</span>
+              </span>
+            </div>
+            <!-- OPC -->
+            <div class="radio-item" data-group="businessType" data-value="One Person Corporation" tabindex="0" role="radio" aria-checked="false" aria-describedby="descOPC">
+              <span class="radio-circle" aria-hidden="true"><span class="radio-dot"></span></span>
+              <span>
+                <span class="radio-text-label">One Person Corporation (OPC)</span>
+                <span class="radio-text-desc" id="descOPC">Like a corporation, but owned by a single person. Gives you limited liability without needing co-founders.</span>
+              </span>
+            </div>
+          </div>
+          <div class="field-error" id="businessTypeError" role="alert" aria-live="polite" hidden>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Please select your business type to continue.
+          </div>
+        </div>
+
+        <!-- Field 3: Business Category -->
+        <div class="field">
+          <label class="field-label" for="businessCategory">
+            Business Category <span class="field-required" aria-hidden="true">*</span>
+          </label>
+          <p class="field-help" id="businessCategoryHelp">
+            Pick the category that best describes what your business does. This helps us find the right permits for you.
+          </p>
+          <div class="select-wrapper">
+            <select
+              class="select"
+              id="businessCategory"
+              name="businessCategory"
+              aria-describedby="businessCategoryHelp businessCategoryError"
+              aria-required="true"
+            >
+              <option value="" disabled selected>Select a category…</option>
+              <optgroup label="Retail &amp; Food">
+                <option value="food_beverage">Food &amp; Beverage</option>
+                <option value="retail_general">General Retail / Sari-sari</option>
+                <option value="online_selling">Online Selling</option>
+              </optgroup>
+              <optgroup label="Services">
+                <option value="salon_beauty">Salon &amp; Beauty Services</option>
+                <option value="repair_services">Repair &amp; Maintenance</option>
+                <option value="freelance_professional">Freelance / Professional Services</option>
+                <option value="transportation">Transportation</option>
+              </optgroup>
+              <optgroup label="Other">
+                <option value="manufacturing">Manufacturing</option>
+                <option value="other">Other</option>
+              </optgroup>
+            </select>
+            <span class="select-icon" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+          </div>
+          <div class="field-error" id="businessCategoryError" role="alert" aria-live="polite" hidden>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Please select a business category to continue.
+          </div>
+        </div>
+
+        <!-- Field 4: Where are you in the process? -->
+        <div class="field">
+          <span class="field-label" id="processLabel">
+            Where are you in the process? <span class="field-required" aria-hidden="true">*</span>
+          </span>
+          <p class="field-help" id="processHelp">
+            This helps us skip steps you've already done and show you what's next.
+          </p>
+          <div
+            class="radio-group"
+            id="processGroup"
+            role="radiogroup"
+            aria-labelledby="processLabel"
+            aria-describedby="processHelp processError"
+            aria-required="true"
+          >
+            <div class="radio-item" data-group="processStatus" data-value="Planning" tabindex="0" role="radio" aria-checked="false">
+              <span class="radio-circle" aria-hidden="true"><span class="radio-dot"></span></span>
+              <span>
+                <span class="radio-text-label">Planning — I haven't started yet</span>
+                <span class="radio-text-desc">I want to know what I need before I begin.</span>
+              </span>
+            </div>
+            <div class="radio-item" data-group="processStatus" data-value="Started" tabindex="0" role="radio" aria-checked="false">
+              <span class="radio-circle" aria-hidden="true"><span class="radio-dot"></span></span>
+              <span>
+                <span class="radio-text-label">Started — I've done some papers already</span>
+                <span class="radio-text-desc">For example, I've registered my business name or got my barangay clearance.</span>
+              </span>
+            </div>
+          </div>
+          <div class="field-error" id="processError" role="alert" aria-live="polite" hidden>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Please let us know where you are in the process.
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          class="btn-primary"
+          id="submitBtn"
+          aria-label="Save your answers and continue to your roadmap"
+        >
+          <span id="btnLabel">Save and continue</span>
+          <svg id="btnArrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          <span class="spinner" id="btnSpinner" hidden aria-hidden="true"></span>
+        </button>
+
+        <p class="form-note">
+          <strong>Pasig City only</strong> for now. You can change your answers later.
+        </p>
+
+      </form>
+    </div>
+  </main>
+
+  <!-- STATE SWITCHER BAR -->
+  <div class="state-bar" role="navigation" aria-label="Wireframe state switcher">
+    <span class="state-bar-label">View State:</span>
+    <button class="state-btn is-active" id="sbtn-empty"       onclick="setFormState('empty')"       type="button">Empty</button>
+    <button class="state-btn"           id="sbtn-filled"      onclick="setFormState('filled')"      type="button">Filled</button>
+    <button class="state-btn"           id="sbtn-error"       onclick="setFormState('error')"       type="button">Field Error</button>
+    <button class="state-btn"           id="sbtn-submitting"  onclick="setFormState('submitting')"  type="button">Submitting</button>
+    <button class="state-btn"           id="sbtn-save-failed" onclick="setFormState('save-failed')" type="button">Save Failed</button>
+  </div>
+
+  <script>
+  /* ===================================================
+     RADIO ITEM SELECTION
+  =================================================== */
+  function selectRadioItem(item) {
+    const group = item.dataset.group;
+    // deselect all in group
+    document.querySelectorAll(`.radio-item[data-group="${group}"]`).forEach(r => {
+      r.classList.remove('is-selected', 'is-error');
+      r.setAttribute('aria-checked', 'false');
+    });
+    item.classList.add('is-selected');
+    item.setAttribute('aria-checked', 'true');
+    // clear error
+    const errorEl = document.getElementById(group + 'Error') || document.getElementById('processError');
+    if (errorEl) errorEl.hidden = true;
+  }
+
+  document.querySelectorAll('.radio-item').forEach(item => {
+    item.addEventListener('click', () => selectRadioItem(item));
+    item.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectRadioItem(item); }
+    });
+  });
+
+  document.getElementById('businessCategory').addEventListener('change', function () {
+    if (this.value) {
+      this.classList.remove('is-error');
+      document.getElementById('businessCategoryError').hidden = true;
+    }
+  });
+
+  /* ===================================================
+     STATE MACHINE
+  =================================================== */
+  const ALL_STATES = ['empty','filled','error','submitting','save-failed'];
+
+  function setFormState(state) {
+    resetAll();
+    ALL_STATES.forEach(s => {
+      document.getElementById('sbtn-' + s).classList.toggle('is-active', s === state);
+    });
+    if (state === 'filled')      applyFilled();
+    if (state === 'error')       applyError();
+    if (state === 'submitting')  applySubmitting();
+    if (state === 'save-failed') applySaveFailed();
+  }
+
+  function resetAll() {
+    // inputs
+    document.getElementById('businessName').value = '';
+    document.getElementById('businessName').classList.remove('is-error');
+    document.getElementById('businessCategory').value = '';
+    document.getElementById('businessCategory').classList.remove('is-error');
+    // radios
+    document.querySelectorAll('.radio-item').forEach(r => {
+      r.classList.remove('is-selected','is-error');
+      r.setAttribute('aria-checked','false');
+    });
+    // errors
+    ['businessTypeError','businessCategoryError','processError'].forEach(id => {
+      document.getElementById(id).hidden = true;
+    });
+    // alert
+    document.getElementById('alertBanner').hidden = true;
+    // button
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('btnLabel').textContent = 'Save and continue';
+    document.getElementById('btnArrow').hidden = false;
+    document.getElementById('btnSpinner').hidden = true;
+    // inputs enabled
+    document.querySelectorAll('#assessmentForm input, #assessmentForm select').forEach(el => el.disabled = false);
+  }
+
+  function applyFilled() {
+    document.getElementById('businessName').value = "Maria's Karinderya";
+    const soleProp = document.querySelector('.radio-item[data-value="Sole Proprietorship"]');
+    soleProp.classList.add('is-selected');
+    soleProp.setAttribute('aria-checked','true');
+    document.getElementById('businessCategory').value = 'food_beverage';
+    const notStarted = document.querySelector('.radio-item[data-value="Planning"]');
+    notStarted.classList.add('is-selected');
+    notStarted.setAttribute('aria-checked','true');
+  }
+
+  function applyError() {
+    // Business type error
+    document.getElementById('businessTypeError').hidden = false;
+    document.querySelectorAll('.radio-item[data-group="businessType"]').forEach(r => r.classList.add('is-error'));
+    // Category error
+    document.getElementById('businessCategoryError').hidden = false;
+    document.getElementById('businessCategory').classList.add('is-error');
+    // Process error
+    document.getElementById('processError').hidden = false;
+    document.querySelectorAll('.radio-item[data-group="processStatus"]').forEach(r => r.classList.add('is-error'));
+  }
+
+  function applySubmitting() {
+    applyFilled();
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('btnLabel').textContent = 'Saving…';
+    document.getElementById('btnArrow').hidden = true;
+    document.getElementById('btnSpinner').hidden = false;
+    document.querySelectorAll('#assessmentForm input, #assessmentForm select').forEach(el => el.disabled = true);
+  }
+
+  function applySaveFailed() {
+    applyFilled();
+    document.getElementById('alertBanner').hidden = false;
+  }
+
+  // Retry button
+  document.getElementById('retryBtn').addEventListener('click', () => {
+    setFormState('submitting');
+    setTimeout(() => setFormState('filled'), 2000);
+  });
+
+  /* ===================================================
+     LIVE FORM SUBMIT (validation demo)
+  =================================================== */
+  document.getElementById('assessmentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    let valid = true;
+
+    if (!document.querySelector('.radio-item[data-group="businessType"].is-selected')) {
+      document.getElementById('businessTypeError').hidden = false;
+      document.querySelectorAll('.radio-item[data-group="businessType"]').forEach(r => r.classList.add('is-error'));
+      valid = false;
+    }
+    if (!document.getElementById('businessCategory').value) {
+      document.getElementById('businessCategoryError').hidden = false;
+      document.getElementById('businessCategory').classList.add('is-error');
+      valid = false;
+    }
+    if (!document.querySelector('.radio-item[data-group="processStatus"].is-selected')) {
+      document.getElementById('processError').hidden = false;
+      document.querySelectorAll('.radio-item[data-group="processStatus"]').forEach(r => r.classList.add('is-error'));
+      valid = false;
+    }
+
+    if (!valid) return;
+
+    // demo: submitting → save-failed
+    setFormState('submitting');
+    setTimeout(() => setFormState('save-failed'), 2000);
+  });
+  </script>
+</body>
+</html>

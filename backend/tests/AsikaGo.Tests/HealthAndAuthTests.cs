@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace AsikaGo.Tests;
@@ -25,6 +26,30 @@ public class HealthAndAuthTests : IClassFixture<WebApplicationFactory<Program>>
     {
         using var client = _factory.CreateClient();
         var response = await client.GetAsync("/api/me");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task AssessmentOptions_WithoutToken_ReturnsUnauthorized()
+    {
+        using var client = _factory.CreateClient();
+        var response = await client.GetAsync("/api/assessment/options");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetBusinessProfile_WithoutToken_ReturnsUnauthorized()
+    {
+        using var client = _factory.CreateClient();
+        var response = await client.GetAsync("/api/business-profile");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PutBusinessProfile_WithoutToken_ReturnsUnauthorized()
+    {
+        using var client = _factory.CreateClient();
+        var response = await client.PutAsJsonAsync("/api/business-profile", new { businessType = "Partnership" });
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }
