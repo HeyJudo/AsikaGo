@@ -43,26 +43,7 @@
         }
       }
     },
-    "/api/assessment/options": {
-      "get": {
-        "tags": [
-          "AssessmentEndpoints"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssessmentOptionsResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/assessment/business-profile": {
+    "/api/business-profile": {
       "get": {
         "tags": [
           "AssessmentEndpoints"
@@ -101,6 +82,25 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BusinessProfileResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assessment/options": {
+      "get": {
+        "tags": [
+          "AssessmentEndpoints"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentOptionsResponse"
                 }
               }
             }

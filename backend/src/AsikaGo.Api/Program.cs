@@ -41,6 +41,7 @@ app.MapGet("/health", () => TypedResults.Ok(new { status = "ok" })).AllowAnonymo
 var api = app.MapGroup("/api").RequireAuthorization();
 api.MapMeEndpoints();
 api.MapAssessmentEndpoints();
+api.MapBusinessProfileEndpoints();
 
 app.Run();
 

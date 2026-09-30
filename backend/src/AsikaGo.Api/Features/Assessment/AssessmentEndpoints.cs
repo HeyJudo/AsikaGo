@@ -15,8 +15,14 @@ public static class AssessmentEndpoints
         var group = app.MapGroup("/assessment");
 
         group.MapGet("/options", GetOptions);
-        group.MapGet("/business-profile", GetBusinessProfile);
-        group.MapPut("/business-profile", PutBusinessProfile);
+
+        return app;
+    }
+
+    public static IEndpointRouteBuilder MapBusinessProfileEndpoints(this IEndpointRouteBuilder app)
+    {
+        app.MapGet("/business-profile", GetBusinessProfile);
+        app.MapPut("/business-profile", PutBusinessProfile);
 
         return app;
     }
