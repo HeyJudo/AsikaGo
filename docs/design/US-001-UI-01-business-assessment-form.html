@@ -97,24 +97,6 @@
       padding: 40px 16px 90px;
     }
 
-    /* ─── PROGRESS BAR ───────────────────────────────────────── */
-    .progress-bar-track {
-      width: 100%;
-      max-width: 600px;
-      height: 4px;
-      background: var(--asika-border);
-      border-radius: 2px;
-      margin-bottom: 32px;
-      overflow: hidden;
-    }
-    .progress-bar-fill {
-      height: 100%;
-      width: 25%;
-      background: linear-gradient(90deg, var(--asika-blue), var(--asika-yellow));
-      border-radius: 2px;
-      transition: width 0.4s ease;
-    }
-
     /* ─── CARD ───────────────────────────────────────────────── */
     .card {
       background: var(--asika-white);
@@ -371,6 +353,7 @@
     .alert-body { flex: 1; }
     .alert-title { font-weight: 700; margin-bottom: 3px; }
     .alert-retry {
+      min-height: 44px;
       display: inline-flex;
       align-items: center;
       gap: 4px;
@@ -453,25 +436,13 @@
       Asika<span>Go</span>
       <span class="nav-badge">®</span>
     </a>
-    <span class="nav-step" aria-label="Step 1 of 4 — About your business">
-      Step <strong>1 of 4</strong> — About your business
+    <span class="nav-step">
+      Business assessment
     </span>
   </nav>
 
   <!-- MAIN CONTENT -->
   <main class="page-wrapper" id="main-content">
-
-    <!-- Progress -->
-    <div
-      class="progress-bar-track"
-      role="progressbar"
-      aria-valuenow="25"
-      aria-valuemin="0"
-      aria-valuemax="100"
-      aria-label="Form progress, step 1 of 4"
-    >
-      <div class="progress-bar-fill"></div>
-    </div>
 
     <div class="card">
 
@@ -540,7 +511,7 @@
             aria-required="true"
           >
             <!-- Sole Proprietorship -->
-            <div class="radio-item" data-group="businessType" data-value="sole_proprietorship" tabindex="0" role="radio" aria-checked="false" aria-describedby="descSoleProp">
+            <div class="radio-item" data-group="businessType" data-value="Sole Proprietorship" tabindex="0" role="radio" aria-checked="false" aria-describedby="descSoleProp">
               <span class="radio-circle" aria-hidden="true"><span class="radio-dot"></span></span>
               <span>
                 <span class="radio-text-label">Sole Proprietorship</span>
@@ -548,7 +519,7 @@
               </span>
             </div>
             <!-- Partnership -->
-            <div class="radio-item" data-group="businessType" data-value="partnership" tabindex="0" role="radio" aria-checked="false" aria-describedby="descPartnership">
+            <div class="radio-item" data-group="businessType" data-value="Partnership" tabindex="0" role="radio" aria-checked="false" aria-describedby="descPartnership">
               <span class="radio-circle" aria-hidden="true"><span class="radio-dot"></span></span>
               <span>
                 <span class="radio-text-label">Partnership</span>
@@ -556,7 +527,7 @@
               </span>
             </div>
             <!-- Corporation -->
-            <div class="radio-item" data-group="businessType" data-value="corporation" tabindex="0" role="radio" aria-checked="false" aria-describedby="descCorporation">
+            <div class="radio-item" data-group="businessType" data-value="Corporation" tabindex="0" role="radio" aria-checked="false" aria-describedby="descCorporation">
               <span class="radio-circle" aria-hidden="true"><span class="radio-dot"></span></span>
               <span>
                 <span class="radio-text-label">Corporation</span>
@@ -564,7 +535,7 @@
               </span>
             </div>
             <!-- OPC -->
-            <div class="radio-item" data-group="businessType" data-value="opc" tabindex="0" role="radio" aria-checked="false" aria-describedby="descOPC">
+            <div class="radio-item" data-group="businessType" data-value="One Person Corporation" tabindex="0" role="radio" aria-checked="false" aria-describedby="descOPC">
               <span class="radio-circle" aria-hidden="true"><span class="radio-dot"></span></span>
               <span>
                 <span class="radio-text-label">One Person Corporation (OPC)</span>
@@ -637,25 +608,18 @@
             aria-describedby="processHelp processError"
             aria-required="true"
           >
-            <div class="radio-item" data-group="processStatus" data-value="not_started" tabindex="0" role="radio" aria-checked="false">
+            <div class="radio-item" data-group="processStatus" data-value="Planning" tabindex="0" role="radio" aria-checked="false">
               <span class="radio-circle" aria-hidden="true"><span class="radio-dot"></span></span>
               <span>
                 <span class="radio-text-label">Planning — I haven't started yet</span>
                 <span class="radio-text-desc">I want to know what I need before I begin.</span>
               </span>
             </div>
-            <div class="radio-item" data-group="processStatus" data-value="some_papers" tabindex="0" role="radio" aria-checked="false">
+            <div class="radio-item" data-group="processStatus" data-value="Started" tabindex="0" role="radio" aria-checked="false">
               <span class="radio-circle" aria-hidden="true"><span class="radio-dot"></span></span>
               <span>
                 <span class="radio-text-label">Started — I've done some papers already</span>
                 <span class="radio-text-desc">For example, I've registered my business name or got my barangay clearance.</span>
-              </span>
-            </div>
-            <div class="radio-item" data-group="processStatus" data-value="almost_done" tabindex="0" role="radio" aria-checked="false">
-              <span class="radio-circle" aria-hidden="true"><span class="radio-dot"></span></span>
-              <span>
-                <span class="radio-text-label">Almost done — just a few steps left</span>
-                <span class="radio-text-desc">I just need to finish the last few requirements.</span>
               </span>
             </div>
           </div>
@@ -680,7 +644,7 @@
         </button>
 
         <p class="form-note">
-          <strong>Pasig City only</strong> for now. Your answers save as you go — you can continue later.
+          <strong>Pasig City only</strong> for now. You can change your answers later.
         </p>
 
       </form>
@@ -773,11 +737,11 @@
 
   function applyFilled() {
     document.getElementById('businessName').value = "Maria's Karinderya";
-    const soleProp = document.querySelector('.radio-item[data-value="sole_proprietorship"]');
+    const soleProp = document.querySelector('.radio-item[data-value="Sole Proprietorship"]');
     soleProp.classList.add('is-selected');
     soleProp.setAttribute('aria-checked','true');
     document.getElementById('businessCategory').value = 'food_beverage';
-    const notStarted = document.querySelector('.radio-item[data-value="not_started"]');
+    const notStarted = document.querySelector('.radio-item[data-value="Planning"]');
     notStarted.classList.add('is-selected');
     notStarted.setAttribute('aria-checked','true');
   }
@@ -809,7 +773,10 @@
   }
 
   // Retry button
-  document.getElementById('retryBtn').addEventListener('click', () => setFormState('empty'));
+  document.getElementById('retryBtn').addEventListener('click', () => {
+    setFormState('submitting');
+    setTimeout(() => setFormState('filled'), 2000);
+  });
 
   /* ===================================================
      LIVE FORM SUBMIT (validation demo)
