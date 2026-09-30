@@ -14,7 +14,7 @@ public sealed record SaveBusinessProfileRequest(
     [MaxLength(100)] string? BusinessName,
     [Required] string BusinessType,
     [Required] Guid CategoryId,
-    [Required] RegistrationStatus RegistrationStatus);
+    [Required] RegistrationStatus? RegistrationStatus);
 
 public sealed record BusinessProfileResponse(
     Guid Id,

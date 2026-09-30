@@ -250,7 +250,10 @@
         }
       },
       "RegistrationStatus": {
-        "type": "integer"
+        "enum": [
+          "Planning",
+          "Started"
+        ]
       },
       "SaveBusinessProfileRequest": {
         "required": [
@@ -275,7 +278,14 @@
             "format": "uuid"
           },
           "registrationStatus": {
-            "$ref": "#/components/schemas/RegistrationStatus"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RegistrationStatus"
+              }
+            ]
           }
         }
       }

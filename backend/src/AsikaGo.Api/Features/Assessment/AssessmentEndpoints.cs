@@ -109,7 +109,7 @@ public static class AssessmentEndpoints
                 BusinessType = request.BusinessType!,
                 CategoryId = request.CategoryId,
                 CityId = PasigId,
-                RegistrationStatus = request.RegistrationStatus
+                RegistrationStatus = request.RegistrationStatus!.Value
             };
             db.BusinessProfiles.Add(existing);
         }
@@ -119,7 +119,7 @@ public static class AssessmentEndpoints
             existing.BusinessType = request.BusinessType!;
             existing.CategoryId = request.CategoryId;
             existing.CityId = PasigId;
-            existing.RegistrationStatus = request.RegistrationStatus;
+            existing.RegistrationStatus = request.RegistrationStatus!.Value;
         }
 
         await db.SaveChangesAsync(ct);

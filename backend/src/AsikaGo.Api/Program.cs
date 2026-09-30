@@ -3,10 +3,12 @@ using AsikaGo.Api.Features.Assessment;
 using AsikaGo.Api.Features.Me;
 using AsikaGo.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddProblemDetails();
+builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddOpenApi();
 builder.Services.AddSupabaseAuth(builder.Configuration);
 

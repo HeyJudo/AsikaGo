@@ -206,13 +206,14 @@ export interface components {
             email: null | string;
             isAnonymous: boolean;
         };
-        RegistrationStatus: number;
+        /** @enum {unknown} */
+        RegistrationStatus: "Planning" | "Started";
         SaveBusinessProfileRequest: {
             businessName: null | string;
             businessType: string;
             /** Format: uuid */
             categoryId: string;
-            registrationStatus: components["schemas"]["RegistrationStatus"];
+            registrationStatus: null | components["schemas"]["RegistrationStatus"];
         };
     };
     responses: never;
