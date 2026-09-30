@@ -1,4 +1,5 @@
 using AsikaGo.Api.Data;
+using AsikaGo.Api.Features.Assessment;
 using AsikaGo.Api.Features.Me;
 using AsikaGo.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -39,6 +40,7 @@ app.MapGet("/health", () => TypedResults.Ok(new { status = "ok" })).AllowAnonymo
 
 var api = app.MapGroup("/api").RequireAuthorization();
 api.MapMeEndpoints();
+api.MapAssessmentEndpoints();
 
 app.Run();
 

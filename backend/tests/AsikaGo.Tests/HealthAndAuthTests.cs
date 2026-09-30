@@ -3,25 +3,28 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace AsikaGo.Tests;
 
-public class HealthAndAuthTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+public class HealthAndAuthTests : IClassFixture<WebApplicationFactory<Program>>
 {
+    private readonly WebApplicationFactory<Program> _factory;
+
+    public HealthAndAuthTests(WebApplicationFactory<Program> factory)
+    {
+        _factory = factory;
+    }
+
     [Fact]
     public async Task Health_ReturnsOk()
     {
-        var client = factory.CreateClient();
-
+        using var client = _factory.CreateClient();
         var response = await client.GetAsync("/health");
-
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
     [Fact]
     public async Task Me_WithoutToken_ReturnsUnauthorized()
     {
-        var client = factory.CreateClient();
-
+        using var client = _factory.CreateClient();
         var response = await client.GetAsync("/api/me");
-
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }
