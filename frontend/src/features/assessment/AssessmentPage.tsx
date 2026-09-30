@@ -5,7 +5,7 @@ import { ApiError, apiFetch } from '@/lib/api'
 import type { components } from '@/lib/api-types'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -20,6 +20,34 @@ const ERROR_MESSAGES = {
   registrationStatus: 'Please tell us where you are in the process.',
   businessName: 'Business name must be 100 characters or less.',
 } as const
+
+// Wireframe copy, keyed by the exact API strings; unknown values fall back to the raw name
+const TYPE_DESCRIPTIONS: Record<string, string> = {
+  'Sole Proprietorship': 'You own the business alone. Most small businesses and sari-sari stores start here.',
+  Partnership: 'Two or more people run the business together and share profits and responsibilities.',
+  Corporation: 'A separate legal entity owned by shareholders. Common for larger or investor-backed businesses.',
+  'One Person Corporation':
+    'Like a corporation, but owned by a single person. Gives you limited liability without needing co-founders.',
+}
+
+const STATUS_COPY: Record<string, { label: string; description: string }> = {
+  Planning: { label: "Planning — I haven't started yet", description: 'I want to know what I need before I begin.' },
+  Started: {
+    label: "Started — I've done some papers already",
+    description: "For example, I've registered my business name or got my barangay clearance.",
+  },
+}
+
+const OPTION_ROW = 'flex items-start gap-3 rounded-md border p-3 min-h-11 cursor-pointer font-normal leading-normal'
+
+function FieldError({ id, message }: { id: string; message: string }) {
+  return (
+    <p id={id} className="flex items-center gap-1.5 text-sm text-destructive">
+      <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+      {message}
+    </p>
+  )
+}
 
 function useAssessmentOptions() {
   return useQuery<AssessmentOptions>({
@@ -79,6 +107,24 @@ export function AssessmentPage() {
     return errs
   }
 
+  // Maps a 400 response to field errors; returns true if at least one was mapped.
+  function showServerErrors(err: unknown): boolean {
+    if (!(err instanceof ApiError) || err.status !== 400) return false
+    try {
+      const body = JSON.parse(err.body) as { errors?: Record<string, string[]> }
+      const serverErrors: Record<string, string> = {}
+      for (const [field, messages] of Object.entries(body.errors ?? {})) {
+        if (messages[0]) serverErrors[field] = messages[0]
+      }
+      if (Object.keys(serverErrors).length === 0) return false
+      setErrors(serverErrors)
+      focusFirstError(serverErrors)
+      return true
+    } catch {
+      return false // unparseable 400 body
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
@@ -89,37 +135,16 @@ export function AssessmentPage() {
       return
     }
 
-    try {
-      // TODO: FE-03 — send PUT /api/business-profile, handle success navigation
-      //   and prefill. For now validation is complete; network call goes here.
-      void values // prevent unused-var lint warning until FE-03
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 400) {
-        try {
-          const body = JSON.parse(err.body) as { errors?: Record<string, string[]> }
-          const serverErrors: Record<string, string> = {}
-          for (const [field, messages] of Object.entries(body.errors ?? {})) {
-            if (messages[0]) serverErrors[field] = messages[0]
-          }
-          if (Object.keys(serverErrors).length > 0) {
-            setErrors(serverErrors)
-            focusFirstError(serverErrors)
-            return
-          }
-        } catch {
-          // unparseable 400 body — fall through
-        }
-      }
-      throw err
-    }
+    // FE-03: await apiFetch('/api/business-profile', { method: 'PUT', body: JSON.stringify(...) }); on error call showServerErrors(err), otherwise show the save-failed banner.
+    void showServerErrors // remove in FE-03 (keeps tsc noUnusedLocals happy until it is called)
   }
 
   return (
     <div className="min-h-screen bg-[#f7f9fc] flex flex-col items-center justify-start px-4 py-10">
       <div className="w-full max-w-lg">
-        <h1 className="text-2xl font-bold text-[#1c2b3a] mb-2">Business Assessment</h1>
+        <h1 className="text-2xl font-bold text-[#1c2b3a] mb-2">Tell us about your business.</h1>
         <p className="text-[#6b7a8d] mb-6 text-sm">
-          Tell us about your business so we can build your personalized registration roadmap.
+          We'll use this to build your registration roadmap — it only takes a minute.
         </p>
 
         {isLoading && (
@@ -145,10 +170,6 @@ export function AssessmentPage() {
 
         {options && (
           <Card>
-            <CardHeader>
-              <CardTitle className="text-[#1a3a6b]">Your Business</CardTitle>
-              <CardDescription>All fields except Business Name are required.</CardDescription>
-            </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} noValidate className="space-y-6">
 
@@ -157,29 +178,33 @@ export function AssessmentPage() {
                   <Label htmlFor="businessName">
                     Business Name <span className="text-[#6b7a8d] font-normal">(optional)</span>
                   </Label>
+                  <p id="businessName-help" className="text-sm text-[#6b7a8d]">
+                    You can use your own name if you haven't picked one yet. This won't be your official registered name.
+                  </p>
                   <Input
                     id="businessName"
                     ref={businessNameRef}
-                    placeholder="e.g. Aling Nena's Sari-Sari Store"
+                    placeholder="e.g. Maria's Karinderya, Juan's Bakery…"
                     autoComplete="organization"
                     value={values.businessName}
                     onChange={(e) => {
                       setValues((prev) => ({ ...prev, businessName: e.target.value }))
                       if (e.target.value.length <= 100) clearError('businessName')
                     }}
-                    aria-describedby={errors.businessName ? 'businessName-error' : undefined}
+                    aria-describedby={errors.businessName ? 'businessName-help businessName-error' : 'businessName-help'}
                     aria-invalid={!!errors.businessName}
                   />
-                  {errors.businessName && (
-                    <p id="businessName-error" className="text-sm text-destructive">
-                      {errors.businessName}
-                    </p>
-                  )}
+                  {errors.businessName && <FieldError id="businessName-error" message={errors.businessName} />}
                 </div>
 
                 {/* Business Type */}
                 <div className="space-y-2">
-                  <Label>Business Type</Label>
+                  <Label id="businessType-label">
+                    Business Type <span aria-hidden="true">*</span>
+                  </Label>
+                  <p id="businessType-help" className="text-sm text-[#6b7a8d]">
+                    Choose the structure that best fits how you run your business.
+                  </p>
                   <RadioGroup
                     ref={businessTypeRef}
                     className="space-y-2"
@@ -188,27 +213,33 @@ export function AssessmentPage() {
                       setValues((prev) => ({ ...prev, businessType: value }))
                       clearError('businessType')
                     }}
-                    aria-describedby={errors.businessType ? 'businessType-error' : undefined}
+                    aria-labelledby="businessType-label"
+                    aria-invalid={!!errors.businessType}
+                    aria-describedby={errors.businessType ? 'businessType-help businessType-error' : 'businessType-help'}
                   >
                     {options.businessTypes.map((type) => (
-                      <div key={type} className="flex items-center gap-3">
-                        <RadioGroupItem value={type} id={`type-${type}`} />
-                        <Label htmlFor={`type-${type}`} className="font-normal cursor-pointer">
-                          {type}
-                        </Label>
-                      </div>
+                      <Label key={type} htmlFor={`type-${type}`} className={OPTION_ROW}>
+                        <RadioGroupItem value={type} id={`type-${type}`} className="mt-0.5" />
+                        <span>
+                          <span className="block text-sm font-medium">{type}</span>
+                          {TYPE_DESCRIPTIONS[type] && (
+                            <span className="block text-sm text-[#6b7a8d]">{TYPE_DESCRIPTIONS[type]}</span>
+                          )}
+                        </span>
+                      </Label>
                     ))}
                   </RadioGroup>
-                  {errors.businessType && (
-                    <p id="businessType-error" className="text-sm text-destructive">
-                      {errors.businessType}
-                    </p>
-                  )}
+                  {errors.businessType && <FieldError id="businessType-error" message={errors.businessType} />}
                 </div>
 
                 {/* Business Category */}
                 <div className="space-y-2">
-                  <Label htmlFor="category">Business Category</Label>
+                  <Label htmlFor="category">
+                    Business Category <span aria-hidden="true">*</span>
+                  </Label>
+                  <p id="categoryId-help" className="text-sm text-[#6b7a8d]">
+                    Pick the category that best describes what your business does. This helps us find the right permits for you.
+                  </p>
                   <Select
                     value={values.categoryId}
                     onValueChange={(value) => {
@@ -219,7 +250,7 @@ export function AssessmentPage() {
                     <SelectTrigger
                       id="category"
                       ref={categoryRef}
-                      aria-describedby={errors.categoryId ? 'categoryId-error' : undefined}
+                      aria-describedby={errors.categoryId ? 'categoryId-help categoryId-error' : 'categoryId-help'}
                       aria-invalid={!!errors.categoryId}
                     >
                       <SelectValue placeholder="Select a category" />
@@ -232,16 +263,17 @@ export function AssessmentPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.categoryId && (
-                    <p id="categoryId-error" className="text-sm text-destructive">
-                      {errors.categoryId}
-                    </p>
-                  )}
+                  {errors.categoryId && <FieldError id="categoryId-error" message={errors.categoryId} />}
                 </div>
 
                 {/* Registration Status */}
                 <div className="space-y-2">
-                  <Label>Registration Status</Label>
+                  <Label id="registrationStatus-label">
+                    Where are you in the process? <span aria-hidden="true">*</span>
+                  </Label>
+                  <p id="registrationStatus-help" className="text-sm text-[#6b7a8d]">
+                    This helps us skip steps you've already done and show you what's next.
+                  </p>
                   <RadioGroup
                     ref={registrationStatusRef}
                     className="space-y-2"
@@ -250,21 +282,26 @@ export function AssessmentPage() {
                       setValues((prev) => ({ ...prev, registrationStatus: value }))
                       clearError('registrationStatus')
                     }}
-                    aria-describedby={errors.registrationStatus ? 'registrationStatus-error' : undefined}
+                    aria-labelledby="registrationStatus-label"
+                    aria-invalid={!!errors.registrationStatus}
+                    aria-describedby={
+                      errors.registrationStatus ? 'registrationStatus-help registrationStatus-error' : 'registrationStatus-help'
+                    }
                   >
                     {options.registrationStatuses.map((status) => (
-                      <div key={status} className="flex items-center gap-3">
-                        <RadioGroupItem value={status} id={`status-${status}`} />
-                        <Label htmlFor={`status-${status}`} className="font-normal cursor-pointer">
-                          {status}
-                        </Label>
-                      </div>
+                      <Label key={status} htmlFor={`status-${status}`} className={OPTION_ROW}>
+                        <RadioGroupItem value={status} id={`status-${status}`} className="mt-0.5" />
+                        <span>
+                          <span className="block text-sm font-medium">{STATUS_COPY[status]?.label ?? status}</span>
+                          {STATUS_COPY[status] && (
+                            <span className="block text-sm text-[#6b7a8d]">{STATUS_COPY[status].description}</span>
+                          )}
+                        </span>
+                      </Label>
                     ))}
                   </RadioGroup>
                   {errors.registrationStatus && (
-                    <p id="registrationStatus-error" className="text-sm text-destructive">
-                      {errors.registrationStatus}
-                    </p>
+                    <FieldError id="registrationStatus-error" message={errors.registrationStatus} />
                   )}
                 </div>
 
@@ -274,6 +311,9 @@ export function AssessmentPage() {
                 >
                   Save and continue
                 </Button>
+                <p className="text-center text-sm text-[#6b7a8d]">
+                  <strong>Pasig City only</strong> for now. You can change your answers later.
+                </p>
 
               </form>
             </CardContent>
