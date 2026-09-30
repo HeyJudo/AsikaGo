@@ -14,7 +14,7 @@ public static class AssessmentEndpoints
     {
         var group = app.MapGroup("/assessment");
 
-        group.MapGet("/options", GetOptions).AllowAnonymous();
+        group.MapGet("/options", GetOptions);
 
         return app;
     }
