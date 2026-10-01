@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useRef, useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router'
 import { AlertCircle } from 'lucide-react'
 import { ApiError, apiFetch } from '@/lib/api'
 import type { components } from '@/lib/api-types'
@@ -57,7 +58,26 @@ function useAssessmentOptions() {
 }
 
 export function AssessmentPage() {
-  const { data: options, isLoading, isError, refetch } = useAssessmentOptions()
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
+
+  const { data: options, isLoading: optionsLoading, isError: optionsError, refetch: refetchOptions } = useAssessmentOptions()
+
+  const { data: profile, isLoading: profileLoading, isError: profileError, refetch: refetchProfile } = useQuery<components['schemas']['BusinessProfileResponse'] | null>({
+    queryKey: ['business-profile'],
+    queryFn: async () => {
+      try {
+        return await apiFetch<components['schemas']['BusinessProfileResponse']>('/api/business-profile')
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) return null
+        throw err
+      }
+    },
+    retry: (failCount, err) => {
+      if (err instanceof ApiError && err.status === 404) return false
+      return failCount < 3
+    }
+  })
 
   const [values, setValues] = useState({
     businessName: '',
@@ -66,7 +86,20 @@ export function AssessmentPage() {
     registrationStatus: '',
   })
 
+  useEffect(() => {
+    if (profile) {
+      setValues({
+        businessName: profile.businessName || '',
+        businessType: profile.businessType || '',
+        categoryId: profile.categoryId || '',
+        registrationStatus: profile.registrationStatus || '',
+      })
+    }
+  }, [profile])
+
+
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [saveNetworkError, setSaveNetworkError] = useState(false)
 
   // Refs for focus management after failed submit — RadioGroup refs point to
   // the wrapper div; we call .querySelector('button') to reach the first item.
@@ -82,6 +115,7 @@ export function AssessmentPage() {
       delete next[field]
       return next
     })
+    setSaveNetworkError(false)
   }
 
   function focusFirstError(errs: Record<string, string>) {
@@ -125,8 +159,27 @@ export function AssessmentPage() {
     }
   }
 
+  const saveMutation = useMutation({
+    mutationFn: (payload: typeof values) => apiFetch('/api/business-profile', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['business-profile'] })
+      // Navigate to /my-business
+      void navigate('/my-business')
+    },
+    onError: (err) => {
+      const is400 = showServerErrors(err)
+      if (!is400) {
+        setSaveNetworkError(true)
+      }
+    }
+  })
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setSaveNetworkError(false)
 
     const clientErrors = validate()
     if (Object.keys(clientErrors).length > 0) {
@@ -135,9 +188,11 @@ export function AssessmentPage() {
       return
     }
 
-    // FE-03: await apiFetch('/api/business-profile', { method: 'PUT', body: JSON.stringify(...) }); on error call showServerErrors(err), otherwise show the save-failed banner.
-    void showServerErrors // remove in FE-03 (keeps tsc noUnusedLocals happy until it is called)
+    saveMutation.mutate(values)
   }
+
+  const isLoading = optionsLoading || profileLoading
+  const isError = optionsError || profileError
 
   return (
     <div className="min-h-screen bg-[#f7f9fc] flex flex-col items-center justify-start px-4 py-10">
@@ -150,7 +205,7 @@ export function AssessmentPage() {
         {isLoading && (
           <Card>
             <CardContent className="py-10 text-center text-[#6b7a8d] text-sm">
-              Loading options…
+              Loading form…
             </CardContent>
           </Card>
         )}
@@ -160,18 +215,34 @@ export function AssessmentPage() {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Failed to load options</AlertTitle>
             <AlertDescription className="flex items-center gap-3 mt-2">
-              Something went wrong while fetching form options.
-              <Button size="sm" variant="outline" onClick={() => refetch()}>
+              Something went wrong while fetching form data.
+              <Button size="sm" variant="outline" onClick={() => {
+                void refetchOptions()
+                void refetchProfile()
+              }}>
                 Retry
               </Button>
             </AlertDescription>
           </Alert>
         )}
 
-        {options && (
+        {!(isLoading || isError) && options && (
           <Card>
             <CardContent>
-              <form onSubmit={handleSubmit} noValidate className="space-y-6">
+              {saveNetworkError && (
+                <Alert variant="destructive" className="mb-6 mt-6">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Failed to save</AlertTitle>
+                  <AlertDescription className="flex items-center gap-3 mt-2">
+                    Something went wrong. Please check your connection and try again.
+                    <Button size="sm" variant="outline" onClick={() => saveMutation.mutate(values)} disabled={saveMutation.isPending}>
+                      Retry
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              <form onSubmit={handleSubmit} noValidate className={saveNetworkError ? "space-y-6" : "space-y-6 mt-6"}>
 
                 {/* Business Name */}
                 <div className="space-y-2">
@@ -307,6 +378,7 @@ export function AssessmentPage() {
 
                 <Button
                   type="submit"
+                  disabled={saveMutation.isPending}
                   className="w-full bg-[#1a3a6b] hover:bg-[#0f1f3d] text-white"
                 >
                   Save and continue
