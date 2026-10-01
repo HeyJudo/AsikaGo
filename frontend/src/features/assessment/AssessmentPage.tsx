@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { AlertCircle } from 'lucide-react'
@@ -86,16 +86,16 @@ export function AssessmentPage() {
     registrationStatus: '',
   })
 
-  useEffect(() => {
-    if (profile) {
-      setValues({
-        businessName: profile.businessName || '',
-        businessType: profile.businessType || '',
-        categoryId: profile.categoryId || '',
-        registrationStatus: profile.registrationStatus || '',
-      })
-    }
-  }, [profile])
+  const [prefilled, setPrefilled] = useState(false)
+  if (profile && !prefilled) {
+    setPrefilled(true)
+    setValues({
+      businessName: profile.businessName || '',
+      businessType: profile.businessType || '',
+      categoryId: profile.categoryId || '',
+      registrationStatus: profile.registrationStatus || '',
+    })
+  }
 
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -213,7 +213,7 @@ export function AssessmentPage() {
         {isError && (
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Failed to load options</AlertTitle>
+            <AlertTitle>Couldn't load the form</AlertTitle>
             <AlertDescription className="flex items-center gap-3 mt-2">
               Something went wrong while fetching form data.
               <Button size="sm" variant="outline" onClick={() => {
@@ -232,11 +232,11 @@ export function AssessmentPage() {
               {saveNetworkError && (
                 <Alert variant="destructive" className="mb-6 mt-6">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Failed to save</AlertTitle>
+                  <AlertTitle>We couldn't save your answers.</AlertTitle>
                   <AlertDescription className="flex items-center gap-3 mt-2">
-                    Something went wrong. Please check your connection and try again.
+                    Something went wrong on our end. Your answers are still here — don't refresh the page.
                     <Button size="sm" variant="outline" onClick={() => saveMutation.mutate(values)} disabled={saveMutation.isPending}>
-                      Retry
+                      Try again
                     </Button>
                   </AlertDescription>
                 </Alert>
