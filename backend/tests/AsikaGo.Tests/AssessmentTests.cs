@@ -190,4 +190,56 @@ public class AssessmentTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("Pasig", (await Read(response)).CityName);
     }
+
+    [Fact]
+    public async Task GetBusinessProfile_Returns200_WhenProfileExists()
+    {
+        var user = Guid.NewGuid();
+        // First create a profile
+        await Put(user, Json());
+
+        // Then get it
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-User", user.ToString());
+        var response = await client.GetAsync("/api/business-profile");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var profile = await Read(response);
+        Assert.NotNull(profile.BusinessName);
+        Assert.Equal("Test Business", profile.BusinessName);
+    }
+
+    [Fact]
+    public async Task GetBusinessProfile_Returns404_WhenNoProfileExists()
+    {
+        var user = Guid.NewGuid();
+        // Don't create a profile, just try to get one
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-User", user.ToString());
+        var response = await client.GetAsync("/api/business-profile");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetBusinessProfile_ReturnsOnlyOwnProfile()
+    {
+        var userA = Guid.NewGuid();
+        var userB = Guid.NewGuid();
+
+        // Create profile for user A
+        await Put(userA, Json(name: "A's Business"));
+        // Create profile for user B
+        await Put(userB, Json(name: "B's Business"));
+
+        // Try to get A's profile as user B - should get B's profile, not A's
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-User", userB.ToString());
+        var response = await client.GetAsync("/api/business-profile");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var profile = await Read(response);
+        Assert.Equal("B's Business", profile.BusinessName);
+        Assert.NotEqual("A's Business", profile.BusinessName);
+    }
 }
