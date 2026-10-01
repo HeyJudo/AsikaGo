@@ -242,4 +242,62 @@ public class AssessmentTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal("B's Business", profile.BusinessName);
         Assert.NotEqual("A's Business", profile.BusinessName);
     }
+
+    [Fact]
+    public async Task PutThenGetBusinessProfile_ReturnsSameData()
+    {
+        var user = Guid.NewGuid();
+        var businessName = "Test Business";
+        var businessType = "Partnership";
+        var foodCategoryId = new Guid("22222222-2222-2222-2222-222222222201");
+
+        // Create profile via PUT
+        var putResponse = await Put(user, Json(name: businessName, type: businessType, category: foodCategoryId.ToString(), status: "Planning"));
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+
+        // Get profile via GET
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-User", user.ToString());
+        var getResponse = await client.GetAsync("/api/business-profile");
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+
+        var profile = await Read(getResponse);
+        Assert.Equal(businessName, profile.BusinessName);
+        Assert.Equal(businessType, profile.BusinessType);
+        Assert.Equal("Planning", profile.RegistrationStatus.ToString());
+        Assert.Equal("Pasig", profile.CityName); // City is hardcoded to Pasig in the endpoint
+    }
+
+    [Fact]
+    public async Task PutBusinessProfile_TwoCalls_ResultsInSingleRow()
+    {
+        var user = Guid.NewGuid();
+        var foodCategoryId = new Guid("22222222-2222-2222-2222-222222222201");
+
+        // First PUT
+        var firstResponse = await Put(user, Json(name: "First Name", type: "Sole Proprietorship", category: foodCategoryId.ToString(), status: "Planning"));
+        Assert.Equal(HttpStatusCode.OK, firstResponse.StatusCode);
+
+        // Second PUT with different data
+        var secondResponse = await Put(user, Json(name: "Second Name", type: "Corporation", category: foodCategoryId.ToString(), status: "Started"));
+        Assert.Equal(HttpStatusCode.OK, secondResponse.StatusCode);
+
+        // Verify only one row exists for this user
+        var rows = Rows(user);
+        Assert.Single(rows);
+
+        // Verify the row contains the data from the second PUT
+        var row = rows.Single();
+        Assert.Equal("Second Name", row.BusinessName);
+        Assert.Equal("Corporation", row.BusinessType);
+        Assert.Equal(RegistrationStatus.Started, row.RegistrationStatus);
+    }
+
+    [Fact]
+    public async Task PutBusinessProfile_RequiredFieldsMissing_Returns400()
+    {
+        var user = Guid.NewGuid();
+        var response = await Put(user, "{}");
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }
