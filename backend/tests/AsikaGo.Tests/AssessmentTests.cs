@@ -242,4 +242,34 @@ public class AssessmentTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal("B's Business", profile.BusinessName);
         Assert.NotEqual("A's Business", profile.BusinessName);
     }
+
+    [Fact]
+    public async Task PutThenGetBusinessProfile_ReturnsSameData()
+    {
+        var user = Guid.NewGuid();
+        var putResponse = await Put(user, Json(name: "Test Business", type: "Partnership", category: FoodId, status: "Planning"));
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+        var putProfile = await Read(putResponse);
+
+        using var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-User", user.ToString());
+        var getResponse = await client.GetAsync("/api/business-profile");
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        var getProfile = await Read(getResponse);
+
+        Assert.Equal(putProfile, getProfile); // record value equality: every field incl. CreatedAt
+        Assert.Equal("Food and Beverage", getProfile.CategoryName);
+        Assert.Equal("Pasig", getProfile.CityName);
+    }
+
+    [Fact]
+    public async Task PutBusinessProfile_RequiredFieldsMissing_Returns400()
+    {
+        var response = await Put(Guid.NewGuid(), "{}");
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var errors = doc.RootElement.GetProperty("errors");
+        foreach (var key in new[] { "businessType", "categoryId", "registrationStatus" })
+            Assert.True(errors.TryGetProperty(key, out _), $"expected error under {key}");
+    }
 }
