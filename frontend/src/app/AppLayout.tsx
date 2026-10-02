@@ -14,6 +14,7 @@ function SiteHeader() {
   const { user, loading } = useAuth()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const onSignIn = useLocation().pathname === '/sign-in'
 
   async function signOut() {
     await supabase.auth.signOut()
@@ -56,16 +57,22 @@ function SiteHeader() {
             <a href="/#faq" className={NAV_LINK}>
               FAQ
             </a>
-            <a href="/#start" className={NAV_LINK}>
-              Sign in
-            </a>
             <Link
-              to="/#start"
-              className="bg-gold text-navy inline-flex min-h-11 items-center gap-1 whitespace-nowrap rounded-full px-3 text-xs font-bold sm:px-4 sm:text-sm outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-white md:px-6"
+              to="/sign-in"
+              className={NAV_LINK}
+              aria-current={onSignIn ? 'page' : undefined}
             >
-              Start My Roadmap
-              <ArrowUpRight className="size-4" aria-hidden="true" />
+              Sign in
             </Link>
+            {!onSignIn && (
+              <Link
+                to="/sign-in"
+                className="bg-gold text-navy inline-flex min-h-11 items-center gap-1 whitespace-nowrap rounded-full px-3 text-xs font-bold sm:px-4 sm:text-sm outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-white md:px-6"
+              >
+                Start My Roadmap
+                <ArrowUpRight className="size-4" aria-hidden="true" />
+              </Link>
+            )}
           </nav>
         ))}
     </header>
