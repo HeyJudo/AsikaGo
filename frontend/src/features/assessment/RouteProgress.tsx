@@ -19,12 +19,12 @@ export function RouteProgress({ labels, current }: Props) {
       aria-valuemin={1}
       aria-valuemax={labels.length}
       aria-valuenow={current + 1}
-      aria-valuetext={`${heading}: ${labels[current]}`}
+      aria-valuetext={current === last ? heading : `${heading}: ${labels[current]}`}
       className="mb-8"
     >
       <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-brand" aria-hidden="true">
         {heading}
-        <span className="sm:hidden"> · {labels[current]}</span>
+        {current !== last && <span className="sm:hidden"> · {labels[current]}</span>}
       </p>
       <div className="relative flex items-center justify-between sm:pb-6" aria-hidden="true">
         <div className="absolute inset-x-3.5 top-3.5">
