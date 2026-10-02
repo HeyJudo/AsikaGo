@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, ArrowRight, Loader2 } from 'lucide-react'
 import { ApiError, apiFetch } from '@/lib/api'
 import type { components } from '@/lib/api-types'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -195,54 +195,57 @@ export function AssessmentPage() {
   const isError = optionsError || profileError
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] flex flex-col items-center justify-start px-4 py-10">
-      <div className="w-full max-w-lg">
-        <h1 className="text-2xl font-bold text-[#1c2b3a] mb-2">Tell us about your business.</h1>
-        <p className="text-[#6b7a8d] mb-6 text-sm">
-          We'll use this to build your registration roadmap — it only takes a minute.
-        </p>
+    <div className="min-h-screen bg-[#f7f9fc]">
+      <header className="sticky top-0 z-10 flex h-14 items-center justify-between bg-[#1a3a6b] px-6 shadow-md">
+        <span className="text-[22px] font-extrabold tracking-tight text-white">
+          Asika<span className="text-[#f5a623]">Go</span>
+        </span>
+        <span className="text-[13px] font-medium text-white/70">Business assessment</span>
+      </header>
 
-        {isLoading && (
-          <Card>
-            <CardContent className="py-10 text-center text-[#6b7a8d] text-sm">
-              Loading form…
-            </CardContent>
-          </Card>
-        )}
+      <main className="flex flex-col items-center px-3 py-6 sm:px-4 sm:py-10">
+        <Card className="w-full max-w-[600px]">
+          <CardContent className="py-3 sm:px-10 sm:py-6">
+            {saveNetworkError && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>We couldn't save your answers.</AlertTitle>
+                <AlertDescription className="flex flex-col items-start gap-3 mt-2">
+                  Something went wrong on our end. Your answers are still here — don't refresh the page.
+                  <Button variant="outline" className="h-11" onClick={() => saveMutation.mutate(values)} disabled={saveMutation.isPending}>
+                    Try again
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
 
-        {isError && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Couldn't load the form</AlertTitle>
-            <AlertDescription className="flex items-center gap-3 mt-2">
-              Something went wrong while fetching form data.
-              <Button size="sm" variant="outline" onClick={() => {
-                void refetchOptions()
-                void refetchProfile()
-              }}>
-                Retry
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
+            <h1 className="text-2xl font-bold text-[#1c2b3a] mb-2">Tell us about your business.</h1>
+            <p className="text-[#6b7a8d] mb-8 text-sm">
+              We'll use this to build your registration roadmap — it only takes a minute.
+            </p>
 
-        {!(isLoading || isError) && options && (
-          <Card>
-            <CardContent>
-              {saveNetworkError && (
-                <Alert variant="destructive" className="mb-6 mt-6">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>We couldn't save your answers.</AlertTitle>
-                  <AlertDescription className="flex items-center gap-3 mt-2">
-                    Something went wrong on our end. Your answers are still here — don't refresh the page.
-                    <Button size="sm" variant="outline" onClick={() => saveMutation.mutate(values)} disabled={saveMutation.isPending}>
-                      Try again
-                    </Button>
-                  </AlertDescription>
-                </Alert>
-              )}
+            {isLoading && (
+              <p className="py-10 text-center text-[#6b7a8d] text-sm">Loading form…</p>
+            )}
 
-              <form onSubmit={handleSubmit} noValidate className={saveNetworkError ? "space-y-6" : "space-y-6 mt-6"}>
+            {isError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Couldn't load the form</AlertTitle>
+                <AlertDescription className="flex flex-col items-start gap-3 mt-2">
+                  Something went wrong while fetching form data.
+                  <Button variant="outline" className="h-11" onClick={() => {
+                    void refetchOptions()
+                    void refetchProfile()
+                  }}>
+                    Retry
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {!(isLoading || isError) && options && (
+              <form onSubmit={handleSubmit} noValidate className="space-y-6">
 
                 {/* Business Name */}
                 <div className="space-y-2">
@@ -254,6 +257,7 @@ export function AssessmentPage() {
                   </p>
                   <Input
                     id="businessName"
+                    className="h-11"
                     ref={businessNameRef}
                     placeholder="e.g. Maria's Karinderya, Juan's Bakery…"
                     autoComplete="organization"
@@ -271,7 +275,7 @@ export function AssessmentPage() {
                 {/* Business Type */}
                 <div className="space-y-2">
                   <Label id="businessType-label">
-                    Business Type <span aria-hidden="true">*</span>
+                    Business Type <span className="text-destructive" aria-hidden="true">*</span>
                   </Label>
                   <p id="businessType-help" className="text-sm text-[#6b7a8d]">
                     Choose the structure that best fits how you run your business.
@@ -306,7 +310,7 @@ export function AssessmentPage() {
                 {/* Business Category */}
                 <div className="space-y-2">
                   <Label htmlFor="category">
-                    Business Category <span aria-hidden="true">*</span>
+                    Business Category <span className="text-destructive" aria-hidden="true">*</span>
                   </Label>
                   <p id="categoryId-help" className="text-sm text-[#6b7a8d]">
                     Pick the category that best describes what your business does. This helps us find the right permits for you.
@@ -320,6 +324,7 @@ export function AssessmentPage() {
                   >
                     <SelectTrigger
                       id="category"
+                      className="w-full data-[size=default]:h-11"
                       ref={categoryRef}
                       aria-describedby={errors.categoryId ? 'categoryId-help categoryId-error' : 'categoryId-help'}
                       aria-invalid={!!errors.categoryId}
@@ -340,7 +345,7 @@ export function AssessmentPage() {
                 {/* Registration Status */}
                 <div className="space-y-2">
                   <Label id="registrationStatus-label">
-                    Where are you in the process? <span aria-hidden="true">*</span>
+                    Where are you in the process? <span className="text-destructive" aria-hidden="true">*</span>
                   </Label>
                   <p id="registrationStatus-help" className="text-sm text-[#6b7a8d]">
                     This helps us skip steps you've already done and show you what's next.
@@ -379,19 +384,29 @@ export function AssessmentPage() {
                 <Button
                   type="submit"
                   disabled={saveMutation.isPending}
-                  className="w-full bg-[#1a3a6b] hover:bg-[#0f1f3d] text-white"
+                  className="w-full h-12 text-[15px] font-bold bg-[#1a3a6b] hover:bg-[#0f1f3d] text-white"
                 >
-                  Save and continue
+                  {saveMutation.isPending ? (
+                    <>
+                      Saving…
+                      <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                    </>
+                  ) : (
+                    <>
+                      Save and continue
+                      <ArrowRight className="size-4" aria-hidden="true" />
+                    </>
+                  )}
                 </Button>
                 <p className="text-center text-sm text-[#6b7a8d]">
                   <strong>Pasig City only</strong> for now. You can change your answers later.
                 </p>
 
               </form>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            )}
+          </CardContent>
+        </Card>
+      </main>
     </div>
   )
 }
