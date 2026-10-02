@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router'
 import { AppLayout } from '@/app/AppLayout'
 import { HomePage } from '@/features/auth/HomePage'
+import { SignInPage } from '@/features/auth/SignInPage'
 import { AssessmentPage } from '@/features/assessment/AssessmentPage'
 import { MyBusinessPage } from '@/features/assessment/MyBusinessPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
@@ -12,6 +13,7 @@ export const router = createBrowserRouter([
     errorElement: <FullPageError onRetry={() => window.location.reload()} />,
     children: [
       { index: true, element: <HomePage /> },
+      { path: 'sign-in', element: <SignInPage /> },
       {
         path: 'assessment',
         element: (
