@@ -102,7 +102,7 @@ function Hero() {
         alt=""
         className="absolute inset-0 -z-20 size-full object-cover object-right"
       />
-      <div className="from-navy/95 via-navy/80 to-navy/40 md:via-navy/70 absolute inset-0 -z-10 bg-gradient-to-r md:to-transparent" />
+      <div className="from-navy/95 via-navy/80 to-navy/40 md:from-navy/90 md:via-navy/35 md:via-45% absolute inset-0 -z-10 bg-gradient-to-r md:to-transparent" />
       <motion.div
         variants={stagger}
         initial="hidden"
@@ -219,7 +219,7 @@ function FormPreview() {
         <Tile>Started - some papers done.</Tile>
       </div>
       <div className="bg-navy mt-5 flex h-12 items-center justify-center rounded-lg font-bold text-white">
-        View my Roadmap
+        Save and continue
       </div>
     </div>
   )
