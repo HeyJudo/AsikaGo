@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router'
 import { motion, type Variants } from 'motion/react'
-import { AlertCircle, Check, Map, MapPin, PenLine, Store } from 'lucide-react'
+import { AlertCircle, Check, MapIcon, MapPin, PenLine, Store } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -184,7 +184,7 @@ export function MyBusinessPage() {
 
             <Card>
               <CardContent className="flex items-start gap-3">
-                <Map className="text-brand mt-0.5 size-6 shrink-0" aria-hidden="true" />
+                <MapIcon className="text-brand mt-0.5 size-6 shrink-0" aria-hidden="true" />
                 <div>
                   <p className="text-navy font-semibold">Your registration roadmap is coming soon.</p>
                   <p className="text-muted-foreground text-sm">We're preparing every Pasig City permit you need, in the right order.</p>
