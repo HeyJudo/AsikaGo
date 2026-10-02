@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { AlertCircle, ArrowRight, Loader2 } from 'lucide-react'
 import { ApiError, apiFetch } from '@/lib/api'
-import { useBusinessProfile } from '@/lib/queries'
+import { useBusinessProfile, type BusinessProfile } from '@/lib/queries'
 import type { components } from '@/lib/api-types'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -147,13 +147,13 @@ export function AssessmentPage() {
   }
 
   const saveMutation = useMutation({
-    mutationFn: (payload: typeof values) => apiFetch('/api/business-profile', {
+    mutationFn: (payload: typeof values) => apiFetch<BusinessProfile>('/api/business-profile', {
       method: 'PUT',
       body: JSON.stringify(payload),
     }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['business-profile'] })
-      // Navigate to /my-business
+    onSuccess: (saved) => {
+      // Seed the cache before navigating: /my-business redirects back here if it reads a stale null.
+      queryClient.setQueryData(['business-profile'], saved)
       void navigate('/my-business')
     },
     onError: (err) => {
