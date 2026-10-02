@@ -11,8 +11,9 @@ export function SignInPage() {
   if (loading) return <FullPageLoader />
   if (session) return <SignedInRedirect />
 
+  // Phones see the sign-in card first; the blue route story follows
   return (
-    <SignInPanel as="h1" className="min-h-[calc(100svh-4rem)] md:min-h-[calc(100svh-5rem)]">
+    <SignInPanel as="h1" className="min-h-[calc(100svh-4rem)] max-lg:[&>:first-child]:order-last md:min-h-[calc(100svh-5rem)]">
       <Link
         to="/"
         className="text-navy mb-4 inline-flex min-h-11 items-center gap-2 rounded-sm text-sm font-semibold outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
