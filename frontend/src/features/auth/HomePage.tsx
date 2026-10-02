@@ -27,9 +27,6 @@ const STOP_PAD = 'pl-12 pr-4 md:pl-24 md:pr-12'
 function Hero() {
   const { pending, error, run } = useSignIn()
 
-  if (loading) return <FullPageLoader />
-  if (session) return <SignedInRedirect />
-
   return (
     <section className="relative isolate flex min-h-[34rem] items-center overflow-hidden bg-navy md:min-h-[44rem]">
       <img
