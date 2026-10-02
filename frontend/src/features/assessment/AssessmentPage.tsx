@@ -2,12 +2,12 @@ import { useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { AlertCircle, ArrowRight, Loader2 } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { ApiError, apiFetch } from '@/lib/api'
 import { useBusinessProfile } from '@/lib/queries'
 import type { components } from '@/lib/api-types'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -33,14 +33,36 @@ const TYPE_DESCRIPTIONS: Record<string, string> = {
 }
 
 const STATUS_COPY: Record<string, { label: string; description: string }> = {
-  Planning: { label: "Planning — I haven't started yet", description: 'I want to know what I need before I begin.' },
+  Planning: { label: "Planning – haven't started", description: 'I want to know what I need before I begin.' },
   Started: {
-    label: "Started — I've done some papers already",
+    label: 'Started – some papers done',
     description: "For example, I've registered my business name or got my barangay clearance.",
   },
 }
 
-const OPTION_ROW = 'flex items-start gap-3 rounded-md border p-3 min-h-11 cursor-pointer font-normal leading-normal'
+const TILE =
+  'relative flex min-h-14 cursor-pointer items-center justify-center rounded-xl border bg-white px-3 py-2 text-center text-sm font-medium leading-snug transition-colors hover:border-brand/60 ' +
+  'has-[[data-state=checked]]:border-brand has-[[data-state=checked]]:bg-brand has-[[data-state=checked]]:text-white ' +
+  'has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-brand/40'
+
+function OptionDescription({ text }: { text?: string }) {
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      {text && (
+        <motion.p
+          key={text}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="text-sm text-muted-foreground"
+        >
+          {text}
+        </motion.p>
+      )}
+    </AnimatePresence>
+  )
+}
 
 function FieldError({ id, message }: { id: string; message: string }) {
   return (
@@ -182,10 +204,14 @@ export function AssessmentPage() {
   const isError = optionsError || profileError
 
   return (
-    <div className="min-h-screen bg-cream">
-      <div className="flex flex-col items-center px-3 py-6 sm:px-4 sm:py-10">
-        <Card className="w-full max-w-[600px]">
-          <CardContent className="py-3 sm:px-10 sm:py-6">
+    <div className="flex flex-col items-center px-3 py-6 sm:px-4 sm:py-10">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="w-full max-w-[640px] rounded-2xl bg-white p-5 shadow-lg shadow-navy/10 sm:p-8"
+      >
+        <div>
             {saveNetworkError && (
               <Alert variant="destructive" className="mb-6">
                 <AlertCircle className="h-4 w-4" />
@@ -199,13 +225,14 @@ export function AssessmentPage() {
               </Alert>
             )}
 
-            <h1 className="text-2xl font-bold text-[#1c2b3a] mb-2">Tell us about your business.</h1>
-            <p className="text-[#6b7a8d] mb-8 text-sm">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-brand">Stop 1 · Pasig City</p>
+            <h1 className="text-2xl font-bold text-navy mb-2">Tell us about your business.</h1>
+            <p className="text-muted-foreground mb-8 text-sm">
               We'll use this to build your registration roadmap — it only takes a minute.
             </p>
 
             {isLoading && (
-              <p className="py-10 text-center text-[#6b7a8d] text-sm">Loading form…</p>
+              <p className="animate-pulse py-10 text-center text-muted-foreground text-sm">Loading form…</p>
             )}
 
             {isError && (
@@ -230,14 +257,14 @@ export function AssessmentPage() {
                 {/* Business Name */}
                 <div className="space-y-2">
                   <Label htmlFor="businessName">
-                    Business Name <span className="text-[#6b7a8d] font-normal">(optional)</span>
+                    Business Name <span className="text-muted-foreground font-normal">(optional)</span>
                   </Label>
-                  <p id="businessName-help" className="text-sm text-[#6b7a8d]">
+                  <p id="businessName-help" className="text-sm text-muted-foreground">
                     You can use your own name if you haven't picked one yet. This won't be your official registered name.
                   </p>
                   <Input
                     id="businessName"
-                    className="h-11"
+                    className="h-11 rounded-lg bg-white"
                     ref={businessNameRef}
                     placeholder="e.g. Maria's Karinderya, Juan's Bakery…"
                     autoComplete="organization"
@@ -257,12 +284,12 @@ export function AssessmentPage() {
                   <Label id="businessType-label">
                     Business Type <span className="text-destructive" aria-hidden="true">*</span>
                   </Label>
-                  <p id="businessType-help" className="text-sm text-[#6b7a8d]">
+                  <p id="businessType-help" className="text-sm text-muted-foreground">
                     Choose the structure that best fits how you run your business.
                   </p>
                   <RadioGroup
                     ref={businessTypeRef}
-                    className="space-y-2"
+                    className={`grid grid-cols-2 gap-2 ${errors.businessType ? '[&_label]:border-destructive' : ''}`}
                     value={values.businessType}
                     onValueChange={(value) => {
                       setValues((prev) => ({ ...prev, businessType: value }))
@@ -273,17 +300,13 @@ export function AssessmentPage() {
                     aria-describedby={errors.businessType ? 'businessType-help businessType-error' : 'businessType-help'}
                   >
                     {options.businessTypes.map((type) => (
-                      <Label key={type} htmlFor={`type-${type}`} className={OPTION_ROW}>
-                        <RadioGroupItem value={type} id={`type-${type}`} className="mt-0.5" />
-                        <span>
-                          <span className="block text-sm font-medium">{type}</span>
-                          {TYPE_DESCRIPTIONS[type] && (
-                            <span className="block text-sm text-[#6b7a8d]">{TYPE_DESCRIPTIONS[type]}</span>
-                          )}
-                        </span>
+                      <Label key={type} htmlFor={`type-${type}`} className={TILE}>
+                        <RadioGroupItem value={type} id={`type-${type}`} className="absolute inset-0 size-full opacity-0" />
+                        {type}
                       </Label>
                     ))}
                   </RadioGroup>
+                  <OptionDescription text={TYPE_DESCRIPTIONS[values.businessType]} />
                   {errors.businessType && <FieldError id="businessType-error" message={errors.businessType} />}
                 </div>
 
@@ -292,7 +315,7 @@ export function AssessmentPage() {
                   <Label htmlFor="category">
                     Business Category <span className="text-destructive" aria-hidden="true">*</span>
                   </Label>
-                  <p id="categoryId-help" className="text-sm text-[#6b7a8d]">
+                  <p id="categoryId-help" className="text-sm text-muted-foreground">
                     Pick the category that best describes what your business does. This helps us find the right permits for you.
                   </p>
                   <Select
@@ -304,7 +327,7 @@ export function AssessmentPage() {
                   >
                     <SelectTrigger
                       id="category"
-                      className="w-full data-[size=default]:h-11"
+                      className="w-full rounded-lg bg-white data-[size=default]:h-11"
                       ref={categoryRef}
                       aria-describedby={errors.categoryId ? 'categoryId-help categoryId-error' : 'categoryId-help'}
                       aria-invalid={!!errors.categoryId}
@@ -327,12 +350,12 @@ export function AssessmentPage() {
                   <Label id="registrationStatus-label">
                     Where are you in the process? <span className="text-destructive" aria-hidden="true">*</span>
                   </Label>
-                  <p id="registrationStatus-help" className="text-sm text-[#6b7a8d]">
+                  <p id="registrationStatus-help" className="text-sm text-muted-foreground">
                     This helps us skip steps you've already done and show you what's next.
                   </p>
                   <RadioGroup
                     ref={registrationStatusRef}
-                    className="space-y-2"
+                    className={`grid grid-cols-2 gap-2 ${errors.registrationStatus ? '[&_label]:border-destructive' : ''}`}
                     value={values.registrationStatus}
                     onValueChange={(value) => {
                       setValues((prev) => ({ ...prev, registrationStatus: value }))
@@ -345,17 +368,13 @@ export function AssessmentPage() {
                     }
                   >
                     {options.registrationStatuses.map((status) => (
-                      <Label key={status} htmlFor={`status-${status}`} className={OPTION_ROW}>
-                        <RadioGroupItem value={status} id={`status-${status}`} className="mt-0.5" />
-                        <span>
-                          <span className="block text-sm font-medium">{STATUS_COPY[status]?.label ?? status}</span>
-                          {STATUS_COPY[status] && (
-                            <span className="block text-sm text-[#6b7a8d]">{STATUS_COPY[status].description}</span>
-                          )}
-                        </span>
+                      <Label key={status} htmlFor={`status-${status}`} className={TILE}>
+                        <RadioGroupItem value={status} id={`status-${status}`} className="absolute inset-0 size-full opacity-0" />
+                        {STATUS_COPY[status]?.label ?? status}
                       </Label>
                     ))}
                   </RadioGroup>
+                  <OptionDescription text={STATUS_COPY[values.registrationStatus]?.description} />
                   {errors.registrationStatus && (
                     <FieldError id="registrationStatus-error" message={errors.registrationStatus} />
                   )}
@@ -364,7 +383,7 @@ export function AssessmentPage() {
                 <Button
                   type="submit"
                   disabled={saveMutation.isPending}
-                  className="w-full h-12 text-[15px] font-bold bg-[#1a3a6b] hover:bg-[#0f1f3d] text-white"
+                  className="w-full h-12 rounded-xl text-[15px] font-bold bg-navy hover:bg-navy/90 text-white"
                 >
                   {saveMutation.isPending ? (
                     <>
@@ -378,15 +397,14 @@ export function AssessmentPage() {
                     </>
                   )}
                 </Button>
-                <p className="text-center text-sm text-[#6b7a8d]">
+                <p className="text-center text-sm text-muted-foreground">
                   <strong>Pasig City only</strong> for now. You can change your answers later.
                 </p>
 
               </form>
             )}
-          </CardContent>
-        </Card>
-      </div>
+        </div>
+      </motion.div>
     </div>
   )
 }
