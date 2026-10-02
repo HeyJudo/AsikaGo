@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router'
 import { AlertCircle, ArrowRight, Loader2 } from 'lucide-react'
 import { ApiError, apiFetch } from '@/lib/api'
+import { useBusinessProfile } from '@/lib/queries'
 import type { components } from '@/lib/api-types'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -63,21 +64,7 @@ export function AssessmentPage() {
 
   const { data: options, isLoading: optionsLoading, isError: optionsError, refetch: refetchOptions } = useAssessmentOptions()
 
-  const { data: profile, isLoading: profileLoading, isError: profileError, refetch: refetchProfile } = useQuery<components['schemas']['BusinessProfileResponse'] | null>({
-    queryKey: ['business-profile'],
-    queryFn: async () => {
-      try {
-        return await apiFetch<components['schemas']['BusinessProfileResponse']>('/api/business-profile')
-      } catch (err) {
-        if (err instanceof ApiError && err.status === 404) return null
-        throw err
-      }
-    },
-    retry: (failCount, err) => {
-      if (err instanceof ApiError && err.status === 404) return false
-      return failCount < 3
-    }
-  })
+  const { data: profile, isLoading: profileLoading, isError: profileError, refetch: refetchProfile } = useBusinessProfile()
 
   const [values, setValues] = useState({
     businessName: '',
@@ -195,15 +182,8 @@ export function AssessmentPage() {
   const isError = optionsError || profileError
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc]">
-      <header className="sticky top-0 z-10 flex h-14 items-center justify-between bg-[#1a3a6b] px-6 shadow-md">
-        <span className="text-[22px] font-extrabold tracking-tight text-white">
-          Asika<span className="text-[#f5a623]">Go</span>
-        </span>
-        <span className="text-[13px] font-medium text-white/70">Business assessment</span>
-      </header>
-
-      <main className="flex flex-col items-center px-3 py-6 sm:px-4 sm:py-10">
+    <div className="min-h-screen bg-cream">
+      <div className="flex flex-col items-center px-3 py-6 sm:px-4 sm:py-10">
         <Card className="w-full max-w-[600px]">
           <CardContent className="py-3 sm:px-10 sm:py-6">
             {saveNetworkError && (
@@ -406,7 +386,7 @@ export function AssessmentPage() {
             )}
           </CardContent>
         </Card>
-      </main>
+      </div>
     </div>
   )
 }
