@@ -80,7 +80,7 @@
     .btn-primary:focus-visible { box-shadow: 0 0 0 3px rgba(35,64,213,.4); }
 
     /* Route */
-    .route { list-style: none; position: relative; display: flex; flex-direction: column; gap: 12px; }
+    .route, .steps { list-style: none; position: relative; display: flex; flex-direction: column; gap: 12px; }
     .route::before { content: ''; position: absolute; left: 15px; top: 16px; bottom: 16px; border-left: 2px dashed rgba(241,177,50,.7); }
     .pin { position: relative; display: flex; gap: 16px; align-items: center; padding: 4px 0; }
     .pin-dot { z-index: 1; width: 32px; height: 32px; border-radius: 999px; background: var(--gold); color: var(--navy); display: grid; place-items: center; flex-shrink: 0; }
@@ -131,7 +131,7 @@
       ['Business Permit Application (UBAF)', 'BPLD (Business Permits and Licensing Department)'],
       ['Tax Order of Payment', 'BPLD'],
       ['Payment of Local Business Taxes and Fees', "City Treasurer's Office"],
-      ['Ancillary Permits at BOSS', 'BOSS (Business One-Stop Shop): BFP, City Health Department, CENRO (City Environment and Natural Resources Office)'],
+      ['Ancillary Permits at BOSS', 'BOSS (Business One-Stop Shop): BFP, City Health Department, CENRO (City Environment and Natural Resources Office), and others as needed'],
       ['Business Permit Release', 'BPLD'],
       ['BIR Registration', 'BIR (Bureau of Internal Revenue)'],
     ]
@@ -173,12 +173,13 @@
     const startedHint = `<p class="hint">${icon('info')}Already done some steps? You'll be able to mark them as done soon.</p>`
 
     const route = () => `
-      <ol class="route">
-        <li class="pin"><span class="pin-dot">${icon('check')}</span><div><b>Point A – Profile saved</b><span>You told us about your business.</span></div></li>
+      <div class="route">
+        <div class="pin"><span class="pin-dot">${icon('check')}</span><div><b>Point A – Profile saved</b><span>You told us about your business.</span></div></div>
+        <ol class="steps">
         ${STEPS.map(([name, agency, note], i) => `
         <li>
-          <a class="step-row" href="#" aria-label="Step ${i + 1}: ${name}">
-            <span class="num">${i + 1}</span>
+          <a class="step-row" href="#">
+            <span class="num"><span class="sr-only">Step </span>${i + 1}</span>
             <span class="step-card">
               <span class="step-text">
                 <span class="step-name" style="display:block">${name}</span>
@@ -189,8 +190,9 @@
             </span>
           </a>
         </li>`).join('')}
-        <li class="pin"><span class="pin-dot">${icon('flag')}</span><div><b>Biz – Registered</b><span>Your destination.</span></div></li>
-      </ol>`
+        </ol>
+        <div class="pin"><span class="pin-dot">${icon('flag')}</span><div><b>Biz – Registered</b><span>Your destination.</span></div></div>
+      </div>`
 
     const roadmap = ({ guest = false, started = false } = {}) => `
       ${header(guest)}
@@ -236,11 +238,12 @@
         <li>Page: <code>bg-cream px-4 py-8 md:py-12</code>, column <code>mx-auto max-w-3xl flex flex-col gap-6</code>.</li>
         <li>Title <code>text-navy text-3xl md:text-4xl font-extrabold</code>. Subtitle is built from <code>steps.length</code>, <code>categoryName</code>, <code>cityName</code>.</li>
         <li>"See step 1" is the one main action: <code>Button</code> <code>h-11 rounded-full</code>, full width on mobile, <code>Link to="/roadmap/steps/1"</code>.</li>
-        <li>Route line: same dashed gold line as the My Business route card (<code>border-l-2 border-dashed border-gold</code>). Point A and Biz pins reuse that card's wording.</li>
-        <li>Each step is one <code>Link to="/roadmap/steps/{number}"</code> wrapping the number badge and a <code>Card</code>. Min height 44 px. Focus: <code>focus-visible:ring-2 ring-ring</code>.</li>
+        <li>Route line: a gold-on-cream version of the My Business route card's line (that card uses <code>border-white/50</code> on blue with <code>size-6</code> dots). Here: <code>border-l-2 border-dashed border-gold/70</code>, with <code>size-8</code> dots. Point A and Biz pins reuse that card's wording.</li>
+        <li>Point A and Biz pins sit outside the <code>&lt;ol&gt;</code>, so screen readers count 10 steps, not 12.</li>
+        <li>Each step is one <code>Link to="/roadmap/steps/{number}"</code> wrapping the number badge and a <code>Card</code>. No <code>aria-label</code>: the link's own text (step, name, agency, tag) is read out, with <code>&lt;span className="sr-only"&gt;Step &lt;/span&gt;</code> before the number. Min height 44 px. Focus: <code>focus-visible:ring-2 ring-ring</code>.</li>
         <li>Tag shows <code>conditionNote</code> as is (it wraps, never truncates). Hidden when null.</li>
         <li>Step text is the API's <code>name</code> and <code>agency</code>. The sample agency text is spelled out. The seed (RS-003-01) must spell it out too.</li>
-        <li><b>For the RS-003-02 clarity review:</b> the research seed names "FSIC", "UBAF" and "BOSS" are jargon (writing rule 1). The names are shown as they are because they come from the seed.</li>
+        <li><b>For the RS-003-02 clarity review:</b> the research seed names "FSIC", "UBAF" and "BOSS" are jargon (writing rule 1). The names are shown as they are because they come from the seed. Step 8's agency ends with "and others as needed", as in the research. CENRO is Unverified there, so the seed should confirm it or say "Confirm this at the office".</li>
         <li><b>Out of scope, worth checking:</b> the header copies the live <code>SiteHeader</code> sizes, and in this mockup "Sign Out" is cut off at 360 px. Check the live app at 360 px.</li>
       </ul>`],
       ['2. Guest (anonymous user)', [
@@ -251,6 +254,7 @@
         <li>Styling matches the My Business GuestBanner: <code>rounded-xl border border-brand/30 bg-brand/5 p-4 md:flex-row md:p-5</code>.</li>
         <li>The button is the existing <code>GoogleButton</code>. It hard-codes "Continue with Google", so US-002-FE-01 should add a label prop (for example <code>children</code>) to show "Save with Google".</li>
         <li>Linking uses the shared <code>useLinkGoogle</code> hook from US-002-FE-01. <code>redirectTo</code> should be <code>/roadmap</code>, so the guest comes back to the same screen.</li>
+        <li>The main action stays "See step 1" (writing rule 3). "Save with Google" is a secondary action inside the banner. Its dark style is fixed by Google's branding rules, so the banner's tinted box is what sets it apart.</li>
       </ul>`],
       ['3. Started (registration status = Started)', [
         ['Started · Mobile 360', 'mobile', () => roadmap({ started: true })],
@@ -269,7 +273,7 @@
         ['No profile · Mobile 360', 'mobile', noProfile],
         ['No profile · Desktop 1280', 'desktop', noProfile],
       ], `<ul>
-        <li>Same <code>Centered</code> layout as <code>PageStates.tsx</code>. Icon is lucide <code>ClipboardList</code> in <code>bg-gold/20 text-brand</code>, like <code>NotFoundPage</code>.</li>
+        <li>Same <code>Centered</code> layout as <code>PageStates.tsx</code>. <code>Centered</code> isn't exported today, so export it and build this screen inline in the roadmap page. Don't create a new state component. Icon is lucide <code>ClipboardList</code> in <code>bg-gold/20 text-brand</code>, like <code>NotFoundPage</code>.</li>
         <li>Button: <code>Link to="/assessment"</code>, "Answer the questions".</li>
         <li><b>For Seth to decide:</b> the API contract (Section 4) says the frontend redirects to <code>/assessment</code> on 404, but this ticket asks for this screen. The screen tells the user why they were sent away, so this design prefers the screen.</li>
       </ul>`],
@@ -278,7 +282,7 @@
         ['Error · Desktop 1280', 'desktop', error],
       ], `<ul>
         <li>Same layout as <code>FullPageError</code>. The body text names the roadmap.</li>
-        <li><b>For Seth to decide:</b> the ticket says "Try again", but <code>FullPageError</code> says "Retry". Change the shared label once (it reads better everywhere) instead of making a copy of the component.</li>
+        <li><b>For Seth to decide:</b> the ticket says "Try again", but <code>FullPageError</code> says "Retry". Its body text is also fixed ("We couldn't load this page."). Either change the shared label to "Try again" and keep the generic body text, or add an optional <code>message</code> prop for "We couldn't load your roadmap." Don't make a copy of the component.</li>
       </ul>`],
     ]
 
