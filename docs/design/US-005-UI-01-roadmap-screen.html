@@ -52,9 +52,13 @@
     .is-desktop .user .email { display: block; }
     .btn-signout { min-height: 44px; border: 1px solid #fff; border-radius: 999px; padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; font-size: 14px; white-space: nowrap; flex-shrink: 0; }
     .btn-signout svg.i { width: 16px; height: 16px; }
+    /* Mobile: compact Sign Out so the header fits 360 px. Still 44 px tall. */
+    .is-mobile .user { gap: 8px; }
+    .is-mobile .btn-signout { padding: 0 12px; gap: 6px; font-size: 13px; }
+    .is-mobile .btn-signout svg.i { width: 14px; height: 14px; }
 
     /* ─── Page ─── */
-    .page { padding: 32px 16px 48px; }
+    .page { padding: 32px 24px 48px; }
     .is-desktop .page { padding: 48px 32px 64px; }
     .container { max-width: 768px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
 
@@ -82,13 +86,13 @@
     /* Route */
     .route, .steps { list-style: none; position: relative; display: flex; flex-direction: column; gap: 12px; }
     .route::before { content: ''; position: absolute; left: 15px; top: 16px; bottom: 16px; border-left: 2px dashed rgba(241,177,50,.7); }
-    .pin { position: relative; display: flex; gap: 16px; align-items: center; padding: 4px 0; }
+    .pin { position: relative; display: flex; gap: 12px; align-items: center; padding: 4px 0; }
     .pin-dot { z-index: 1; width: 32px; height: 32px; border-radius: 999px; background: var(--gold); color: var(--navy); display: grid; place-items: center; flex-shrink: 0; }
     .pin-dot svg.i { width: 18px; height: 18px; }
     .pin b { display: block; font-weight: 700; }
     .pin span { color: var(--muted-foreground); font-size: 14px; }
 
-    .step-row { position: relative; display: flex; gap: 16px; align-items: center; min-height: 44px; border-radius: 14px; outline: none; }
+    .step-row { position: relative; display: flex; gap: 12px; align-items: center; min-height: 44px; border-radius: 14px; outline: none; }
     .num { z-index: 1; width: 32px; height: 32px; border-radius: 999px; background: var(--brand); color: #fff; font-weight: 700; font-size: 14px; display: grid; place-items: center; flex-shrink: 0; }
     .step-card { flex: 1; min-width: 0; background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; display: flex; gap: 12px; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,.06); transition: border-color .15s; }
     .step-row:hover .step-card { border-color: var(--brand); }
@@ -235,7 +239,7 @@
         ['Normal · Mobile 360', 'mobile', () => roadmap()],
         ['Normal · Desktop 1280', 'desktop', () => roadmap()],
       ], `<ul>
-        <li>Page: <code>bg-cream px-4 py-8 md:py-12</code>, column <code>mx-auto max-w-3xl flex flex-col gap-6</code>.</li>
+        <li>Page: <code>bg-cream px-6 py-8 md:px-8 md:py-12</code>, column <code>mx-auto max-w-3xl flex flex-col gap-6</code>.</li>
         <li>Title <code>text-navy text-3xl md:text-4xl font-extrabold</code>. Subtitle is built from <code>steps.length</code>, <code>categoryName</code>, <code>cityName</code>.</li>
         <li>"See step 1" is the one main action: <code>Button</code> <code>h-11 rounded-full</code>, full width on mobile, <code>Link to="/roadmap/steps/1"</code>.</li>
         <li>Route line: a gold-on-cream version of the My Business route card's line (that card uses <code>border-white/50</code> on blue with <code>size-6</code> dots). Here: <code>border-l-2 border-dashed border-gold/70</code>, with <code>size-8</code> dots. Point A and Biz pins reuse that card's wording.</li>
@@ -244,7 +248,7 @@
         <li>Tag shows <code>conditionNote</code> as is (it wraps, never truncates). Hidden when null.</li>
         <li>Step text is the API's <code>name</code> and <code>agency</code>. The sample agency text is spelled out. The seed (RS-003-01) must spell it out too.</li>
         <li><b>For the RS-003-02 clarity review:</b> the research seed names "FSIC", "UBAF" and "BOSS" are jargon (writing rule 1). The names are shown as they are because they come from the seed. Step 8's agency ends with "and others as needed", as in the research. CENRO is Unverified there, so the seed should confirm it or say "Confirm this at the office".</li>
-        <li><b>Out of scope, worth checking:</b> the header copies the live <code>SiteHeader</code> sizes, and in this mockup "Sign Out" is cut off at 360 px. Check the live app at 360 px.</li>
+        <li><b>Header change:</b> with the live <code>SiteHeader</code> sizes, "Sign Out" was cut off at 360 px. The mobile frames use a compact version: <code>gap-2</code>, button <code>px-3 gap-1.5 text-[13px]</code>, icon <code>size-3.5</code>, still <code>h-11</code>. Use <code>sm:</code> to keep the current sizes from 640 px up.</li>
       </ul>`],
       ['2. Guest (anonymous user)', [
         ['Guest · Mobile 360', 'mobile', () => roadmap({ guest: true })],
