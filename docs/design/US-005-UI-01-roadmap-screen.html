@@ -126,7 +126,14 @@
     .compass { width: 120px; height: 120px; filter: drop-shadow(0 6px 14px rgba(20,33,91,.18)); }
     .needle { transform-box: view-box; transform-origin: 50px 50px; animation: needle 1.8s cubic-bezier(.45,0,.25,1) infinite; }
     @keyframes needle { 0% { transform: rotate(0deg); } 65% { transform: rotate(385deg); } 82% { transform: rotate(350deg); } 100% { transform: rotate(360deg); } }
-    @media (prefers-reduced-motion: reduce) { .needle { animation: none; } }
+    .trip { display: flex; align-items: center; gap: 8px; width: 220px; margin-top: 4px; }
+    .trip-end { font-size: 12px; font-weight: 800; border-radius: 999px; min-width: 26px; height: 26px; display: grid; place-items: center; padding: 0 8px; }
+    .trip-end.a { background: var(--navy); color: #fff; }
+    .trip-end.biz { background: var(--brand); color: #fff; }
+    .trip-line { flex: 1; position: relative; border-top: 2px dashed var(--gold); }
+    .trip-dot { position: absolute; top: -6px; left: 0; width: 10px; height: 10px; border-radius: 999px; background: var(--gold); box-shadow: 0 0 0 3px rgba(241,177,50,.3); animation: travel 1.8s ease-in-out infinite; }
+    @keyframes travel { from { left: 0; } to { left: calc(100% - 10px); } }
+    @media (prefers-reduced-motion: reduce) { .needle, .trip-dot { animation: none; } }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
   </style>
 </head>
@@ -247,7 +254,12 @@
       </div></div>`
 
     const loading = () => `${header(false)}
-      <div class="centered" role="status">${COMPASS}<span class="sr-only">Loading your roadmap</span></div>`
+      <div class="centered" role="status">
+        ${COMPASS}
+        <h1>Finding your route…</h1>
+        <p>We're putting your registration steps in order.</p>
+        <div class="trip" aria-hidden="true"><span class="trip-end a">A</span><span class="trip-line"><span class="trip-dot"></span></span><span class="trip-end biz">Biz</span></div>
+      </div>`
 
     const noProfile = () => `${header(false)}
       <div class="centered">
@@ -311,8 +323,10 @@
         ['Loading · Desktop 1280', 'desktop', loading],
       ], `<ul>
         <li>Compass loader: an inline SVG (viewBox 100, shown at <code>size-30</code>, 120 px, with <code>drop-shadow-lg</code>). White face with a <code>stroke-brand</code> ring, a dashed gold inner ring (the route-line motif) and fine navy ticks. "Biz" (brand blue) sits at the top and "A" (navy) at the bottom, with lucide <code>MapPin</code> route stops on the left and right. The needle is two-tone: gold tip, navy tail, with a darker shade on one side of each. Only the needle (<code>&lt;g&gt;</code>) animates: one turn every 1.8 s, overshooting to 385° and settling back to 360°, so it always lands pointing at Biz.</li>
-        <li>Put it inside <code>FullPageLoader</code> in place of the <code>Loader2</code> spinner, so every full-page load gets it. Keep <code>role="status"</code> and the sr-only label (<code>label="Loading your roadmap"</code>).</li>
-        <li><code>motion-reduce:animate-none</code> on the needle, so users who ask for less motion see a still compass.</li>
+        <li>Put it inside <code>FullPageLoader</code> in place of the <code>Loader2</code> spinner, so every full-page load gets it. Keep <code>role="status"</code>.</li>
+        <li>Under the compass: title "Finding your route…" (<code>text-navy text-xl font-bold</code>), then the line "We're putting your registration steps in order." (<code>text-muted-foreground text-sm</code>). The visible text replaces the sr-only label. The line is roadmap-specific, so give <code>FullPageLoader</code> an optional <code>message</code> prop and show nothing when it's not passed.</li>
+        <li>Route bar (<code>aria-hidden</code>, 220 px): an "A" chip (<code>bg-navy</code>), a dashed gold line with a gold dot travelling from A to Biz every 1.8 s, in time with the needle, and a "Biz" chip (<code>bg-brand</code>).</li>
+        <li><code>motion-reduce:animate-none</code> on the needle and the travelling dot, so users who ask for less motion see a still compass.</li>
       </ul>`],
       ['5. No business profile (API 404)', [
         ['No profile · Mobile 360', 'mobile', noProfile],
