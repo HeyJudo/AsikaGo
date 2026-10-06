@@ -203,7 +203,7 @@
           </a>
         </li>`).join('')}
         </ol>
-        <div class="pin pin-end"><span class="pin-dot">${icon('flag')}</span><div class="pin-card"><div><b><em>Biz</em> – Registered</b><span>Your destination. Finish all 10 steps to get here.</span></div></div></div>
+        <div class="pin pin-end"><span class="pin-dot">${icon('flag')}</span><div class="pin-card"><div><b><em>Biz</em> – Registered</b><span>Your destination.</span></div></div></div>
       </div>`
 
     const roadmap = ({ guest = false, started = false } = {}) => `
@@ -251,7 +251,7 @@
         <li>Title <code>text-navy text-3xl md:text-4xl font-extrabold</code>. Subtitle is built from <code>steps.length</code>, <code>categoryName</code>, <code>cityName</code>.</li>
         <li>"See step 1" is the one main action: <code>Button</code> <code>h-11 rounded-full</code>, full width on mobile, <code>Link to="/roadmap/steps/1"</code>.</li>
         <li>Route line: a gold-on-cream version of the My Business route card's line (that card uses <code>border-white/50</code> on blue with <code>size-6</code> dots). Here: <code>border-l-2 border-dashed border-gold/70</code>, with <code>size-8</code> dots. Point A and Biz pins reuse that card's wording.</li>
-        <li>Point A: <code>Card</code>-shaped box <code>rounded-xl border border-gold/60 bg-gold/15 px-4 py-3</code> with a <code>bg-gold text-navy rounded-full text-xs font-bold</code> "Done" chip. Biz: <code>rounded-xl bg-brand text-white shadow-lg</code>, "Biz" in <code>text-gold</code>, dot <code>bg-brand text-white ring-3 ring-gold</code>. "10 steps" comes from <code>steps.length</code>.</li>
+        <li>Point A: <code>Card</code>-shaped box <code>rounded-xl border border-gold/60 bg-gold/15 px-4 py-3</code> with a <code>bg-gold text-navy rounded-full text-xs font-bold</code> "Done" chip. Biz: <code>rounded-xl bg-brand text-white shadow-lg</code>, "Biz" in <code>text-gold</code>, dot <code>bg-brand text-white ring-3 ring-gold</code>.</li>
         <li>Point A and Biz pins sit outside the <code>&lt;ol&gt;</code>, so screen readers count 10 steps, not 12.</li>
         <li>Each step is one <code>Link to="/roadmap/steps/{number}"</code> wrapping the number badge and a <code>Card</code>. No <code>aria-label</code>: the link's own text (step, name, agency, tag) is read out, with <code>&lt;span className="sr-only"&gt;Step &lt;/span&gt;</code> before the number. Min height 44 px.</li>
         <li>Hover and keyboard focus (<code>group</code> on the Link): card gets <code>group-hover:border-brand group-hover:ring-3 group-hover:ring-brand/35</code> (same for <code>group-focus-visible:</code>). Number badge flips to <code>group-hover:bg-white group-hover:text-brand</code> with <code>ring-2 ring-brand</code> plus the same soft glow. Add <code>transition-colors</code>.</li>
