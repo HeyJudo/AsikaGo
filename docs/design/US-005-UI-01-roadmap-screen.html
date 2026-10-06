@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AsikaGo – Roadmap Screen (US-005-UI-01 Design)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* Tokens copied from frontend/src/index.css (:root) so the build matches the live app. */
+    :root {
+      --brand: #2340d5;
+      --brand-dark: #1a31a8;
+      --gold: #f1b132;
+      --navy: #14215b;
+      --cream: #faf7f0;
+      --cream-deep: #f1ece0;
+      --muted-foreground: #5b6478;
+      --border: #e5e5e5;
+      --destructive: #e7000b;
+      --radius: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; color: var(--navy); background: #e9ecf2; padding: 32px; }
+    a { color: inherit; text-decoration: none; }
+    svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+    /* ─── Doc chrome (not part of the design) ─── */
+    .doc-title { font-size: 28px; font-weight: 800; }
+    .doc-sub { color: var(--muted-foreground); margin: 4px 0 32px; max-width: 900px; }
+    .state { margin-bottom: 56px; }
+    .state > h2 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+    .frames { display: flex; gap: 32px; align-items: flex-start; }
+    .frame-label { font-size: 12px; font-weight: 600; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+    .frame-mobile, .frame-desktop { background: var(--cream); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(20,33,91,.15); }
+    .frame-mobile { width: 360px; }
+    .frame-desktop { width: 1280px; }
+    .notes { background: #fff; border-left: 4px solid var(--brand); border-radius: 8px; padding: 12px 16px; margin-top: 16px; max-width: 1672px; font-size: 13px; line-height: 1.6; }
+    .notes li { margin-left: 18px; }
+    .notes code { background: #f1f5f9; padding: 0 4px; border-radius: 4px; font-size: 12px; }
+
+    /* ─── App header (AppLayout.tsx SiteHeader) ─── */
+    .app-header { background: var(--brand); height: 64px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .is-desktop .app-header { height: 80px; padding: 0 32px; }
+    .app-header img { height: 32px; }
+    .is-desktop .app-header img { height: 48px; }
+    .user { display: flex; align-items: center; gap: 12px; color: #fff; font-size: 14px; font-weight: 600; }
+    .avatar { width: 40px; height: 40px; border-radius: 999px; background: var(--gold); color: var(--navy); display: grid; place-items: center; }
+    .user .email { display: none; }
+    .is-desktop .user .email { display: block; }
+    .btn-signout { min-height: 44px; border: 1px solid #fff; border-radius: 999px; padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; font-size: 14px; white-space: nowrap; flex-shrink: 0; }
+    .btn-signout svg.i { width: 16px; height: 16px; }
+    /* Mobile: compact Sign Out so the header fits 360 px. Still 44 px tall. */
+    .is-mobile .user { gap: 8px; }
+    .is-mobile .btn-signout { padding: 0 12px; gap: 6px; font-size: 13px; }
+    .is-mobile .btn-signout svg.i { width: 14px; height: 14px; }
+
+    /* ─── Page ─── */
+    .page { padding: 32px 24px 48px; }
+    .is-desktop .page { padding: 48px 32px 64px; }
+    .container { max-width: 768px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+
+    /* Guest banner (MyBusinessPage GuestBanner style) */
+    .guest { border: 1px solid rgba(35,64,213,.3); background: rgba(35,64,213,.05); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+    .is-desktop .guest { flex-direction: row; align-items: center; justify-content: space-between; padding: 20px; }
+    .guest p { font-weight: 600; line-height: 1.45; }
+    .btn-google { min-height: 44px; width: 100%; border-radius: 999px; border: 1px solid #8e918f; background: #131314; color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 0 24px; font-size: 14px; font-weight: 500; }
+    .is-desktop .btn-google { width: 288px; flex-shrink: 0; }
+    .btn-google svg { width: 20px; height: 20px; }
+
+    /* Header */
+    h1 { font-size: 30px; font-weight: 800; line-height: 1.2; }
+    .is-desktop h1 { font-size: 36px; }
+    .subtitle { color: var(--muted-foreground); margin-top: 8px; line-height: 1.5; }
+    .is-desktop .subtitle { font-size: 18px; }
+    .hint { display: flex; gap: 8px; align-items: flex-start; margin-top: 12px; color: var(--navy); font-size: 14px; line-height: 1.5; background: rgba(241,177,50,.15); border-radius: 8px; padding: 8px 12px; }
+    .hint svg.i { color: var(--brand); width: 18px; height: 18px; margin-top: 2px; }
+
+    .btn-primary { min-height: 44px; border-radius: 999px; background: var(--brand); color: #fff; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 24px; width: 100%; outline: none; }
+    .is-desktop .btn-primary { width: auto; align-self: flex-start; }
+    .btn-primary:hover { background: var(--brand-dark); }
+    .btn-primary:focus-visible { box-shadow: 0 0 0 3px rgba(35,64,213,.4); }
+
+    /* Route */
+    .route, .steps { list-style: none; position: relative; display: flex; flex-direction: column; gap: 12px; }
+    .route::before { content: ''; position: absolute; left: 15px; top: 40px; bottom: 40px; border-left: 2px dashed rgba(241,177,50,.7); }
+    .pin { position: relative; display: flex; gap: 12px; align-items: center; padding: 4px 0; }
+    .pin-dot { z-index: 1; width: 32px; height: 32px; border-radius: 999px; background: var(--gold); color: var(--navy); display: grid; place-items: center; flex-shrink: 0; }
+    .pin-dot svg.i { width: 18px; height: 18px; }
+    .pin-card { flex: 1; min-width: 0; border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .pin-card b { display: block; font-weight: 700; line-height: 1.35; }
+    .pin-card span { display: block; font-size: 14px; line-height: 1.4; }
+    .pin-start .pin-card { background: rgba(241,177,50,.15); border: 1px solid rgba(241,177,50,.6); }
+    .pin-start .pin-card span { color: var(--muted-foreground); }
+    .chip { background: var(--gold); color: var(--navy); font-size: 12px; font-weight: 700; border-radius: 999px; padding: 2px 10px; flex-shrink: 0; }
+    .pin-end .pin-dot { background: var(--brand); color: #fff; box-shadow: 0 0 0 3px var(--gold); }
+    .pin-end .pin-card { background: var(--brand); color: #fff; box-shadow: 0 4px 16px rgba(35,64,213,.3); }
+    .pin-end .pin-card b em { font-style: normal; color: var(--gold); }
+    .pin-end .pin-card span { color: rgba(255,255,255,.8); }
+
+    .step-row { position: relative; display: flex; gap: 12px; align-items: center; min-height: 44px; border-radius: 14px; outline: none; }
+    .num { z-index: 1; width: 32px; height: 32px; border-radius: 999px; background: var(--brand); color: #fff; font-weight: 700; font-size: 14px; display: grid; place-items: center; flex-shrink: 0; transition: background-color .15s, color .15s, box-shadow .15s; }
+    .step-card { flex: 1; min-width: 0; background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; display: flex; gap: 12px; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,.06); transition: border-color .15s; }
+    .step-row:hover .step-card, .step-row:focus-visible .step-card { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(35,64,213,.35); }
+    .step-row:hover .num, .step-row:focus-visible .num { background: #fff; color: var(--brand); box-shadow: 0 0 0 2px var(--brand), 0 0 0 5px rgba(35,64,213,.35); }
+    .step-text { flex: 1; min-width: 0; }
+    .step-name { font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+    .step-agency { color: var(--muted-foreground); font-size: 14px; line-height: 1.4; margin-top: 2px; overflow-wrap: anywhere; }
+    .tag { display: inline-flex; gap: 6px; align-items: flex-start; margin-top: 8px; background: rgba(241,177,50,.2); color: var(--navy); font-size: 13px; font-weight: 500; line-height: 1.4; border-radius: 6px; padding: 4px 8px; }
+    .tag svg.i { width: 14px; height: 14px; margin-top: 2px; }
+    .chev { color: var(--muted-foreground); }
+
+    /* Full-page states (PageStates.tsx Centered) */
+    .centered { min-height: 560px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 32px; text-align: center; }
+    .is-desktop .centered { min-height: 640px; }
+    .state-icon { width: 64px; height: 64px; border-radius: 999px; display: grid; place-items: center; }
+    .state-icon svg.i { width: 32px; height: 32px; }
+    .state-icon.gold { background: rgba(241,177,50,.2); color: var(--brand); }
+    .state-icon.red { background: rgba(231,0,11,.1); color: var(--destructive); }
+    .centered h1 { font-size: 20px; font-weight: 700; }
+    .centered p { color: var(--muted-foreground); font-size: 14px; max-width: 384px; line-height: 1.5; }
+    .centered .btn-primary { width: auto; align-self: center; }
+    /* Compass loader: the face stays still, the needle spins and settles like a real compass. */
+    .compass { width: 120px; height: 120px; filter: drop-shadow(0 6px 14px rgba(20,33,91,.18)); }
+    .needle { transform-box: view-box; transform-origin: 50px 50px; animation: needle 1.8s cubic-bezier(.45,0,.25,1) infinite; }
+    @keyframes needle { 0% { transform: rotate(0deg); } 65% { transform: rotate(385deg); } 82% { transform: rotate(350deg); } 100% { transform: rotate(360deg); } }
+    .trip { display: flex; align-items: center; gap: 8px; width: 220px; margin-top: 4px; }
+    .trip-end { font-size: 12px; font-weight: 800; border-radius: 999px; min-width: 26px; height: 26px; display: grid; place-items: center; padding: 0 8px; }
+    .trip-end.a { background: var(--navy); color: #fff; }
+    .trip-end.biz { background: var(--brand); color: #fff; }
+    .trip-line { flex: 1; position: relative; border-top: 2px dashed var(--gold); }
+    .trip-dot { position: absolute; top: -6px; left: 0; width: 10px; height: 10px; border-radius: 999px; background: var(--gold); box-shadow: 0 0 0 3px rgba(241,177,50,.3); animation: travel 1.8s ease-in-out infinite; }
+    @keyframes travel { from { left: 0; } to { left: calc(100% - 10px); } }
+    @media (prefers-reduced-motion: reduce) { .needle, .trip-dot { animation: none; } }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+  </style>
+</head>
+<body>
+  <h1 class="doc-title">US-005-UI-01 · Roadmap screen (<code>/roadmap</code>)</h1>
+  <p class="doc-sub">Design for AB#77. Every frame uses the same sample profile: Sole Proprietorship, Food and Beverage, Pasig City (10 steps). Mobile frames are 360 px and desktop frames are 1280 px. Tokens come from <code>frontend/src/index.css</code>.</p>
+
+  <div id="states"></div>
+
+  <script>
+    // Single source for all copy. Matches RoadmapResponse (Sprint 3 breakdown, Section 4).
+    const STEPS = [
+      ['DTI Business Name Registration', 'DTI (Department of Trade and Industry)'],
+      ['Barangay Business Clearance', 'Barangay hall of your business address'],
+      ['Certificate of Conformance', 'CPDO (City Planning and Development Office), Zoning Division', 'If your business is inside a mall or in the Ortigas Center, ask CPDO if you still need this.'],
+      ['FSIC for Occupancy', 'BFP (Bureau of Fire Protection) Pasig', 'Only if your place is newly built or renovated.'],
+      ['Business Permit Application (UBAF)', 'BPLD (Business Permits and Licensing Department)'],
+      ['Tax Order of Payment', 'BPLD'],
+      ['Payment of Local Business Taxes and Fees', "City Treasurer's Office"],
+      ['Ancillary Permits at BOSS', 'BOSS (Business One-Stop Shop): BFP, City Health Department, CENRO (City Environment and Natural Resources Office), and others as needed'],
+      ['Business Permit Release', 'BPLD'],
+      ['BIR Registration', 'BIR (Bureau of Internal Revenue)'],
+    ]
+
+    // lucide icon paths
+    const ICONS = {
+      check: '<path d="M20 6 9 17l-5-5"/>',
+      pin: '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+      flag: '<path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/>',
+      chev: '<path d="m9 18 6-6-6-6"/>',
+      arrow: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+      info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+      alert: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+      loader: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+      retry: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
+      clipboard: '<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>',
+      user: '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
+      logout: '<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>',
+    }
+    const icon = (name, cls = 'i') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`
+    const GOOGLE_G = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>'
+
+    // Compass loader. viewBox 100. Biz at the top, A at the bottom, map pins on the sides.
+    const TICKS = Array.from({ length: 24 }, (_, i) => i * 15)
+      .filter((d) => d % 90 > 20 && d % 90 < 70 || d % 90 === 45)
+      .map((d) => `<line x1="50" y1="12" x2="50" y2="${d % 45 ? 15 : 17}" transform="rotate(${d} 50 50)"/>`).join('')
+    const PIN = '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" fill="var(--gold)" stroke="var(--navy)" stroke-width="2"/><circle cx="12" cy="10" r="3" fill="#fff" stroke="var(--navy)" stroke-width="2"/>'
+    const COMPASS = `
+      <svg class="compass" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="46" fill="#fff" stroke="var(--brand)" stroke-width="4"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <g stroke="var(--navy)" stroke-opacity=".45" stroke-width="1.2" stroke-linecap="round">${TICKS}</g>
+        <text x="50" y="25" text-anchor="middle" font-size="11" font-weight="800" fill="var(--brand)">Biz</text>
+        <text x="50" y="83" text-anchor="middle" font-size="11" font-weight="800" fill="var(--navy)">A</text>
+        <g transform="translate(14 43) scale(.55)">${PIN}</g>
+        <g transform="translate(73 43) scale(.55)">${PIN}</g>
+        <g class="needle">
+          <path d="M50 28 50 50H44z" fill="#d99a1f"/>
+          <path d="M50 28 56 50H50z" fill="var(--gold)"/>
+          <path d="M50 72 44 50H50z" fill="var(--navy)"/>
+          <path d="M50 72 50 50H56z" fill="#0b1440"/>
+        </g>
+        <circle cx="50" cy="50" r="5" fill="#fff" stroke="var(--navy)" stroke-width="2"/>
+        <circle cx="50" cy="50" r="2" fill="var(--gold)"/>
+      </svg>`
+
+    const header = (guest) => `
+      <header class="app-header">
+        <img src="../../frontend/src/assets/logo-white.png" alt="AsikaGo" />
+        <div class="user">
+          <span class="avatar">${icon('user')}</span>
+          <span class="email">${guest ? 'Guest' : 'juan.delacruz@gmail.com'}</span>
+          <a class="btn-signout" href="#">${icon('logout')}Sign Out</a>
+        </div>
+      </header>`
+
+    const guestBanner = `
+      <div class="guest">
+        <p>This is your roadmap preview. Save it with Google so you don't lose it.</p>
+        <a class="btn-google" href="#">${GOOGLE_G}Save with Google</a>
+      </div>`
+
+    const startedHint = `<p class="hint">${icon('info')}Already done some steps? You'll be able to mark them as done soon.</p>`
+
+    const route = () => `
+      <div class="route">
+        <div class="pin pin-start"><span class="pin-dot">${icon('check')}</span><div class="pin-card"><div><b>Point A – Profile saved</b><span>You told us about your business.</span></div><span class="chip">Done</span></div></div>
+        <ol class="steps">
+        ${STEPS.map(([name, agency, note], i) => `
+        <li>
+          <a class="step-row" href="#">
+            <span class="num"><span class="sr-only">Step </span>${i + 1}</span>
+            <span class="step-card">
+              <span class="step-text">
+                <span class="step-name" style="display:block">${name}</span>
+                <span class="step-agency" style="display:block">${agency}</span>
+                ${note ? `<span class="tag">${icon('info')}${note}</span>` : ''}
+              </span>
+              <span class="chev">${icon('chev')}</span>
+            </span>
+          </a>
+        </li>`).join('')}
+        </ol>
+        <div class="pin pin-end"><span class="pin-dot">${icon('flag')}</span><div class="pin-card"><div><b><em>Biz</em> – Registered</b><span>Your destination.</span></div></div></div>
+      </div>`
+
+    const roadmap = ({ guest = false, started = false } = {}) => `
+      ${header(guest)}
+      <div class="page"><div class="container">
+        ${guest ? guestBanner : ''}
+        <div>
+          <h1>Your registration roadmap:</h1>
+          <p class="subtitle">Up to 10 steps to register your Food and Beverage business in Pasig City.</p>
+          ${started ? startedHint : ''}
+        </div>
+        <a class="btn-primary" href="#">See step 1${icon('arrow')}</a>
+        ${route()}
+      </div></div>`
+
+    const loading = () => `${header(false)}
+      <div class="centered" role="status">
+        ${COMPASS}
+        <h1>Finding your route…</h1>
+        <p>We're putting your registration steps in order.</p>
+        <div class="trip" aria-hidden="true"><span class="trip-end a">A</span><span class="trip-line"><span class="trip-dot"></span></span><span class="trip-end biz">Biz</span></div>
+      </div>`
+
+    const noProfile = () => `${header(false)}
+      <div class="centered">
+        <span class="state-icon gold">${icon('clipboard')}</span>
+        <h1>Answer a few questions first</h1>
+        <p>We need to know about your business to build your roadmap.</p>
+        <a class="btn-primary" href="#">Answer the questions${icon('arrow')}</a>
+      </div>`
+
+    const error = () => `${header(false)}
+      <div class="centered">
+        <span class="state-icon red">${icon('alert')}</span>
+        <h1>Something went wrong.</h1>
+        <p>We couldn't load your roadmap. Check your connection and try again.</p>
+        <a class="btn-primary" href="#">${icon('retry')}Try again</a>
+      </div>`
+
+    const frame = (label, size, body) => `
+      <div><p class="frame-label">${label}</p><div class="frame-${size} is-${size}">${body}</div></div>`
+
+    // [title, frames[[label, size, renderer]], notes html]
+    const STATES = [
+      ['1. Normal (Google user, Planning)', [
+        ['Normal · Mobile 360', 'mobile', () => roadmap()],
+        ['Normal · Desktop 1280', 'desktop', () => roadmap()],
+      ], `<ul>
+        <li>Page: <code>bg-cream px-6 py-8 md:px-8 md:py-12</code>, column <code>mx-auto max-w-3xl flex flex-col gap-6</code>.</li>
+        <li>Title <code>text-navy text-3xl md:text-4xl font-extrabold</code>. Subtitle: <code>Up to {steps.length} steps to register your {categoryName} business in {cityName} City.</code> "Up to", because steps with a <code>conditionNote</code> may not apply. The API sends <code>cityName</code> as "Pasig", so "City" is added in the text.</li>
+        <li>"See step 1" is the one main action: <code>Button</code> <code>h-11 rounded-full</code>, full width on mobile, <code>Link to="/roadmap/steps/1"</code>.</li>
+        <li>Route line: a gold-on-cream version of the My Business route card's line (that card uses <code>border-white/50</code> on blue with <code>size-6</code> dots). Here: <code>border-l-2 border-dashed border-gold/70</code>, with <code>size-8</code> dots. Point A and Biz pins reuse that card's wording.</li>
+        <li>Point A: <code>Card</code>-shaped box <code>rounded-xl border border-gold/60 bg-gold/15 px-4 py-3</code> with a <code>bg-gold text-navy rounded-full text-xs font-bold</code> "Done" chip. Biz: <code>rounded-xl bg-brand text-white shadow-lg</code>, "Biz" in <code>text-gold</code>, dot <code>bg-brand text-white ring-3 ring-gold</code>.</li>
+        <li>Point A and Biz pins sit outside the <code>&lt;ol&gt;</code>, so screen readers count 10 steps, not 12.</li>
+        <li>Each step is one <code>Link to="/roadmap/steps/{number}"</code> wrapping the number badge and a <code>Card</code>. No <code>aria-label</code>: the link's own text (step, name, agency, tag) is read out, with <code>&lt;span className="sr-only"&gt;Step &lt;/span&gt;</code> before the number. Min height 44 px.</li>
+        <li>Hover and keyboard focus (<code>group</code> on the Link): card gets <code>group-hover:border-brand group-hover:ring-3 group-hover:ring-brand/35</code> (same for <code>group-focus-visible:</code>). Number badge flips to <code>group-hover:bg-white group-hover:text-brand</code> with <code>ring-2 ring-brand</code> plus the same soft glow. Add <code>transition-colors</code>.</li>
+        <li>Tag shows <code>conditionNote</code> as is (it wraps, never truncates). Hidden when null.</li>
+        <li>Step text is the API's <code>name</code> and <code>agency</code>. The sample agency text is spelled out. The seed (RS-003-01) must spell it out too.</li>
+        <li><b>For the RS-003-02 clarity review:</b> the research seed names "FSIC", "UBAF" and "BOSS" are jargon (writing rule 1). The names are shown as they are because they come from the seed. Step 8's agency ends with "and others as needed", as in the research. CENRO is Unverified there, so the seed should confirm it or say "Confirm this at the office".</li>
+        <li><b>Header change:</b> with the live <code>SiteHeader</code> sizes, "Sign Out" was cut off at 360 px. The mobile frames use a compact version: <code>gap-2</code>, button <code>px-3 gap-1.5 text-[13px]</code>, icon <code>size-3.5</code>, still <code>h-11</code>. Use <code>sm:</code> to keep the current sizes from 640 px up.</li>
+      </ul>`],
+      ['2. Guest (anonymous user)', [
+        ['Guest · Mobile 360', 'mobile', () => roadmap({ guest: true })],
+        ['Guest · Desktop 1280', 'desktop', () => roadmap({ guest: true })],
+      ], `<ul>
+        <li>Banner shows only when <code>user.is_anonymous</code> (US-002-FE-01). Google users never see it.</li>
+        <li>Styling matches the My Business GuestBanner: <code>rounded-xl border border-brand/30 bg-brand/5 p-4 md:flex-row md:p-5</code>.</li>
+        <li>The button is the existing <code>GoogleButton</code>. It hard-codes "Continue with Google", so US-002-FE-01 should add a label prop (for example <code>children</code>) to show "Save with Google".</li>
+        <li>Linking uses the shared <code>useLinkGoogle</code> hook from US-002-FE-01. <code>redirectTo</code> should be <code>/roadmap</code>, so the guest comes back to the same screen.</li>
+        <li>The main action stays "See step 1" (writing rule 3). "Save with Google" is a secondary action inside the banner. Its dark style is fixed by Google's branding rules, so the banner's tinted box is what sets it apart.</li>
+      </ul>`],
+      ['3. Started (registration status = Started)', [
+        ['Started · Mobile 360', 'mobile', () => roadmap({ started: true })],
+        ['Started · Desktop 1280', 'desktop', () => roadmap({ started: true })],
+        ['Guest + Started · Mobile 360', 'mobile', () => roadmap({ guest: true, started: true })],
+      ], `<ul>
+        <li>Hint shows only when <code>registrationStatus === "Started"</code> (D12). The steps stay the same.</li>
+        <li>Hint: <code>flex gap-2 rounded-lg bg-gold/15 px-3 py-2 text-sm</code> with a lucide <code>Info</code> icon in <code>text-brand</code>.</li>
+        <li>Guest + Started: the guest banner stays on top, because it protects the user's data. The hint stays under the subtitle.</li>
+      </ul>`],
+      ['4. Loading', [
+        ['Loading · Mobile 360', 'mobile', loading],
+        ['Loading · Desktop 1280', 'desktop', loading],
+      ], `<ul>
+        <li>Compass loader: an inline SVG (viewBox 100, shown at <code>size-30</code>, 120 px, with <code>drop-shadow-lg</code>). White face with a <code>stroke-brand</code> ring, a dashed gold inner ring (the route-line motif) and fine navy ticks. "Biz" (brand blue) sits at the top and "A" (navy) at the bottom, with lucide <code>MapPin</code> route stops on the left and right. The needle is two-tone: gold tip, navy tail, with a darker shade on one side of each. Only the needle (<code>&lt;g&gt;</code>) animates: one turn every 1.8 s, overshooting to 385° and settling back to 360°, so it always lands pointing at Biz.</li>
+        <li>Put it inside <code>FullPageLoader</code> in place of the <code>Loader2</code> spinner, so every full-page load gets it. Keep <code>role="status"</code>.</li>
+        <li>Under the compass: title "Finding your route…" (<code>text-navy text-xl font-bold</code>), then the line "We're putting your registration steps in order." (<code>text-muted-foreground text-sm</code>). The visible text replaces the sr-only label. The line is roadmap-specific, so give <code>FullPageLoader</code> an optional <code>message</code> prop and show nothing when it's not passed.</li>
+        <li>Route bar (<code>aria-hidden</code>, 220 px): an "A" chip (<code>bg-navy</code>), a dashed gold line with a gold dot travelling from A to Biz every 1.8 s, in time with the needle, and a "Biz" chip (<code>bg-brand</code>).</li>
+        <li><code>motion-reduce:animate-none</code> on the needle and the travelling dot, so users who ask for less motion see a still compass.</li>
+      </ul>`],
+      ['5. No business profile (API 404)', [
+        ['No profile · Mobile 360', 'mobile', noProfile],
+        ['No profile · Desktop 1280', 'desktop', noProfile],
+      ], `<ul>
+        <li>Same <code>Centered</code> layout as <code>PageStates.tsx</code>. <code>Centered</code> isn't exported today, so export it and build this screen inline in the roadmap page. Don't create a new state component. Icon is lucide <code>ClipboardList</code> in <code>bg-gold/20 text-brand</code>, like <code>NotFoundPage</code>.</li>
+        <li>Button: <code>Link to="/assessment"</code>, "Answer the questions".</li>
+        <li><b>For Seth to decide:</b> the API contract (Section 4) says the frontend redirects to <code>/assessment</code> on 404, but this ticket asks for this screen. The screen tells the user why they were sent away, so this design prefers the screen.</li>
+      </ul>`],
+      ['6. Error', [
+        ['Error · Mobile 360', 'mobile', error],
+        ['Error · Desktop 1280', 'desktop', error],
+      ], `<ul>
+        <li>Same layout as <code>FullPageError</code>. The body text names the roadmap.</li>
+        <li><b>For Seth to decide:</b> the ticket says "Try again", but <code>FullPageError</code> says "Retry". Its body text is also fixed ("We couldn't load this page."). Either change the shared label to "Try again" and keep the generic body text, or add an optional <code>message</code> prop for "We couldn't load your roadmap." Don't make a copy of the component.</li>
+      </ul>`],
+    ]
+
+    document.getElementById('states').innerHTML = STATES.map(([title, frames, notes]) => `
+      <section class="state">
+        <h2>${title}</h2>
+        <div class="frames">${frames.map(([l, s, r]) => frame(l, s, r())).join('')}</div>
+        <div class="notes">${notes}</div>
+      </section>`).join('')
+  </script>
+</body>
+</html>
