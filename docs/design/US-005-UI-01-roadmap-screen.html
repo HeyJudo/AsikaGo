@@ -123,8 +123,8 @@
     .centered p { color: var(--muted-foreground); font-size: 14px; max-width: 384px; line-height: 1.5; }
     .centered .btn-primary { width: auto; align-self: center; }
     /* Compass loader: the face stays still, the needle spins and settles like a real compass. */
-    .compass { width: 72px; height: 72px; }
-    .needle { transform-box: view-box; transform-origin: 32px 32px; animation: needle 1.8s cubic-bezier(.45,0,.25,1) infinite; }
+    .compass { width: 120px; height: 120px; filter: drop-shadow(0 6px 14px rgba(20,33,91,.18)); }
+    .needle { transform-box: view-box; transform-origin: 50px 50px; animation: needle 1.8s cubic-bezier(.45,0,.25,1) infinite; }
     @keyframes needle { 0% { transform: rotate(0deg); } 65% { transform: rotate(385deg); } 82% { transform: rotate(350deg); } 100% { transform: rotate(360deg); } }
     @media (prefers-reduced-motion: reduce) { .needle { animation: none; } }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
@@ -169,15 +169,28 @@
     const icon = (name, cls = 'i') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`
     const GOOGLE_G = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>'
 
+    // Compass loader. viewBox 100. Biz at the top, A at the bottom, map pins on the sides.
+    const TICKS = Array.from({ length: 24 }, (_, i) => i * 15)
+      .filter((d) => d % 90 > 20 && d % 90 < 70 || d % 90 === 45)
+      .map((d) => `<line x1="50" y1="12" x2="50" y2="${d % 45 ? 15 : 17}" transform="rotate(${d} 50 50)"/>`).join('')
+    const PIN = '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" fill="var(--gold)" stroke="var(--navy)" stroke-width="2"/><circle cx="12" cy="10" r="3" fill="#fff" stroke="var(--navy)" stroke-width="2"/>'
     const COMPASS = `
-      <svg class="compass" viewBox="0 0 64 64" aria-hidden="true">
-        <circle cx="32" cy="32" r="29" fill="#fff" stroke="var(--brand)" stroke-width="3"/>
-        <path d="M32 7v5M32 52v5M7 32h5M52 32h5" stroke="var(--navy)" stroke-width="2.5" stroke-linecap="round"/>
+      <svg class="compass" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="46" fill="#fff" stroke="var(--brand)" stroke-width="4"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <g stroke="var(--navy)" stroke-opacity=".45" stroke-width="1.2" stroke-linecap="round">${TICKS}</g>
+        <text x="50" y="25" text-anchor="middle" font-size="11" font-weight="800" fill="var(--brand)">Biz</text>
+        <text x="50" y="83" text-anchor="middle" font-size="11" font-weight="800" fill="var(--navy)">A</text>
+        <g transform="translate(14 43) scale(.55)">${PIN}</g>
+        <g transform="translate(73 43) scale(.55)">${PIN}</g>
         <g class="needle">
-          <path d="M32 12 38 32H26z" fill="var(--gold)"/>
-          <path d="M32 52 38 32H26z" fill="var(--navy)"/>
+          <path d="M50 28 50 50H44z" fill="#d99a1f"/>
+          <path d="M50 28 56 50H50z" fill="var(--gold)"/>
+          <path d="M50 72 44 50H50z" fill="var(--navy)"/>
+          <path d="M50 72 50 50H56z" fill="#0b1440"/>
         </g>
-        <circle cx="32" cy="32" r="3.5" fill="#fff" stroke="var(--navy)" stroke-width="2"/>
+        <circle cx="50" cy="50" r="5" fill="#fff" stroke="var(--navy)" stroke-width="2"/>
+        <circle cx="50" cy="50" r="2" fill="var(--gold)"/>
       </svg>`
 
     const header = (guest) => `
@@ -297,7 +310,7 @@
         ['Loading · Mobile 360', 'mobile', loading],
         ['Loading · Desktop 1280', 'desktop', loading],
       ], `<ul>
-        <li>Compass loader: an inline SVG (64 viewBox, shown at <code>size-18</code>). White face with a <code>stroke-brand</code> ring, navy N/E/S/W ticks, a needle with a gold tip and navy tail, and a white center cap. Only the needle (<code>&lt;g&gt;</code>) animates: one turn every 1.8 s, overshooting to 385° and settling back to 360°.</li>
+        <li>Compass loader: an inline SVG (viewBox 100, shown at <code>size-30</code>, 120 px, with <code>drop-shadow-lg</code>). White face with a <code>stroke-brand</code> ring, a dashed gold inner ring (the route-line motif) and fine navy ticks. "Biz" (brand blue) sits at the top and "A" (navy) at the bottom, with lucide <code>MapPin</code> route stops on the left and right. The needle is two-tone: gold tip, navy tail, with a darker shade on one side of each. Only the needle (<code>&lt;g&gt;</code>) animates: one turn every 1.8 s, overshooting to 385° and settling back to 360°, so it always lands pointing at Biz.</li>
         <li>Put it inside <code>FullPageLoader</code> in place of the <code>Loader2</code> spinner, so every full-page load gets it. Keep <code>role="status"</code> and the sr-only label (<code>label="Loading your roadmap"</code>).</li>
         <li><code>motion-reduce:animate-none</code> on the needle, so users who ask for less motion see a still compass.</li>
       </ul>`],
