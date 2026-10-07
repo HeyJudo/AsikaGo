@@ -47,3 +47,26 @@ jobs:
       - name: Frontend build
         working-directory: frontend
         run: npm run build
+
+  migrate-db:
+    # Runs after a merge to main. Render's "After CI Checks Pass" waits for this job,
+    # so the schema is updated before the new API goes live.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: AsikaGo
+    concurrency: migrate-db
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Apply EF migrations
+        working-directory: backend
+        env:
+          DB_CONNECTION: ${{ secrets.DB_CONNECTION }}
+        run: |
+          dotnet tool restore
+          dotnet ef database update --project src/AsikaGo.Api --connection "$DB_CONNECTION"
