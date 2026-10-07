@@ -69,4 +69,5 @@ jobs:
           DB_CONNECTION: ${{ secrets.DB_CONNECTION }}
         run: |
           dotnet tool restore
-          dotnet ef database update --project src/AsikaGo.Api --connection "$DB_CONNECTION"
+          dotnet build src/AsikaGo.Api
+          dotnet ef database update --project src/AsikaGo.Api --no-build --connection "$DB_CONNECTION"
