@@ -115,10 +115,6 @@
     /* Full-page states (PageStates.tsx Centered) */
     .centered { min-height: 560px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 32px; text-align: center; }
     .is-desktop .centered { min-height: 640px; }
-    .state-icon { width: 64px; height: 64px; border-radius: 999px; display: grid; place-items: center; }
-    .state-icon svg.i { width: 32px; height: 32px; }
-    .state-icon.gold { background: rgba(241,177,50,.2); color: var(--brand); }
-    .state-icon.red { background: rgba(231,0,11,.1); color: var(--destructive); }
     .centered h1 { font-size: 20px; font-weight: 700; }
     .centered p { color: var(--muted-foreground); font-size: 14px; max-width: 384px; line-height: 1.5; }
     .centered .btn-primary { width: auto; align-self: center; }
@@ -133,7 +129,13 @@
     .trip-line { flex: 1; position: relative; border-top: 2px dashed var(--gold); }
     .trip-dot { position: absolute; top: -6px; left: 0; width: 10px; height: 10px; border-radius: 999px; background: var(--gold); box-shadow: 0 0 0 3px rgba(241,177,50,.3); animation: travel 1.8s ease-in-out infinite; }
     @keyframes travel { from { left: 0; } to { left: calc(100% - 10px); } }
-    @media (prefers-reduced-motion: reduce) { .needle, .trip-dot { animation: none; } }
+    .scene { width: 260px; height: auto; filter: drop-shadow(0 6px 14px rgba(20,33,91,.12)); }
+    .light { animation: blink 1.2s steps(1) infinite; }
+    .light-2 { animation-delay: .6s; }
+    @keyframes blink { 50% { opacity: .2; } }
+    .pulse { transform-box: fill-box; transform-origin: center; animation: pulse 1.8s ease-out infinite; }
+    @keyframes pulse { from { transform: scale(1); opacity: .9; } to { transform: scale(1.9); opacity: 0; } }
+    @media (prefers-reduced-motion: reduce) { .needle, .trip-dot, .light, .pulse { animation: none; } }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
   </style>
 </head>
@@ -166,10 +168,8 @@
       chev: '<path d="m9 18 6-6-6-6"/>',
       arrow: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
       info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
-      alert: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
       loader: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
       retry: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
-      clipboard: '<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>',
       user: '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
       logout: '<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>',
     }
@@ -261,17 +261,68 @@
         <div class="trip" aria-hidden="true"><span class="trip-end a">A</span><span class="trip-line"><span class="trip-dot"></span></span><span class="trip-end biz">Biz</span></div>
       </div>`
 
+    // No-profile illustration: the route to Biz is there, but the starting point A is still empty.
+    const NO_START = `
+      <svg class="scene" viewBox="0 0 260 150" aria-hidden="true">
+        <rect x="4" y="4" width="252" height="142" rx="18" fill="#fff" stroke="var(--border)"/>
+        <g fill="none" stroke="var(--gold)" stroke-width="3" stroke-dasharray="7 6" stroke-linecap="round">
+          <path d="M52 112 Q 68 111 80 104"/>
+          <path d="M86 96 Q 94 88 100 78" transform="rotate(-24 93 87) translate(2 12)"/>
+          <path d="M160 54 Q 172 50 184 48" transform="rotate(-12 172 51) translate(0 -5)"/>
+          <path d="M192 45 Q 198 43 202 42"/>
+        </g>
+        <g stroke="var(--gold)" stroke-width="3" stroke-linecap="round" opacity=".8">
+          <path d="M88 122l7-3"/><path d="M104 112l4 6"/><path d="M168 74l6 3"/><path d="M186 66l3-6"/>
+        </g>
+        <rect x="200" y="24" width="44" height="28" rx="14" fill="var(--brand)"/>
+        <text x="222" y="43" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">Biz</text>
+        <ellipse cx="130" cy="92" rx="26" ry="3.5" fill="var(--navy)" opacity=".15"/>
+        <rect x="108" y="31" width="44" height="54" rx="7" fill="#fff" stroke="var(--navy)" stroke-width="2.5"/>
+        <rect x="120" y="25" width="20" height="10" rx="3" fill="var(--navy)"/>
+        <g fill="none" stroke-width="2" stroke-linecap="round">
+          <rect x="115" y="44" width="7" height="7" rx="1.5" stroke="var(--brand)"/><path d="M127 47.5h18" stroke="var(--navy)" stroke-opacity=".35"/>
+          <rect x="115" y="57" width="7" height="7" rx="1.5" stroke="var(--brand)"/><path d="M127 60.5h18" stroke="var(--navy)" stroke-opacity=".35"/>
+          <rect x="115" y="70" width="7" height="7" rx="1.5" stroke="var(--brand)"/><path d="M127 73.5h12" stroke="var(--navy)" stroke-opacity=".35"/>
+        </g>
+        <circle class="pulse" cx="36" cy="112" r="14" fill="none" stroke="var(--gold)" stroke-width="3"/>
+        <circle cx="36" cy="112" r="14" fill="#fff" stroke="var(--navy)" stroke-width="2" stroke-dasharray="4 3"/>
+        <text x="36" y="117" text-anchor="middle" font-size="14" font-weight="800" fill="var(--navy)" opacity=".4">A</text>
+      </svg>`
+
     const noProfile = () => `${header(false)}
       <div class="centered">
-        <span class="state-icon gold">${icon('clipboard')}</span>
+        ${NO_START}
         <h1>Answer a few questions first</h1>
         <p>We need to know about your business to build your roadmap.</p>
         <a class="btn-primary" href="#">Answer the questions${icon('arrow')}</a>
       </div>`
 
+    // Error illustration (shared FullPageError): the route from A to Biz, blocked by a road barrier.
+    const ROADBLOCK = `
+      <svg class="scene" viewBox="0 0 260 150" aria-hidden="true">
+        <defs>
+          <clipPath id="before-block"><rect width="118" height="150"/></clipPath>
+          <pattern id="block-stripes" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="12" fill="var(--destructive)"/></pattern>
+        </defs>
+        <rect x="4" y="4" width="252" height="142" rx="18" fill="#fff" stroke="var(--border)"/>
+        <path d="M36 112 C 84 112, 92 52, 140 56 S 196 40, 222 38" fill="none" stroke="var(--gold)" stroke-width="3" stroke-dasharray="7 6" stroke-linecap="round" opacity=".3"/>
+        <path d="M36 112 C 84 112, 92 52, 140 56 S 196 40, 222 38" fill="none" stroke="var(--gold)" stroke-width="3" stroke-dasharray="7 6" stroke-linecap="round" clip-path="url(#before-block)"/>
+        <circle cx="36" cy="112" r="14" fill="var(--navy)"/>
+        <text x="36" y="117" text-anchor="middle" font-size="14" font-weight="800" fill="#fff">A</text>
+        <g opacity=".45"><rect x="200" y="24" width="44" height="28" rx="14" fill="var(--brand)"/>
+        <text x="222" y="43" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">Biz</text></g>
+        <ellipse cx="130" cy="102" rx="34" ry="3.5" fill="var(--navy)" opacity=".15"/>
+        <path d="M110 74 104 100M150 74l6 26M112 58v-7M148 58v-7" stroke="var(--navy)" stroke-width="3" stroke-linecap="round"/>
+        <circle class="light" cx="112" cy="46" r="5" fill="var(--destructive)"/>
+        <circle class="light light-2" cx="148" cy="46" r="5" fill="var(--destructive)"/>
+        <rect x="98" y="58" width="64" height="18" rx="4" fill="#fff"/>
+        <rect x="98" y="58" width="64" height="18" rx="4" fill="url(#block-stripes)"/>
+        <rect x="98" y="58" width="64" height="18" rx="4" fill="none" stroke="var(--navy)" stroke-width="2"/>
+      </svg>`
+
     const error = () => `${header(false)}
       <div class="centered">
-        <span class="state-icon red">${icon('alert')}</span>
+        ${ROADBLOCK}
         <h1>Something went wrong.</h1>
         <p>We couldn't load your roadmap. Check your connection and try again.</p>
         <a class="btn-primary" href="#">${icon('retry')}Try again</a>
@@ -332,7 +383,7 @@
         ['No profile · Mobile 360', 'mobile', noProfile],
         ['No profile · Desktop 1280', 'desktop', noProfile],
       ], `<ul>
-        <li>Same <code>Centered</code> layout as <code>PageStates.tsx</code>. <code>Centered</code> isn't exported today, so export it and build this screen inline in the roadmap page. Don't create a new state component. Icon is lucide <code>ClipboardList</code> in <code>bg-gold/20 text-brand</code>, like <code>NotFoundPage</code>.</li>
+        <li>Same <code>Centered</code> layout as <code>PageStates.tsx</code>. <code>Centered</code> isn't exported today, so export it and build this screen inline in the roadmap page. Don't create a new state component. In place of an icon: an inline SVG (<code>aria-hidden</code>, 260 px wide) in the same style as the error screen. A white card shows the route to the "Biz" chip still under construction: the dashed gold route is broken into 4 pieces knocked out of line (two of them rotated and shifted), with gaps between them and 4 loose gold dashes lying beside the path. The "A" spot is still empty: a dashed navy circle with a faded "A" and a gold ring that pulses outward every 1.8 s. A question sheet (navy clipboard with 3 empty boxes, with a soft ground shadow) stands in the middle of the route and blocks it, the same way the barrier does on the error screen. The message is "answer the questions to set your starting point". Add <code>motion-reduce:animate-none</code> on the ring. It's only used on this screen, so keep it in the roadmap feature folder.</li>
         <li>Button: <code>Link to="/assessment"</code>, "Answer the questions".</li>
         <li><b>For Seth to decide:</b> the API contract (Section 4) says the frontend redirects to <code>/assessment</code> on 404, but this ticket asks for this screen. The screen tells the user why they were sent away, so this design prefers the screen.</li>
       </ul>`],
@@ -341,6 +392,7 @@
         ['Error · Desktop 1280', 'desktop', error],
       ], `<ul>
         <li>Same layout as <code>FullPageError</code>. The body text names the roadmap.</li>
+        <li>In place of the red round icon: an inline SVG (<code>aria-hidden</code>, 260 px wide) in the same style as the step not-found screen. A white card shows the dashed gold route from the "A" chip, blocked halfway by a road barrier with red stripes and two red lights that blink in turn. The route past the barrier and the "Biz" chip are faded. Add <code>motion-reduce:animate-none</code> on the lights. Put it inside the shared <code>FullPageError</code>, so every page that fails to load shows the same screen. The roadmap (US-005-UI-01) and step detail (US-006-UI-01) designs show the same one.</li>
         <li><b>For Seth to decide:</b> the ticket says "Try again", but <code>FullPageError</code> says "Retry". Its body text is also fixed ("We couldn't load this page."). Either change the shared label to "Try again" and keep the generic body text, or add an optional <code>message</code> prop for "We couldn't load your roadmap." Don't make a copy of the component.</li>
       </ul>`],
     ]
