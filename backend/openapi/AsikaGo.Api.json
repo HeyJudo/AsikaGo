@@ -107,6 +107,56 @@
           }
         }
       }
+    },
+    "/api/roadmap": {
+      "get": {
+        "tags": [
+          "RoadmapEndpoints"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoadmapResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/roadmap/steps/{number}": {
+      "get": {
+        "tags": [
+          "RoadmapEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoadmapStepResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -255,6 +305,104 @@
           "Started"
         ]
       },
+      "RequirementResponse": {
+        "required": [
+          "id",
+          "text",
+          "source"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "text": {
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceResponse"
+          }
+        }
+      },
+      "RoadmapResponse": {
+        "required": [
+          "id",
+          "userId",
+          "createdAt",
+          "updatedAt",
+          "steps"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoadmapStepResponse"
+            }
+          }
+        }
+      },
+      "RoadmapStepResponse": {
+        "required": [
+          "number",
+          "title",
+          "description",
+          "status",
+          "requirements",
+          "estimatedHours"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StepStatus"
+          },
+          "requirements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequirementResponse"
+            }
+          },
+          "estimatedHours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "SaveBusinessProfileRequest": {
         "required": [
           "businessName",
@@ -288,6 +436,29 @@
             ]
           }
         }
+      },
+      "SourceResponse": {
+        "required": [
+          "type",
+          "description"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "StepStatus": {
+        "enum": [
+          "Planned",
+          "Started",
+          "Completed",
+          "Locked"
+        ]
       }
     }
   },
@@ -300,6 +471,9 @@
     },
     {
       "name": "AssessmentEndpoints"
+    },
+    {
+      "name": "RoadmapEndpoints"
     }
   ]
 }

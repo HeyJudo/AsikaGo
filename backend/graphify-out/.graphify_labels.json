@@ -1,0 +1,23 @@
+{
+  "0": "RoadmapRule",
+  "1": ".PutBusinessProfile",
+  "2": "AsikaGo.Api.Data",
+  "3": ".GetStepDetails",
+  "4": "AssessmentTests.cs",
+  "5": "AssessmentTests",
+  "6": "AsikaGo.Tests.csproj",
+  "7": "HealthAndAuthTests",
+  "8": "Profile",
+  "9": "AppDbContext",
+  "10": "http",
+  "11": "RoadmapProgress",
+  "12": "BusinessProfile",
+  "13": "InitialSchema",
+  "14": "Core Concepts",
+  "15": "RequirementProgress",
+  "16": ".OnModelCreating",
+  "17": "UserRoadmap",
+  "18": "AuthExtensions.cs",
+  "19": ".BuildModel",
+  "20": "City"
+}

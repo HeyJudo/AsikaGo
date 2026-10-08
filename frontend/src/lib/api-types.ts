@@ -167,6 +167,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/roadmap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RoadmapResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/roadmap/steps/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    number: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RoadmapStepResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -208,6 +280,33 @@ export interface components {
         };
         /** @enum {unknown} */
         RegistrationStatus: "Planning" | "Started";
+        RequirementResponse: {
+            /** Format: uuid */
+            id: string;
+            text: string;
+            source: components["schemas"]["SourceResponse"];
+        };
+        RoadmapResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            userId: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            steps: components["schemas"]["RoadmapStepResponse"][];
+        };
+        RoadmapStepResponse: {
+            /** Format: int32 */
+            number: number | string;
+            title: string;
+            description: string;
+            status: components["schemas"]["StepStatus"];
+            requirements: components["schemas"]["RequirementResponse"][];
+            /** Format: int32 */
+            estimatedHours: number | string;
+        };
         SaveBusinessProfileRequest: {
             businessName: null | string;
             businessType: string;
@@ -215,6 +314,12 @@ export interface components {
             categoryId: string;
             registrationStatus: null | components["schemas"]["RegistrationStatus"];
         };
+        SourceResponse: {
+            type: string;
+            description: string;
+        };
+        /** @enum {unknown} */
+        StepStatus: "Planned" | "Started" | "Completed" | "Locked";
     };
     responses: never;
     parameters: never;
