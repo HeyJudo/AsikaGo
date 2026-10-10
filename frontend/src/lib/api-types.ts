@@ -192,6 +192,15 @@ export interface paths {
                         "application/json": components["schemas"]["RoadmapResponse"];
                     };
                 };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
             };
         };
         put?: never;
@@ -226,7 +235,16 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["RoadmapStepResponse"];
+                        "application/json": components["schemas"]["StepDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
             };
@@ -278,34 +296,45 @@ export interface components {
             email: null | string;
             isAnonymous: boolean;
         };
+        ProblemDetails: {
+            type?: null | string;
+            title?: null | string;
+            /** Format: int32 */
+            status?: null | number | string;
+            detail?: null | string;
+            instance?: null | string;
+        };
         /** @enum {unknown} */
         RegistrationStatus: "Planning" | "Started";
         RequirementResponse: {
             /** Format: uuid */
             id: string;
-            text: string;
+            name: string;
+            description: null | string;
+            appliesTo: null | string;
             source: components["schemas"]["SourceResponse"];
         };
         RoadmapResponse: {
             /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            userId: string;
+            roadmapId: string;
             /** Format: date-time */
             createdAt: string;
-            /** Format: date-time */
-            updatedAt: string;
+            businessType: string;
+            categoryName: string;
+            cityName: string;
+            registrationStatus: components["schemas"]["RegistrationStatus"];
             steps: components["schemas"]["RoadmapStepResponse"][];
         };
         RoadmapStepResponse: {
             /** Format: int32 */
             number: number | string;
-            title: string;
-            description: string;
-            status: components["schemas"]["StepStatus"];
-            requirements: components["schemas"]["RequirementResponse"][];
+            /** Format: uuid */
+            stepId: string;
+            name: string;
+            agency: string;
+            conditionNote: null | string;
             /** Format: int32 */
-            estimatedHours: number | string;
+            requirementCount: number | string;
         };
         SaveBusinessProfileRequest: {
             businessName: null | string;
@@ -315,11 +344,29 @@ export interface components {
             registrationStatus: null | components["schemas"]["RegistrationStatus"];
         };
         SourceResponse: {
-            type: string;
-            description: string;
+            name: string;
+            url: string;
+            /** Format: date */
+            dateVerified: string;
         };
-        /** @enum {unknown} */
-        StepStatus: "Planned" | "Started" | "Completed" | "Locked";
+        StepDetailResponse: {
+            /** Format: int32 */
+            number: number | string;
+            /** Format: int32 */
+            totalSteps: number | string;
+            /** Format: uuid */
+            stepId: string;
+            name: string;
+            agency: string;
+            description: string;
+            actions: string[];
+            conditionNote: null | string;
+            requirements: components["schemas"]["RequirementResponse"][];
+            /** Format: int32 */
+            previousNumber: null | number | string;
+            /** Format: int32 */
+            nextNumber: null | number | string;
+        };
     };
     responses: never;
     parameters: never;

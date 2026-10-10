@@ -123,6 +123,16 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         }
       }
@@ -150,7 +160,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RoadmapStepResponse"
+                  "$ref": "#/components/schemas/StepDetailResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -299,6 +319,44 @@
           }
         }
       },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "RegistrationStatus": {
         "enum": [
           "Planning",
@@ -308,7 +366,9 @@
       "RequirementResponse": {
         "required": [
           "id",
-          "text",
+          "name",
+          "description",
+          "appliesTo",
           "source"
         ],
         "type": "object",
@@ -317,8 +377,20 @@
             "type": "string",
             "format": "uuid"
           },
-          "text": {
+          "name": {
             "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "appliesTo": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "source": {
             "$ref": "#/components/schemas/SourceResponse"
@@ -327,19 +399,17 @@
       },
       "RoadmapResponse": {
         "required": [
-          "id",
-          "userId",
+          "roadmapId",
           "createdAt",
-          "updatedAt",
+          "businessType",
+          "categoryName",
+          "cityName",
+          "registrationStatus",
           "steps"
         ],
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "userId": {
+          "roadmapId": {
             "type": "string",
             "format": "uuid"
           },
@@ -347,9 +417,17 @@
             "type": "string",
             "format": "date-time"
           },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+          "businessType": {
+            "type": "string"
+          },
+          "categoryName": {
+            "type": "string"
+          },
+          "cityName": {
+            "type": "string"
+          },
+          "registrationStatus": {
+            "$ref": "#/components/schemas/RegistrationStatus"
           },
           "steps": {
             "type": "array",
@@ -362,11 +440,11 @@
       "RoadmapStepResponse": {
         "required": [
           "number",
-          "title",
-          "description",
-          "status",
-          "requirements",
-          "estimatedHours"
+          "stepId",
+          "name",
+          "agency",
+          "conditionNote",
+          "requirementCount"
         ],
         "type": "object",
         "properties": {
@@ -378,22 +456,23 @@
             ],
             "format": "int32"
           },
-          "title": {
+          "stepId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
             "type": "string"
           },
-          "description": {
+          "agency": {
             "type": "string"
           },
-          "status": {
-            "$ref": "#/components/schemas/StepStatus"
+          "conditionNote": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
-          "requirements": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RequirementResponse"
-            }
-          },
-          "estimatedHours": {
+          "requirementCount": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
@@ -439,26 +518,106 @@
       },
       "SourceResponse": {
         "required": [
-          "type",
-          "description"
+          "name",
+          "url",
+          "dateVerified"
         ],
         "type": "object",
         "properties": {
-          "type": {
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "dateVerified": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "StepDetailResponse": {
+        "required": [
+          "number",
+          "totalSteps",
+          "stepId",
+          "name",
+          "agency",
+          "description",
+          "actions",
+          "conditionNote",
+          "requirements",
+          "previousNumber",
+          "nextNumber"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalSteps": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "stepId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "agency": {
             "type": "string"
           },
           "description": {
             "type": "string"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "conditionNote": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "requirements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequirementResponse"
+            }
+          },
+          "previousNumber": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "nextNumber": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
-      },
-      "StepStatus": {
-        "enum": [
-          "Planned",
-          "Started",
-          "Completed",
-          "Locked"
-        ]
       }
     }
   },
