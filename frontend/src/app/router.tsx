@@ -1,17 +1,36 @@
 import { createBrowserRouter } from 'react-router'
+import { AppLayout } from '@/app/AppLayout'
 import { HomePage } from '@/features/auth/HomePage'
+import { SignInPage } from '@/features/auth/SignInPage'
 import { AssessmentPage } from '@/features/assessment/AssessmentPage'
+import { MyBusinessPage } from '@/features/assessment/MyBusinessPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
+import { FullPageError, NotFoundPage } from '@/components/PageStates'
 
 export const router = createBrowserRouter([
-  { path: '/', element: <HomePage /> },
   {
-    path: '/assessment',
-    element: (
-      <ProtectedRoute>
-        <AssessmentPage />
-      </ProtectedRoute>
-    ),
+    element: <AppLayout />,
+    errorElement: <FullPageError onRetry={() => window.location.reload()} />,
+    children: [
+      { index: true, element: <HomePage /> },
+      { path: 'sign-in', element: <SignInPage /> },
+      {
+        path: 'assessment',
+        element: (
+          <ProtectedRoute>
+            <AssessmentPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'my-business',
+        element: (
+          <ProtectedRoute>
+            <MyBusinessPage />
+          </ProtectedRoute>
+        ),
+      },
+      { path: '*', element: <NotFoundPage /> },
+    ],
   },
-  { path: '*', element: <p className="p-8 text-center">Page not found.</p> },
 ])

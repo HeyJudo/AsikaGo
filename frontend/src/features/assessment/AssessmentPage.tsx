@@ -1,17 +1,45 @@
-import { useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { AlertCircle } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate, useSearchParams } from 'react-router'
+import {
+  AlertCircle,
+  ArrowRight,
+  Building2,
+  ClipboardList,
+  Compass,
+  FileCheck2,
+  Loader2,
+  MapPin,
+  MapPinned,
+  Route,
+  ShoppingBag,
+  Store,
+  User,
+  UserRoundCheck,
+  Users,
+  UtensilsCrossed,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
 import { ApiError, apiFetch } from '@/lib/api'
+import { useBusinessProfile, type BusinessProfile } from '@/lib/queries'
 import type { components } from '@/lib/api-types'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { RadioGroup } from '@/components/ui/radio-group'
+import { ChoiceCard } from './ChoiceCard'
+import { RouteProgress } from './RouteProgress'
 
 type AssessmentOptions = components['schemas']['AssessmentOptionsResponse']
+type Field = 'businessName' | 'businessType' | 'categoryId' | 'registrationStatus'
+type Values = Record<Field, string>
+
+const STEPS = ['intro', 'name', 'type', 'category', 'status', 'review'] as const
+type Step = (typeof STEPS)[number]
+
+const PROGRESS_LABELS = ['Name', 'Type', 'Category', 'Status', 'Review']
 
 // Exact wording must match US-001-BE-03 validation messages
 const ERROR_MESSAGES = {
@@ -20,6 +48,14 @@ const ERROR_MESSAGES = {
   registrationStatus: 'Please tell us where you are in the process.',
   businessName: 'Business name must be 100 characters or less.',
 } as const
+
+const FIELD_STEP: Record<Field, Step> = {
+  businessName: 'name',
+  businessType: 'type',
+  categoryId: 'category',
+  registrationStatus: 'status',
+}
+const FIELD_ORDER: Field[] = ['businessName', 'businessType', 'categoryId', 'registrationStatus']
 
 // Wireframe copy, keyed by the exact API strings; unknown values fall back to the raw name
 const TYPE_DESCRIPTIONS: Record<string, string> = {
@@ -30,19 +66,37 @@ const TYPE_DESCRIPTIONS: Record<string, string> = {
     'Like a corporation, but owned by a single person. Gives you limited liability without needing co-founders.',
 }
 
-const STATUS_COPY: Record<string, { label: string; description: string }> = {
-  Planning: { label: "Planning — I haven't started yet", description: 'I want to know what I need before I begin.' },
+const TYPE_ICONS: Record<string, LucideIcon> = {
+  'Sole Proprietorship': User,
+  Partnership: Users,
+  Corporation: Building2,
+  'One Person Corporation': UserRoundCheck,
+}
+
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  'Food and Beverage': UtensilsCrossed,
+  Retail: ShoppingBag,
+  Services: Wrench,
+}
+
+const STATUS_COPY: Record<string, { label: string; description: string; icon: LucideIcon }> = {
+  Planning: { label: "Planning — I haven't started yet", description: 'I want to know what I need before I begin.', icon: Compass },
   Started: {
     label: "Started — I've done some papers already",
     description: "For example, I've registered my business name or got my barangay clearance.",
+    icon: FileCheck2,
   },
 }
 
-const OPTION_ROW = 'flex items-start gap-3 rounded-md border p-3 min-h-11 cursor-pointer font-normal leading-normal'
+const INTRO_ROWS = [
+  { icon: ClipboardList, text: 'Tell us about your business' },
+  { icon: MapPinned, text: "We match Pasig City's permits" },
+  { icon: Route, text: 'Get your step-by-step roadmap' },
+]
 
 function FieldError({ id, message }: { id: string; message: string }) {
   return (
-    <p id={id} className="flex items-center gap-1.5 text-sm text-destructive">
+    <p id={id} role="alert" className="mt-3 flex items-center gap-1.5 text-sm text-destructive">
       <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
       {message}
     </p>
@@ -56,55 +110,157 @@ function useAssessmentOptions() {
   })
 }
 
-export function AssessmentPage() {
-  const { data: options, isLoading, isError, refetch } = useAssessmentOptions()
+function firstFocusable(root: HTMLElement | null) {
+  return root?.querySelector<HTMLElement>('input, [role="radio"]') ?? null
+}
 
-  const [values, setValues] = useState({
+const slide = {
+  enter: (dir: number) => ({ opacity: 0, x: dir * 48 }),
+  center: { opacity: 1, x: 0, transition: { duration: 0.3, ease: 'easeOut' as const } },
+  exit: (dir: number) => ({ opacity: 0, x: dir * -48, transition: { duration: 0.15 } }),
+}
+
+// One screen. On mount focuses the first field (after a failed step) or the heading (screen readers announce it).
+function StepFrame({
+  title,
+  dir,
+  focusField,
+  children,
+}: {
+  title: string
+  dir: number
+  focusField: boolean
+  children: React.ReactNode
+}) {
+  const rootRef = useRef<HTMLDivElement>(null)
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    const target = focusField ? firstFocusable(rootRef.current) : null
+    ;(target ?? headingRef.current)?.focus()
+  }, [focusField])
+
+  return (
+    <motion.div ref={rootRef} custom={dir} variants={slide} initial="enter" animate="center" exit="exit">
+      <h1 ref={headingRef} tabIndex={-1} className="mb-2 text-2xl font-bold text-navy outline-none">
+        {title}
+      </h1>
+      {children}
+    </motion.div>
+  )
+}
+
+const BUTTON_PRIMARY = 'h-12 flex-1 rounded-xl bg-navy text-[15px] font-bold text-white hover:bg-navy/90'
+
+function Actions({ children }: { children: React.ReactNode }) {
+  return <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row">{children}</div>
+}
+
+function Tap({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div className="flex flex-1" whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}>
+      {children}
+    </motion.div>
+  )
+}
+
+export function AssessmentPage() {
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
+
+  const { data: options, isLoading: optionsLoading, isError: optionsError, refetch: refetchOptions } = useAssessmentOptions()
+  const { data: profile, isLoading: profileLoading, isError: profileError, refetch: refetchProfile } = useBusinessProfile()
+
+  const [values, setValues] = useState<Values>({
     businessName: '',
     businessType: '',
     categoryId: '',
     registrationStatus: '',
   })
 
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [prefilled, setPrefilled] = useState(false)
+  if (profile && !prefilled) {
+    setPrefilled(true)
+    setValues({
+      businessName: profile.businessName || '',
+      businessType: profile.businessType || '',
+      categoryId: profile.categoryId || '',
+      registrationStatus: profile.registrationStatus || '',
+    })
+  }
 
-  // Refs for focus management after failed submit — RadioGroup refs point to
-  // the wrapper div; we call .querySelector('button') to reach the first item.
-  const businessNameRef = useRef<HTMLInputElement>(null)
-  const businessTypeRef = useRef<HTMLDivElement>(null)
-  const categoryRef = useRef<HTMLButtonElement>(null)
-  const registrationStatusRef = useRef<HTMLDivElement>(null)
+  const [errors, setErrors] = useState<Partial<Record<Field, string>>>({})
+  const [saveNetworkError, setSaveNetworkError] = useState(false)
+  const [focusField, setFocusField] = useState(false)
+  const returnToReview = useRef(false)
 
-  function clearError(field: string) {
+  const isLoading = optionsLoading || profileLoading
+  const isError = optionsError || profileError
+  const ready = !isLoading && !isError && !!options
+
+  // Resolve the step: URL param, defaulted by saved profile, clamped to the first unanswered required step
+  const requested = params.get('step')
+  const requestedStep = STEPS.find((s) => s === requested)
+  let step: Step = requestedStep ?? (profile ? 'review' : 'intro')
+  if (profile && step === 'intro') step = 'review'
+  const missing = !values.businessType ? 'type' : !values.categoryId ? 'category' : !values.registrationStatus ? 'status' : null
+  if (missing && STEPS.indexOf(step) > STEPS.indexOf(missing)) step = missing
+  const stepIndex = STEPS.indexOf(step)
+
+  const urlOutOfSync = requested !== step && !(requested === null && step === 'intro')
+  useEffect(() => {
+    if (ready && urlOutOfSync) setParams({ step }, { replace: true })
+  }, [ready, urlOutOfSync, step, setParams])
+
+  // Direction of travel, derived while rendering
+  const [travel, setTravel] = useState({ index: stepIndex, dir: 1 })
+  if (travel.index !== stepIndex) setTravel({ index: stepIndex, dir: stepIndex > travel.index ? 1 : -1 })
+
+  function go(to: Step, replace = false) {
+    setFocusField(false)
+    if (to === 'review') returnToReview.current = false
+    setParams({ step: to }, { replace })
+  }
+
+  function next() {
+    go(returnToReview.current ? 'review' : STEPS[stepIndex + 1])
+  }
+
+  function edit(to: Step) {
+    returnToReview.current = true
+    go(to)
+  }
+
+  function clearError(field: Field) {
     setErrors((prev) => {
       if (!(field in prev)) return prev
       const next = { ...prev }
       delete next[field]
       return next
     })
+    setSaveNetworkError(false)
   }
 
-  function focusFirstError(errs: Record<string, string>) {
-    if (errs.businessName) {
-      businessNameRef.current?.focus()
-    } else if (errs.businessType) {
-      businessTypeRef.current?.querySelector('button')?.focus()
-    } else if (errs.categoryId) {
-      categoryRef.current?.focus()
-    } else if (errs.registrationStatus) {
-      registrationStatusRef.current?.querySelector('button')?.focus()
+  function setValue(field: Field, value: string) {
+    setValues((prev) => ({ ...prev, [field]: value }))
+  }
+
+  function fieldError(field: Field, v: Values) {
+    if (field === 'businessName') return v.businessName.length > 100 ? ERROR_MESSAGES.businessName : undefined
+    return v[field] ? undefined : ERROR_MESSAGES[field]
+  }
+
+  // Show errors and send the user to the earliest step that has one
+  function showErrors(errs: Partial<Record<Field, string>>) {
+    setErrors(errs)
+    const first = FIELD_ORDER.find((f) => errs[f])
+    if (!first) return
+    if (FIELD_STEP[first] === step) {
+      firstFocusable(document.getElementById('assessment-card'))?.focus()
+    } else {
+      go(FIELD_STEP[first])
+      setFocusField(true)
     }
-  }
-
-  function validate() {
-    const errs: Record<string, string> = {}
-
-    if (!values.businessType) errs.businessType = ERROR_MESSAGES.businessType
-    if (!values.categoryId) errs.categoryId = ERROR_MESSAGES.categoryId
-    if (!values.registrationStatus) errs.registrationStatus = ERROR_MESSAGES.registrationStatus
-    if (values.businessName.length > 100) errs.businessName = ERROR_MESSAGES.businessName
-
-    return errs
   }
 
   // Maps a 400 response to field errors; returns true if at least one was mapped.
@@ -112,214 +268,399 @@ export function AssessmentPage() {
     if (!(err instanceof ApiError) || err.status !== 400) return false
     try {
       const body = JSON.parse(err.body) as { errors?: Record<string, string[]> }
-      const serverErrors: Record<string, string> = {}
+      const serverErrors: Partial<Record<Field, string>> = {}
       for (const [field, messages] of Object.entries(body.errors ?? {})) {
-        if (messages[0]) serverErrors[field] = messages[0]
+        if (messages[0] && field in FIELD_STEP) serverErrors[field as Field] = messages[0]
       }
       if (Object.keys(serverErrors).length === 0) return false
-      setErrors(serverErrors)
-      focusFirstError(serverErrors)
+      showErrors(serverErrors)
       return true
     } catch {
       return false // unparseable 400 body
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  const saveMutation = useMutation({
+    mutationFn: (payload: Values) =>
+      apiFetch<BusinessProfile>('/api/business-profile', {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      }),
+    onSuccess: (saved) => {
+      // Seed the cache so /my-business doesn't see the stale null profile and bounce back
+      queryClient.setQueryData(['business-profile'], saved)
+      void navigate('/my-business')
+    },
+    onError: (err) => {
+      if (!showServerErrors(err)) setSaveNetworkError(true)
+    },
+  })
 
-    const clientErrors = validate()
-    if (Object.keys(clientErrors).length > 0) {
-      setErrors(clientErrors)
-      focusFirstError(clientErrors)
-      return
+  function validateStep(field: Field) {
+    const message = fieldError(field, values)
+    if (message) showErrors({ [field]: message })
+    return !message
+  }
+
+  function save() {
+    setSaveNetworkError(false)
+    const errs: Partial<Record<Field, string>> = {}
+    for (const f of FIELD_ORDER) {
+      const message = fieldError(f, values)
+      if (message) errs[f] = message
     }
+    if (Object.keys(errs).length > 0) return showErrors(errs)
+    saveMutation.mutate(values)
+  }
 
-    // FE-03: await apiFetch('/api/business-profile', { method: 'PUT', body: JSON.stringify(...) }); on error call showServerErrors(err), otherwise show the save-failed banner.
-    void showServerErrors // remove in FE-03 (keeps tsc noUnusedLocals happy until it is called)
+  const submitStep = (field: Field) => (e: React.FormEvent) => {
+    e.preventDefault()
+    if (validateStep(field)) next()
+  }
+
+  function choiceGroup(field: Field, label: string, children: React.ReactNode, cols = 'sm:grid-cols-2') {
+    return (
+      <>
+        <RadioGroup
+          className={`mt-6 grid grid-cols-1 gap-3 ${cols}`}
+          value={values[field]}
+          onValueChange={(value) => {
+            setValue(field, value)
+            clearError(field)
+          }}
+          aria-label={label}
+          aria-invalid={!!errors[field]}
+          aria-describedby={errors[field] ? `${field}-error` : undefined}
+        >
+          {children}
+        </RadioGroup>
+        {errors[field] && <FieldError id={`${field}-error`} message={errors[field]} />}
+      </>
+    )
+  }
+
+  const nextButton = (
+    <Tap>
+      <Button type="submit" className={BUTTON_PRIMARY}>
+        Next
+        <ArrowRight className="size-4" aria-hidden="true" />
+      </Button>
+    </Tap>
+  )
+
+  function renderStep() {
+    if (!options) return null
+    const categoryName = options.categories.find((c) => c.id === values.categoryId)?.name
+    const reviewRows: { label: string; value: string; to?: Step; muted?: boolean }[] = [
+      { label: 'Business name', value: values.businessName || 'Not set (optional)', to: 'name', muted: !values.businessName },
+      { label: 'Business type', value: values.businessType, to: 'type' },
+      { label: 'Category', value: categoryName ?? '', to: 'category' },
+      { label: 'City', value: 'Pasig City' },
+      { label: 'Status', value: STATUS_COPY[values.registrationStatus]?.label ?? values.registrationStatus, to: 'status' },
+    ]
+
+    switch (step) {
+      case 'intro':
+        return (
+          <StepFrame key={step} title="Let's map your route." dir={travel.dir} focusField={false}>
+            <p className="text-muted-foreground text-sm">
+              Answer 4 quick questions and we'll build your Pasig City registration roadmap.
+            </p>
+            <div className="my-6 flex items-center justify-between px-6" aria-hidden="true">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex flex-1 items-center first:flex-none last:flex-none">
+                  <motion.span
+                    initial={{ scale: 0, y: -8 }}
+                    animate={{ scale: 1, y: 0 }}
+                    transition={{ type: 'spring', stiffness: 420, damping: 18, delay: 0.25 + i * 0.25 }}
+                  >
+                    <MapPin className="size-8 fill-gold text-navy" strokeWidth={1.75} />
+                  </motion.span>
+                  {i < 2 && (
+                    <motion.span
+                      className="mx-2 h-0 flex-1 origin-left border-t-2 border-dashed border-gold"
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      transition={{ duration: 0.25, delay: 0.4 + i * 0.25 }}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+            <ul className="space-y-3">
+              {INTRO_ROWS.map(({ icon: Icon, text }, i) => (
+                <motion.li
+                  key={text}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.15 + i * 0.08 }}
+                  className="flex items-center gap-3 rounded-2xl bg-cream p-3 text-sm font-medium text-navy"
+                >
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white text-brand">
+                    <Icon className="size-5" aria-hidden="true" />
+                  </span>
+                  {text}
+                </motion.li>
+              ))}
+            </ul>
+            <p className="mt-4 text-center text-xs text-muted-foreground">About 1 minute · Pasig City only</p>
+            <Actions>
+              <Tap>
+                <Button type="button" className={BUTTON_PRIMARY} onClick={() => go('name')}>
+                  Let's go
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                </Button>
+              </Tap>
+            </Actions>
+          </StepFrame>
+        )
+
+      case 'name':
+        return (
+          <StepFrame key={step} title="What's your business called?" dir={travel.dir} focusField={focusField}>
+            <form onSubmit={submitStep('businessName')} noValidate>
+              <p id="businessName-help" className="text-sm text-muted-foreground">
+                You can use your own name if you haven't picked one yet. This won't be your official registered name.
+              </p>
+              <Input
+                id="businessName"
+                aria-label="Business name (optional)"
+                className="mt-6 h-12 rounded-xl bg-white text-base"
+                placeholder="e.g. Maria's Karinderya, Juan's Bakery…"
+                autoComplete="organization"
+                value={values.businessName}
+                onChange={(e) => {
+                  setValue('businessName', e.target.value)
+                  if (e.target.value.length <= 100) clearError('businessName')
+                }}
+                aria-describedby={errors.businessName ? 'businessName-help businessName-error' : 'businessName-help'}
+                aria-invalid={!!errors.businessName}
+              />
+              {errors.businessName && <FieldError id="businessName-error" message={errors.businessName} />}
+              <Actions>
+                <Tap>
+                  <Button type="button" variant="secondary" className="h-12 flex-1 rounded-xl text-[15px]" onClick={next}>
+                    Skip for now
+                  </Button>
+                </Tap>
+                {nextButton}
+              </Actions>
+            </form>
+          </StepFrame>
+        )
+
+      case 'type':
+        return (
+          <StepFrame key={step} title="What type of business is it?" dir={travel.dir} focusField={focusField}>
+            <form onSubmit={submitStep('businessType')} noValidate>
+              <p className="text-sm text-muted-foreground">Choose the structure that best fits how you run your business.</p>
+              {choiceGroup(
+                'businessType',
+                'Business type',
+                options.businessTypes.map((type, i) => (
+                  <ChoiceCard
+                    key={type}
+                    value={type}
+                    id={`type-${type}`}
+                    icon={TYPE_ICONS[type] ?? User}
+                    title={type}
+                    description={TYPE_DESCRIPTIONS[type]}
+                    selected={values.businessType === type}
+                    index={i}
+                    invalid={!!errors.businessType}
+                  />
+                )),
+              )}
+              <Actions>{nextButton}</Actions>
+            </form>
+          </StepFrame>
+        )
+
+      case 'category':
+        return (
+          <StepFrame key={step} title="What does your business do?" dir={travel.dir} focusField={focusField}>
+            <form onSubmit={submitStep('categoryId')} noValidate>
+              <p className="text-sm text-muted-foreground">
+                Pick the category that best describes what your business does. This helps us find the right permits for you.
+              </p>
+              {choiceGroup(
+                'categoryId',
+                'Business category',
+                options.categories.map((cat, i) => (
+                  <ChoiceCard
+                    key={cat.id}
+                    value={cat.id}
+                    id={`category-${cat.id}`}
+                    icon={CATEGORY_ICONS[cat.name] ?? Store}
+                    title={cat.name}
+                    description={cat.description ?? undefined}
+                    selected={values.categoryId === cat.id}
+                    index={i}
+                    invalid={!!errors.categoryId}
+                  />
+                )),
+              )}
+              <Actions>{nextButton}</Actions>
+            </form>
+          </StepFrame>
+        )
+
+      case 'status':
+        return (
+          <StepFrame key={step} title="Where are you in the process?" dir={travel.dir} focusField={focusField}>
+            <form onSubmit={submitStep('registrationStatus')} noValidate>
+              <p className="text-sm text-muted-foreground">
+                This helps us skip steps you've already done and show you what's next.
+              </p>
+              {choiceGroup(
+                'registrationStatus',
+                'Registration status',
+                options.registrationStatuses.map((status, i) => {
+                  const copy = STATUS_COPY[status]
+                  return (
+                    <ChoiceCard
+                      key={status}
+                      value={status}
+                      id={`status-${status}`}
+                      icon={copy?.icon ?? Compass}
+                      title={copy?.label ?? status}
+                      description={copy?.description}
+                      selected={values.registrationStatus === status}
+                      index={i}
+                      invalid={!!errors.registrationStatus}
+                    />
+                  )
+                }),
+                'sm:grid-cols-1',
+              )}
+              <Actions>{nextButton}</Actions>
+            </form>
+          </StepFrame>
+        )
+
+      case 'review':
+        return (
+          <StepFrame key={step} title="Here's your route." dir={travel.dir} focusField={false}>
+            {saveNetworkError && (
+              <Alert variant="destructive" className="mt-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>We couldn't save your answers.</AlertTitle>
+                <AlertDescription className="mt-2 flex flex-col items-start gap-3">
+                  Something went wrong on our end. Your answers are still here — don't refresh the page.
+                  <Button variant="outline" className="h-11" onClick={save} disabled={saveMutation.isPending}>
+                    Try again
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+            <p className="text-sm text-muted-foreground">Check your answers before we build your roadmap.</p>
+            <dl className="mt-4 divide-y divide-border rounded-2xl border bg-cream/50 px-4">
+              {reviewRows.map((row, i) => (
+                <motion.div
+                  key={row.label}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, delay: i * 0.05 }}
+                  className="flex min-h-14 items-center justify-between gap-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-brand">{row.label}</dt>
+                    <dd className={`break-words text-[15px] ${row.muted ? 'text-muted-foreground' : 'font-medium text-navy'}`}>
+                      {row.value}
+                    </dd>
+                  </div>
+                  {row.to && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-11 shrink-0 px-3 text-brand"
+                      aria-label={`Edit ${row.label.toLowerCase()}`}
+                      onClick={() => edit(row.to!)}
+                    >
+                      Edit
+                    </Button>
+                  )}
+                </motion.div>
+              ))}
+            </dl>
+            <motion.div className="mt-6" whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}>
+              <Button
+                type="button"
+                onClick={save}
+                disabled={saveMutation.isPending}
+                className="h-12 w-full rounded-xl bg-navy text-[15px] font-bold text-white hover:bg-navy/90"
+              >
+                {saveMutation.isPending ? (
+                  <>
+                    Saving…
+                    <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                  </>
+                ) : (
+                  <>
+                    Save and continue
+                    <ArrowRight className="size-4" aria-hidden="true" />
+                  </>
+                )}
+              </Button>
+            </motion.div>
+            <p className="mt-4 text-center text-sm text-muted-foreground">
+              <strong>Pasig City only</strong> for now. You can change your answers later.
+            </p>
+          </StepFrame>
+        )
+    }
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f9fc] flex flex-col items-center justify-start px-4 py-10">
-      <div className="w-full max-w-lg">
-        <h1 className="text-2xl font-bold text-[#1c2b3a] mb-2">Tell us about your business.</h1>
-        <p className="text-[#6b7a8d] mb-6 text-sm">
-          We'll use this to build your registration roadmap — it only takes a minute.
-        </p>
-
+    <div className="flex flex-col items-center px-3 py-6 sm:px-4 sm:py-10">
+      <motion.div
+        id="assessment-card"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="w-full max-w-[640px] rounded-3xl bg-white p-5 shadow-lg shadow-navy/10 sm:p-8"
+      >
         {isLoading && (
-          <Card>
-            <CardContent className="py-10 text-center text-[#6b7a8d] text-sm">
-              Loading options…
-            </CardContent>
-          </Card>
+          <>
+            <h1 className="sr-only">Business assessment</h1>
+            <p className="animate-pulse py-10 text-center text-sm text-muted-foreground">Loading form…</p>
+          </>
         )}
 
         {isError && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Failed to load options</AlertTitle>
-            <AlertDescription className="flex items-center gap-3 mt-2">
-              Something went wrong while fetching form options.
-              <Button size="sm" variant="outline" onClick={() => refetch()}>
-                Retry
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {options && (
-          <Card>
-            <CardContent>
-              <form onSubmit={handleSubmit} noValidate className="space-y-6">
-
-                {/* Business Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="businessName">
-                    Business Name <span className="text-[#6b7a8d] font-normal">(optional)</span>
-                  </Label>
-                  <p id="businessName-help" className="text-sm text-[#6b7a8d]">
-                    You can use your own name if you haven't picked one yet. This won't be your official registered name.
-                  </p>
-                  <Input
-                    id="businessName"
-                    ref={businessNameRef}
-                    placeholder="e.g. Maria's Karinderya, Juan's Bakery…"
-                    autoComplete="organization"
-                    value={values.businessName}
-                    onChange={(e) => {
-                      setValues((prev) => ({ ...prev, businessName: e.target.value }))
-                      if (e.target.value.length <= 100) clearError('businessName')
-                    }}
-                    aria-describedby={errors.businessName ? 'businessName-help businessName-error' : 'businessName-help'}
-                    aria-invalid={!!errors.businessName}
-                  />
-                  {errors.businessName && <FieldError id="businessName-error" message={errors.businessName} />}
-                </div>
-
-                {/* Business Type */}
-                <div className="space-y-2">
-                  <Label id="businessType-label">
-                    Business Type <span aria-hidden="true">*</span>
-                  </Label>
-                  <p id="businessType-help" className="text-sm text-[#6b7a8d]">
-                    Choose the structure that best fits how you run your business.
-                  </p>
-                  <RadioGroup
-                    ref={businessTypeRef}
-                    className="space-y-2"
-                    value={values.businessType}
-                    onValueChange={(value) => {
-                      setValues((prev) => ({ ...prev, businessType: value }))
-                      clearError('businessType')
-                    }}
-                    aria-labelledby="businessType-label"
-                    aria-invalid={!!errors.businessType}
-                    aria-describedby={errors.businessType ? 'businessType-help businessType-error' : 'businessType-help'}
-                  >
-                    {options.businessTypes.map((type) => (
-                      <Label key={type} htmlFor={`type-${type}`} className={OPTION_ROW}>
-                        <RadioGroupItem value={type} id={`type-${type}`} className="mt-0.5" />
-                        <span>
-                          <span className="block text-sm font-medium">{type}</span>
-                          {TYPE_DESCRIPTIONS[type] && (
-                            <span className="block text-sm text-[#6b7a8d]">{TYPE_DESCRIPTIONS[type]}</span>
-                          )}
-                        </span>
-                      </Label>
-                    ))}
-                  </RadioGroup>
-                  {errors.businessType && <FieldError id="businessType-error" message={errors.businessType} />}
-                </div>
-
-                {/* Business Category */}
-                <div className="space-y-2">
-                  <Label htmlFor="category">
-                    Business Category <span aria-hidden="true">*</span>
-                  </Label>
-                  <p id="categoryId-help" className="text-sm text-[#6b7a8d]">
-                    Pick the category that best describes what your business does. This helps us find the right permits for you.
-                  </p>
-                  <Select
-                    value={values.categoryId}
-                    onValueChange={(value) => {
-                      setValues((prev) => ({ ...prev, categoryId: value }))
-                      clearError('categoryId')
-                    }}
-                  >
-                    <SelectTrigger
-                      id="category"
-                      ref={categoryRef}
-                      aria-describedby={errors.categoryId ? 'categoryId-help categoryId-error' : 'categoryId-help'}
-                      aria-invalid={!!errors.categoryId}
-                    >
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {options.categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.categoryId && <FieldError id="categoryId-error" message={errors.categoryId} />}
-                </div>
-
-                {/* Registration Status */}
-                <div className="space-y-2">
-                  <Label id="registrationStatus-label">
-                    Where are you in the process? <span aria-hidden="true">*</span>
-                  </Label>
-                  <p id="registrationStatus-help" className="text-sm text-[#6b7a8d]">
-                    This helps us skip steps you've already done and show you what's next.
-                  </p>
-                  <RadioGroup
-                    ref={registrationStatusRef}
-                    className="space-y-2"
-                    value={values.registrationStatus}
-                    onValueChange={(value) => {
-                      setValues((prev) => ({ ...prev, registrationStatus: value }))
-                      clearError('registrationStatus')
-                    }}
-                    aria-labelledby="registrationStatus-label"
-                    aria-invalid={!!errors.registrationStatus}
-                    aria-describedby={
-                      errors.registrationStatus ? 'registrationStatus-help registrationStatus-error' : 'registrationStatus-help'
-                    }
-                  >
-                    {options.registrationStatuses.map((status) => (
-                      <Label key={status} htmlFor={`status-${status}`} className={OPTION_ROW}>
-                        <RadioGroupItem value={status} id={`status-${status}`} className="mt-0.5" />
-                        <span>
-                          <span className="block text-sm font-medium">{STATUS_COPY[status]?.label ?? status}</span>
-                          {STATUS_COPY[status] && (
-                            <span className="block text-sm text-[#6b7a8d]">{STATUS_COPY[status].description}</span>
-                          )}
-                        </span>
-                      </Label>
-                    ))}
-                  </RadioGroup>
-                  {errors.registrationStatus && (
-                    <FieldError id="registrationStatus-error" message={errors.registrationStatus} />
-                  )}
-                </div>
-
+          <>
+            <h1 className="sr-only">Business assessment</h1>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Couldn't load the form</AlertTitle>
+              <AlertDescription className="mt-2 flex flex-col items-start gap-3">
+                Something went wrong while fetching form data.
                 <Button
-                  type="submit"
-                  className="w-full bg-[#1a3a6b] hover:bg-[#0f1f3d] text-white"
+                  variant="outline"
+                  className="h-11"
+                  onClick={() => {
+                    void refetchOptions()
+                    void refetchProfile()
+                  }}
                 >
-                  Save and continue
+                  Retry
                 </Button>
-                <p className="text-center text-sm text-[#6b7a8d]">
-                  <strong>Pasig City only</strong> for now. You can change your answers later.
-                </p>
-
-              </form>
-            </CardContent>
-          </Card>
+              </AlertDescription>
+            </Alert>
+          </>
         )}
-      </div>
+
+        {ready && (
+          <>
+            {step !== 'intro' && <RouteProgress labels={PROGRESS_LABELS} current={stepIndex - 1} />}
+            <div className="-mx-1 overflow-x-clip px-1 pb-1">
+              <AnimatePresence mode="wait" custom={travel.dir}>
+                {renderStep()}
+              </AnimatePresence>
+            </div>
+          </>
+        )}
+      </motion.div>
     </div>
   )
 }

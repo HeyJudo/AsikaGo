@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AsikaGo – Step Detail Screen (US-006-UI-01 Design)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* Tokens copied from frontend/src/index.css (:root) so the build matches the live app. */
+    :root {
+      --brand: #2340d5;
+      --brand-dark: #1a31a8;
+      --gold: #f1b132;
+      --navy: #14215b;
+      --cream: #faf7f0;
+      --muted-foreground: #5b6478;
+      --border: #e5e5e5;
+      --destructive: #e7000b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; color: var(--navy); background: #e9ecf2; padding: 32px; }
+    a { color: inherit; text-decoration: none; }
+    svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+    /* ─── Doc chrome (not part of the design) ─── */
+    .doc-title { font-size: 28px; font-weight: 800; }
+    .doc-sub { color: var(--muted-foreground); margin: 4px 0 32px; max-width: 900px; }
+    .state { margin-bottom: 56px; }
+    .state > h2 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+    .frames { display: flex; gap: 32px; align-items: flex-start; }
+    .frame-label { font-size: 12px; font-weight: 600; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+    .frame-mobile, .frame-desktop { background: var(--cream); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(20,33,91,.15); }
+    .frame-mobile { width: 360px; }
+    .frame-desktop { width: 1280px; }
+    .notes { background: #fff; border-left: 4px solid var(--brand); border-radius: 8px; padding: 12px 16px; margin-top: 16px; max-width: 1672px; font-size: 13px; line-height: 1.6; }
+    .notes li { margin-left: 18px; }
+    .notes code { background: #f1f5f9; padding: 0 4px; border-radius: 4px; font-size: 12px; }
+
+    /* ─── App header (same as US-005-UI-01, with the compact mobile Sign Out) ─── */
+    .app-header { background: var(--brand); height: 64px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .is-desktop .app-header { height: 80px; padding: 0 32px; }
+    .app-header img { height: 32px; }
+    .is-desktop .app-header img { height: 48px; }
+    .user { display: flex; align-items: center; gap: 12px; color: #fff; font-size: 14px; font-weight: 600; }
+    .avatar { width: 40px; height: 40px; border-radius: 999px; background: var(--gold); color: var(--navy); display: grid; place-items: center; }
+    .user .email { display: none; }
+    .is-desktop .user .email { display: block; }
+    .btn-signout { min-height: 44px; border: 1px solid #fff; border-radius: 999px; padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; font-size: 14px; white-space: nowrap; flex-shrink: 0; }
+    .btn-signout svg.i { width: 16px; height: 16px; }
+    .is-mobile .user { gap: 8px; }
+    .is-mobile .btn-signout { padding: 0 12px; gap: 6px; font-size: 13px; }
+    .is-mobile .btn-signout svg.i { width: 14px; height: 14px; }
+
+    /* ─── Page ─── */
+    .page { padding: 16px 24px 48px; }
+    .is-desktop .page { padding: 24px 32px 64px; }
+    .container { max-width: 768px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+    :focus-visible { outline: 3px solid rgba(35,64,213,.45); outline-offset: 2px; }
+
+    .top-link { align-self: flex-start; min-height: 44px; display: inline-flex; align-items: center; gap: 6px; margin-left: -8px; padding: 0 8px; border-radius: 999px; color: var(--brand); font-weight: 600; font-size: 14px; }
+    .top-link:hover { background: rgba(35,64,213,.08); }
+    .top-link svg.i { width: 18px; height: 18px; }
+
+    .eyebrow { display: inline-block; background: var(--gold); color: var(--navy); font-size: 13px; font-weight: 700; border-radius: 999px; padding: 2px 12px; }
+    h1 { font-size: 28px; font-weight: 800; line-height: 1.2; margin-top: 8px; overflow-wrap: anywhere; }
+    .is-desktop h1 { font-size: 36px; }
+
+    .cond { display: flex; gap: 10px; align-items: flex-start; background: rgba(241,177,50,.2); border: 1px solid rgba(241,177,50,.7); border-radius: 14px; padding: 14px 16px; font-weight: 500; line-height: 1.5; }
+    .cond svg.i { color: var(--brand); margin-top: 2px; }
+
+    .section { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 18px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    .is-desktop .section { padding: 24px; }
+    .section h2 { display: flex; gap: 10px; align-items: center; font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+    .section h2 svg.i { color: var(--brand); }
+    .section p { line-height: 1.6; overflow-wrap: anywhere; }
+
+    .actions { list-style: none; counter-reset: a; display: flex; flex-direction: column; gap: 12px; }
+    .actions li { counter-increment: a; display: flex; gap: 12px; line-height: 1.5; overflow-wrap: anywhere; min-width: 0; }
+    .actions li::before { content: counter(a); flex-shrink: 0; width: 28px; height: 28px; border-radius: 999px; background: var(--brand); color: #fff; font-size: 13px; font-weight: 700; display: grid; place-items: center; }
+
+    .reqs { list-style: none; display: flex; flex-direction: column; }
+    .req { padding: 12px 0; border-top: 1px solid var(--border); min-width: 0; }
+    .req:first-child { border-top: 0; padding-top: 0; }
+    .req:last-child { padding-bottom: 0; }
+    .req-name { font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+    .req-desc { color: var(--muted-foreground); font-size: 14px; line-height: 1.5; margin-top: 2px; overflow-wrap: anywhere; }
+    .label { display: inline-flex; gap: 6px; align-items: center; margin-top: 8px; background: rgba(35,64,213,.08); color: var(--brand); font-size: 12px; font-weight: 600; border-radius: 999px; padding: 3px 10px; }
+    .label svg.i { width: 13px; height: 13px; }
+    .src { display: block; min-height: 44px; padding: 8px 0; margin-bottom: -12px; color: var(--brand); font-size: 13px; font-weight: 500; line-height: 1.4; text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
+    .src:hover { color: var(--brand-dark); }
+
+    /* What to bring: the section people use at the counter, so it stands out. */
+    .section.bring { border: 2px solid var(--brand); box-shadow: 0 4px 16px rgba(35,64,213,.15); }
+    .bring h2 { font-size: 20px; }
+    .bring .req { display: flex; gap: 12px; }
+    .doc-icon { flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px; background: rgba(35,64,213,.1); color: var(--brand); display: grid; place-items: center; }
+    .doc-icon svg.i { width: 18px; height: 18px; }
+    .req-body { flex: 1; min-width: 0; }
+    .src svg.i { width: 13px; height: 13px; vertical-align: -2px; margin-left: 4px; }
+
+    .section.go { background: #edf0fc; border-color: rgba(35,64,213,.4); }
+    .where { display: flex; gap: 12px; align-items: center; }
+    .where-icon { flex-shrink: 0; width: 44px; height: 44px; border-radius: 999px; background: var(--brand); color: #fff; display: grid; place-items: center; }
+    .where p { font-size: 18px; font-weight: 700; line-height: 1.4; }
+
+    .nav { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+    .is-desktop .nav { flex-direction: row-reverse; justify-content: space-between; }
+    .btn-primary, .btn-outline { min-height: 44px; border-radius: 999px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 24px; }
+    .btn-primary { background: var(--brand); color: #fff; }
+    .btn-primary:hover { background: var(--brand-dark); }
+    .btn-outline { border: 1px solid var(--brand); color: var(--brand); background: #fff; }
+    .btn-outline:hover { background: rgba(35,64,213,.06); }
+
+    /* Full-page states (PageStates.tsx Centered) */
+    .centered { min-height: 560px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 32px; text-align: center; }
+    .is-desktop .centered { min-height: 640px; }
+    .centered h1 { font-size: 20px; font-weight: 700; margin: 0; }
+    .centered p { color: var(--muted-foreground); font-size: 14px; max-width: 384px; line-height: 1.5; }
+
+    /* Compass loader, copied from US-005-UI-01. */
+    .compass { width: 120px; height: 120px; filter: drop-shadow(0 6px 14px rgba(20,33,91,.18)); }
+    .needle { transform-box: view-box; transform-origin: 50px 50px; animation: needle 1.8s cubic-bezier(.45,0,.25,1) infinite; }
+    @keyframes needle { 0% { transform: rotate(0deg); } 65% { transform: rotate(385deg); } 82% { transform: rotate(350deg); } 100% { transform: rotate(360deg); } }
+    .trip { display: flex; align-items: center; gap: 8px; width: 220px; margin-top: 4px; }
+    .trip-end { font-size: 12px; font-weight: 800; border-radius: 999px; min-width: 26px; height: 26px; display: grid; place-items: center; padding: 0 8px; }
+    .trip-end.a { background: var(--navy); color: #fff; }
+    .trip-end.biz { background: var(--brand); color: #fff; }
+    .trip-line { flex: 1; position: relative; border-top: 2px dashed var(--gold); }
+    .trip-dot { position: absolute; top: -6px; left: 0; width: 10px; height: 10px; border-radius: 999px; background: var(--gold); box-shadow: 0 0 0 3px rgba(241,177,50,.3); animation: travel 1.8s ease-in-out infinite; }
+    @keyframes travel { from { left: 0; } to { left: calc(100% - 10px); } }
+    /* Not-found illustration: the route from A to Biz, with a pin that wandered off it. */
+    .scene { width: 260px; height: auto; filter: drop-shadow(0 6px 14px rgba(20,33,91,.12)); }
+    .light { animation: blink 1.2s steps(1) infinite; }
+    .light-2 { animation-delay: .6s; }
+    @keyframes blink { 50% { opacity: .2; } }
+    .lost-pin { animation: bob 2.4s ease-in-out infinite; }
+    @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    .lost-shadow { transform-box: fill-box; transform-origin: center; animation: shadow 2.4s ease-in-out infinite; }
+    @keyframes shadow { 0%, 100% { transform: scaleX(1); opacity: .25; } 50% { transform: scaleX(.75); opacity: .15; } }
+    @media (prefers-reduced-motion: reduce) { .needle, .trip-dot, .lost-pin, .lost-shadow, .light { animation: none; } }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+  </style>
+</head>
+<body>
+  <h1 class="doc-title">US-006-UI-01 · Step detail screen (<code>/roadmap/steps/:number</code>)</h1>
+  <p class="doc-sub">Design for AB#83. Every frame uses the same sample profile as US-005-UI-01: Sole Proprietorship, Food and Beverage, Pasig City (10 steps). Mobile frames are 360 px and desktop frames are 1280 px. Tokens come from <code>frontend/src/index.css</code>. All copy comes from <code>docs/research/</code>. The final text comes from the seed sheet (RS-003-01).</p>
+
+  <div id="states"></div>
+
+  <script>
+    // Sources, from docs/research/. All checked 2026-10-05.
+    const SRC = {
+      bnrsGuide: { name: 'DTI BNRS Registration Guide', url: 'https://bnrs.dti.gov.ph/resources/registration-guide' },
+      bnrsFaq: { name: 'DTI BNRS FAQ', url: 'https://bnrs.dti.gov.ph/faq' },
+      cpdo: { name: "Pasig CPDO Citizen's Charter (Feb 2024)", url: 'https://assets.pasigcity.gov.ph/storage/attachments/city_planning_and_development_office/662a10cbbeaed1714032843Tagalog.pdf' },
+      bpld: { name: "Pasig BPLD Citizen's Charter 2025", url: 'https://assets.pasigcity.gov.ph/storage/attachments/business_permit_and_licensing_department/686768e6a0f0a1751607526Citizen_s%20Charter%20English.pdf' },
+      birCdr: { name: 'BIR Checklist of Documentary Requirements (Jul 2025)', url: 'https://bir-cdn.bir.gov.ph/BIR/pdf/CDR%20-%202025%20(1).pdf' },
+      birCharter: { name: "BIR Citizen's Charter 2026", url: "https://bir-cdn.bir.gov.ph/BIR/pdf/BIR%20Citizen's%20Charter%20(2026%20Edition)%20final.pdf" },
+    }
+    for (const s of Object.values(SRC)) s.dateVerified = '2026-10-05'
+
+    // [name, description, appliesTo, source] → RequirementResponse
+    const req = (name, description = null, source = null, appliesTo = null) => ({ name, description, appliesTo, source })
+    const FB = 'Food and Beverage'
+
+    // StepDetailResponse, one per sample step (Section 4 of the Sprint 3 breakdown).
+    const STEPS = {
+      1: {
+        number: 1, totalSteps: 10, previousNumber: null, nextNumber: 2,
+        name: 'DTI Business Name Registration',
+        agency: 'DTI (Department of Trade and Industry)',
+        conditionNote: null,
+        description: 'Register your business name with DTI (Department of Trade and Industry). This saves the name so you can use it for your business. You do this online.',
+        actions: [
+          'Go to the DTI business name website: bnrs.dti.gov.ph.',
+          'Fill in your name, birthday, address, and contact details.',
+          'Choose where you will use the name: a barangay, a city, a region, or the whole country.',
+          'Type your business name and check if it is free to use.',
+          'Write down your reference code. You need it to pay.',
+          'Fill in your business address and home address.',
+          'Check your details and confirm they are correct.',
+          "Pay the fee within 7 days. If you don't, your application is cancelled.",
+          'Get your certificate by email after you pay.',
+        ],
+        requirements: [
+          req('2 or 3 business name choices', 'If your first choice is taken, you can try the next one.', SRC.bnrsGuide),
+          req('Registration fee', '₱200 for a barangay, ₱500 for a city, ₱1,000 for a region, or ₱2,000 for the whole country. Add ₱30 for the documentary stamp tax.', SRC.bnrsFaq),
+        ],
+      },
+      2: {
+        number: 2, totalSteps: 10, previousNumber: 1, nextNumber: 3,
+        name: 'Barangay Business Clearance',
+        agency: 'Barangay hall of your business address',
+        conditionNote: null,
+        description: 'Your barangay must say it has no objection to your business. The city needs this clearance before it gives you a business permit. Confirm the exact list at your barangay hall.',
+        actions: [
+          'Get copies of the documents in "What to bring".',
+          'Bring them to the business clearance counter at your barangay hall.',
+          'Pay the fees at the cashier.',
+          'Get your official receipt, your Barangay Business Clearance, and your business plate.',
+        ],
+        // Barangay San Antonio list (Unverified, Facebook post, no URL) → source null. Agreed with Keisuke, 2026-10-07.
+        requirements: [
+          req('Copy of your DTI (Department of Trade and Industry) certificate', 'You got this in Step 1.'),
+          req('Contract of lease, or TCT (Transfer Certificate of Title)'),
+          req('CGL (Comprehensive General Liability) insurance policy'),
+          req('Barangay Clearance for Renovation', 'If you did not renovate, bring a Certificate of Non-Renovation from your building administrator instead.'),
+          req('Money for the fees', 'A space use fee based on the size of your place, and a business plate fee.'),
+        ],
+      },
+      3: {
+        number: 3, totalSteps: 10, previousNumber: 2, nextNumber: 4,
+        name: 'Certificate of Conformance',
+        agency: 'CPDO (City Planning and Development Office), Zoning Division',
+        conditionNote: 'If your business is inside a mall or in the Ortigas Center, ask CPDO if you still need this.',
+        description: "CPDO (City Planning and Development Office) checks that your business is allowed at your address under the city's zoning rules. This certificate is free.",
+        actions: [
+          'Get the application form at CPDO and fill it out.',
+          'Hand in the form with the documents in "What to bring".',
+          "Wait while CPDO checks your address on the city's zoning map.",
+          'Get your Certificate of Conformance.',
+        ],
+        requirements: [
+          req('Filled-out application form', null, SRC.cpdo),
+          req('Floor area of your business and of the whole building', null, SRC.cpdo),
+          req('Number of employees, including you', null, SRC.cpdo),
+          req('Short description of your business or product', null, SRC.cpdo),
+          req('Photos of your business', 'The front of the building and the inside of your business space.', SRC.cpdo),
+          req('HOA (Homeowners Association) clearance', 'Only if your business is inside a subdivision.', SRC.cpdo),
+        ],
+      },
+      5: {
+        number: 5, totalSteps: 10, previousNumber: 4, nextNumber: 6,
+        name: 'Business Permit Application (UBAF)',
+        agency: 'BPLD (Business Permits and Licensing Department)',
+        conditionNote: null,
+        description: 'This is where you apply for your business permit. You fill out the UBAF (Unified Business Application Form) and hand in your documents to BPLD (Business Permits and Licensing Department). There is no fee at this step.',
+        actions: [
+          'Download the UBAF from the Pasig City website, or get a copy at any BPLD office.',
+          'Fill it out.',
+          'Bring the original and one clear photocopy of each document in "What to bring".',
+          'Hand everything in at BPLD Admin (Bridgetowne, Rosario) or a BPLD annex.',
+          'Wait while BPLD checks your documents. If something is missing, they will tell you what to fix.',
+        ],
+        // Line-of-business items are listed first here on purpose: the page must sort them last.
+        requirements: [
+          req('If your business is a restaurant, eatery, carinderia, canteen, food stall, or caterer: Veterinary Clearance from the City Veterinary Office', null, SRC.bpld, FB),
+          req('Filled-out UBAF', null, SRC.bpld),
+          req('DTI (Department of Trade and Industry) certificate', 'You got this in Step 1.', SRC.bpld),
+          req('Barangay Business Clearance', 'You got this in Step 2.', SRC.bpld),
+          req('Certificate of Conformance', 'You got this in Step 3.', SRC.bpld),
+          req('Proof that you can use the place', 'Your lease or sub-lease contract, or a certificate of non-rental.', SRC.bpld),
+          req('Authorization letter or SPA (Special Power of Attorney), with a valid ID', 'Only if someone else hands this in for you.', SRC.bpld),
+          req('If your business is a water refilling station: Certification of Water Potability from the City Health Department', 'This shows your water is safe to drink.', SRC.bpld, FB),
+          req('If your business makes food products: FDA (Food and Drug Administration) License', null, SRC.bpld, FB),
+          req('If your business is a restobar or beer house: Health Certificates and work permits for all workers, and a Fire Safety Certificate', 'Your place must also be at least 200 m away from schools, churches, and public institutions.', SRC.bpld, FB),
+        ],
+      },
+      10: {
+        number: 10, totalSteps: 10, previousNumber: 9, nextNumber: null,
+        name: 'BIR Registration',
+        agency: 'BIR (Bureau of Internal Revenue)',
+        conditionNote: null,
+        description: 'Register with BIR (Bureau of Internal Revenue) so you can pay your taxes and give official invoices. Do this before your first sale.',
+        actions: [
+          "Make an account at orus.bir.gov.ph, BIR's online registration website. Or go to the BIR RDO (Revenue District Office) for your business address.",
+          'Fill out the registration form and upload your documents.',
+          'Pay the ₱30 documentary stamp tax.',
+          'Get your Certificate of Registration (BIR Form 2303). Online takes 3 days. Walk-in takes 1 day.',
+          'Register your books of accounts. This is free.',
+          'Get your invoices before your first sale.',
+        ],
+        requirements: [
+          req('BIR Form 1901', 'Fill it out online in ORUS, or bring 2 copies if you walk in.', SRC.birCdr),
+          req('Government ID with your name, address, and birthday', 'If you apply online, add a selfie of you holding the ID.', SRC.birCdr),
+          req('Invoices', 'Buy BIR Printed Invoices at the BIR office, or bring a sample of your own invoices with an Authority to Print.', SRC.birCdr),
+          req('₱30 for the documentary stamp tax', null, SRC.birCharter),
+          req('Books of accounts', 'Register them in ORUS, or walk in with BIR Form 1905.', SRC.birCdr),
+          req('SPA (Special Power of Attorney)', 'Only if someone else registers for you.', SRC.birCdr),
+        ],
+      },
+    }
+
+    // lucide icon paths
+    const ICONS = {
+      info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+      listChecks: '<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
+      clipboard: '<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>',
+      pin: '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+      tag: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>',
+      file: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+      ext: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+      arrow: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+      arrowLeft: '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+      retry: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
+      user: '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
+      logout: '<path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>',
+    }
+    const icon = (name) => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`
+
+    // Compass loader, copied from US-005-UI-01.
+    const TICKS = Array.from({ length: 24 }, (_, i) => i * 15)
+      .filter((d) => d % 90 > 20 && d % 90 < 70 || d % 90 === 45)
+      .map((d) => `<line x1="50" y1="12" x2="50" y2="${d % 45 ? 15 : 17}" transform="rotate(${d} 50 50)"/>`).join('')
+    const PIN = '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" fill="var(--gold)" stroke="var(--navy)" stroke-width="2"/><circle cx="12" cy="10" r="3" fill="#fff" stroke="var(--navy)" stroke-width="2"/>'
+    const COMPASS = `
+      <svg class="compass" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="46" fill="#fff" stroke="var(--brand)" stroke-width="4"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <g stroke="var(--navy)" stroke-opacity=".45" stroke-width="1.2" stroke-linecap="round">${TICKS}</g>
+        <text x="50" y="25" text-anchor="middle" font-size="11" font-weight="800" fill="var(--brand)">Biz</text>
+        <text x="50" y="83" text-anchor="middle" font-size="11" font-weight="800" fill="var(--navy)">A</text>
+        <g transform="translate(14 43) scale(.55)">${PIN}</g>
+        <g transform="translate(73 43) scale(.55)">${PIN}</g>
+        <g class="needle">
+          <path d="M50 28 50 50H44z" fill="#d99a1f"/>
+          <path d="M50 28 56 50H50z" fill="var(--gold)"/>
+          <path d="M50 72 44 50H50z" fill="var(--navy)"/>
+          <path d="M50 72 50 50H56z" fill="#0b1440"/>
+        </g>
+        <circle cx="50" cy="50" r="5" fill="#fff" stroke="var(--navy)" stroke-width="2"/>
+        <circle cx="50" cy="50" r="2" fill="var(--gold)"/>
+      </svg>`
+
+    const header = `
+      <header class="app-header">
+        <img src="../../frontend/src/assets/logo-white.png" alt="AsikaGo" />
+        <div class="user">
+          <span class="avatar">${icon('user')}</span>
+          <span class="email">juan.delacruz@gmail.com</span>
+          <a class="btn-signout" href="#">${icon('logout')}Sign Out</a>
+        </div>
+      </header>`
+
+    const checked = (iso) => new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    const isLine = (r) => r.name.startsWith('If your business')
+
+    const requirement = (r) => `
+      <li class="req">
+        <span class="doc-icon">${icon('file')}</span>
+        <div class="req-body">
+        <p class="req-name">${r.name}</p>
+        ${r.description ? `<p class="req-desc">${r.description}</p>` : ''}
+        ${r.appliesTo ? `<span class="label">${icon('tag')}For ${r.appliesTo} businesses</span>` : ''}
+        ${r.source ? `<a class="src" href="${r.source.url}" target="_blank" rel="noopener noreferrer">Source: ${r.source.name} (checked ${checked(r.source.dateVerified)})${icon('ext')}<span class="sr-only"> (opens in a new tab)</span></a>` : ''}
+        </div>
+      </li>`
+
+    const nav = (s) => `
+      <nav class="nav" aria-label="Steps">
+        ${s.nextNumber
+          ? `<a class="btn-primary" href="#">See step ${s.nextNumber}${icon('arrow')}</a>`
+          : '<a class="btn-primary" href="#">Back to my roadmap</a>'}
+        ${s.previousNumber ? `<a class="btn-outline" href="#">${icon('arrowLeft')}Back to step ${s.previousNumber}</a>` : ''}
+      </nav>`
+
+    const stepPage = (s) => `${header}
+      <div class="page"><div class="container">
+        <a class="top-link" href="#">${icon('arrowLeft')}My roadmap</a>
+        <div>
+          <span class="eyebrow">Step ${s.number} of ${s.totalSteps}</span>
+          <h1>${s.name}</h1>
+        </div>
+        ${s.conditionNote ? `<div class="cond" role="note">${icon('info')}<p>${s.conditionNote}</p></div>` : ''}
+        <section class="section"><h2>${icon('info')}Why you need this</h2><p>${s.description}</p></section>
+        <section class="section"><h2>${icon('listChecks')}What to do</h2>
+          <ol class="actions">${s.actions.map((a) => `<li>${a}</li>`).join('')}</ol>
+        </section>
+        <section class="section bring"><h2>${icon('clipboard')}What to bring</h2>
+          <ul class="reqs">${[...s.requirements].sort((a, b) => isLine(a) - isLine(b)).map(requirement).join('')}</ul>
+        </section>
+        <section class="section go"><h2>Where to go</h2><div class="where"><span class="where-icon">${icon('pin')}</span><p>${s.agency}</p></div></section>
+        ${nav(s)}
+      </div></div>`
+
+    const loading = () => `${header}
+      <div class="centered" role="status">
+        ${COMPASS}
+        <h1>Finding your step…</h1>
+        <p>Getting the details for step 2.</p>
+        <div class="trip" aria-hidden="true"><span class="trip-end a">A</span><span class="trip-line"><span class="trip-dot"></span></span><span class="trip-end biz">Biz</span></div>
+      </div>`
+
+    const LOST = `
+      <svg class="scene" viewBox="0 0 260 150" aria-hidden="true">
+        <rect x="4" y="4" width="252" height="142" rx="18" fill="#fff" stroke="var(--border)"/>
+        <path d="M36 112 C 84 112, 92 52, 140 56 S 196 40, 222 38" fill="none" stroke="var(--gold)" stroke-width="3" stroke-dasharray="7 6" stroke-linecap="round"/>
+        <g fill="var(--gold)" opacity=".55"><circle cx="150" cy="74" r="2.5"/><circle cx="160" cy="88" r="2.5"/><circle cx="172" cy="100" r="2.5"/></g>
+        <circle cx="36" cy="112" r="14" fill="var(--navy)"/>
+        <text x="36" y="117" text-anchor="middle" font-size="14" font-weight="800" fill="#fff">A</text>
+        <rect x="200" y="24" width="44" height="28" rx="14" fill="var(--brand)"/>
+        <text x="222" y="43" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">Biz</text>
+        <ellipse class="lost-shadow" cx="194" cy="132" rx="14" ry="3.5" fill="var(--navy)"/>
+        <g class="lost-pin">
+          <path d="M194 128c-2-2-18-16-18-30a18 18 0 0 1 36 0c0 14-16 28-18 30z" fill="var(--gold)" stroke="var(--navy)" stroke-width="2.5" stroke-linejoin="round"/>
+          <text x="194" y="105" text-anchor="middle" font-size="18" font-weight="800" fill="var(--navy)">?</text>
+        </g>
+      </svg>`
+
+    const notFound = () => `${header}
+      <div class="centered">
+        ${LOST}
+        <h1>We can't find this step.</h1>
+        <p>This step isn't on your roadmap. Pick a step from your roadmap list.</p>
+        <a class="btn-primary" href="#">Back to my roadmap</a>
+      </div>`
+
+    // Error illustration (shared FullPageError): the route from A to Biz, blocked by a road barrier.
+    const ROADBLOCK = `
+      <svg class="scene" viewBox="0 0 260 150" aria-hidden="true">
+        <defs>
+          <clipPath id="before-block"><rect width="118" height="150"/></clipPath>
+          <pattern id="block-stripes" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="12" fill="var(--destructive)"/></pattern>
+        </defs>
+        <rect x="4" y="4" width="252" height="142" rx="18" fill="#fff" stroke="var(--border)"/>
+        <path d="M36 112 C 84 112, 92 52, 140 56 S 196 40, 222 38" fill="none" stroke="var(--gold)" stroke-width="3" stroke-dasharray="7 6" stroke-linecap="round" opacity=".3"/>
+        <path d="M36 112 C 84 112, 92 52, 140 56 S 196 40, 222 38" fill="none" stroke="var(--gold)" stroke-width="3" stroke-dasharray="7 6" stroke-linecap="round" clip-path="url(#before-block)"/>
+        <circle cx="36" cy="112" r="14" fill="var(--navy)"/>
+        <text x="36" y="117" text-anchor="middle" font-size="14" font-weight="800" fill="#fff">A</text>
+        <g opacity=".45"><rect x="200" y="24" width="44" height="28" rx="14" fill="var(--brand)"/>
+        <text x="222" y="43" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">Biz</text></g>
+        <ellipse cx="130" cy="102" rx="34" ry="3.5" fill="var(--navy)" opacity=".15"/>
+        <path d="M110 74 104 100M150 74l6 26M112 58v-7M148 58v-7" stroke="var(--navy)" stroke-width="3" stroke-linecap="round"/>
+        <circle class="light" cx="112" cy="46" r="5" fill="var(--destructive)"/>
+        <circle class="light light-2" cx="148" cy="46" r="5" fill="var(--destructive)"/>
+        <rect x="98" y="58" width="64" height="18" rx="4" fill="#fff"/>
+        <rect x="98" y="58" width="64" height="18" rx="4" fill="url(#block-stripes)"/>
+        <rect x="98" y="58" width="64" height="18" rx="4" fill="none" stroke="var(--navy)" stroke-width="2"/>
+      </svg>`
+
+    const error = () => `${header}
+      <div class="centered">
+        ${ROADBLOCK}
+        <h1>Something went wrong.</h1>
+        <p>We couldn't load this step. Check your connection and try again.</p>
+        <a class="btn-primary" href="#">${icon('retry')}Try again</a>
+      </div>`
+
+    const frame = (label, size, body) => `
+      <div><p class="frame-label">${label}</p><div class="frame-${size} is-${size}">${body}</div></div>`
+    const pair = (name, render) => [[`${name} · Mobile 360`, 'mobile', render], [`${name} · Desktop 1280`, 'desktop', render]]
+    const step = (n) => () => stepPage(STEPS[n])
+
+    // [title, frames[[label, size, renderer]], notes html]
+    const STATES = [
+      ['1. Normal step (Step 2, Barangay Business Clearance)', pair('Step 2', step(2)), `<ul>
+        <li>Page: <code>bg-cream px-6 py-4 md:px-8 md:py-6</code>, column <code>mx-auto max-w-3xl flex flex-col gap-4</code>, the same as <code>/roadmap</code>.</li>
+        <li>Top: <code>Link to="/roadmap"</code> "My roadmap" with lucide <code>ArrowLeft</code>, <code>h-11 text-brand font-semibold</code>. It's on every step, so the user can always get back.</li>
+        <li>Eyebrow "Step {number} of {totalSteps}": <code>rounded-full bg-gold text-navy text-sm font-bold px-3</code>. Title <code>text-navy text-3xl md:text-4xl font-extrabold</code> from <code>name</code>.</li>
+        <li>Sections in this order: Why you need this (<code>Info</code>), What to do (<code>ListChecks</code>), What to bring (<code>ClipboardList</code>), Where to go (<code>MapPin</code>). Each is a <code>Card</code> with an <code>h2</code> (<code>text-lg font-bold</code>) and the icon in <code>text-brand</code>.</li>
+        <li>What to do: an <code>&lt;ol&gt;</code> from <code>actions</code>. The number is a CSS counter in a <code>size-7 rounded-full bg-brand text-white</code> circle, so screen readers still read it as a numbered list.</li>
+        <li>What to bring is the section people use at the counter, so it stands out: <code>Card</code> with <code>border-2 border-brand shadow-lg shadow-brand/15</code>, <code>h2</code> <code>text-xl</code>. There's no item count, because some items only apply sometimes and a count would overstate.</li>
+        <li>Items: a <code>&lt;ul&gt;</code> from <code>requirements</code>, with a <code>border-t</code> between items. Each starts with lucide <code>FileText</code> in a <code>size-8 rounded-lg bg-brand/10 text-brand</code> tile. It's a document icon, not a checkbox, because ticking items off is US-009 (Sprint 4). Name <code>font-semibold</code>, then <code>description</code> in <code>text-sm text-muted-foreground</code> (hidden when null).</li>
+        <li><b>Step 2 has no source lines.</b> Its list is the Barangay San Antonio list (Unverified, from a Facebook post with no URL), so <code>source</code> is null. When <code>source</code> is null, show nothing, not an empty "Source:" line. Its <code>description</code> ends with "Confirm the exact list at your barangay hall." (RS-003-01 rule).</li>
+        <li>Where to go: a <code>Card</code> in solid light blue (<code>border-brand/40 bg-[#edf0fc]</code>, which is brand at 8% over white. A translucent <code>bg-brand/10</code> turns gray on the cream page). The <code>MapPin</code> moves out of the heading into a <code>size-11 rounded-full bg-brand text-white</code> circle beside <code>agency</code>, which is shown as is in <code>text-lg font-bold</code>. It shows only <code>agency</code>: office details and a map link belong to US-014 and US-015 (Sprint 6), and need a new API field.</li>
+        <li>Navigation: main <code>Button</code> "See step {nextNumber}" (<code>h-11 rounded-full</code>), and <code>variant="outline"</code> "Back to step {previousNumber}". Mobile: stacked, full width, main first. Desktop (<code>md:</code>): one row, <code>flex-row-reverse justify-between</code>, so Back is on the left and the main button is on the right. Labels name the target step (writing rule 3).</li>
+        <li>Keyboard: every link and button has a visible <code>focus-visible:ring-3 ring-brand/45</code>. All of them are at least 44 px tall.</li>
+      </ul>`],
+      ['2. Step with a condition note (Step 3, Certificate of Conformance)', pair('Step 3', step(3)), `<ul>
+        <li>Condition box under the title, only when <code>conditionNote</code> is set: <code>Alert</code> styled <code>rounded-xl border-gold/70 bg-gold/20 font-medium</code>, with an <code>Info</code> icon in <code>text-brand</code>. It's the same gold as the roadmap tag, so the user sees it's the same note. It has <code>role="note"</code>, not <code>role="alert"</code>, because it's not an error.</li>
+        <li>Source line under each requirement: <code>&lt;a target="_blank" rel="noopener noreferrer"&gt;</code> "Source: {source.name} (checked {date})", <code>text-[13px] font-medium text-brand underline hover:text-brand-dark</code>, with lucide <code>ExternalLink</code> (<code>size-3</code>) and <code>&lt;span className="sr-only"&gt; (opens in a new tab)&lt;/span&gt;</code>. Its tap area is <code>min-h-11</code>.</li>
+        <li>Date: <code>dateVerified</code> "2026-10-05" shows as "Oct 5, 2026". Use <code>new Date(dateVerified + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })</code>. Add the time, or the date can shift by a day in UTC.</li>
+      </ul>`],
+      ['3. First step (Step 1, DTI Business Name Registration)', pair('Step 1', step(1)), `<ul>
+        <li><code>previousNumber</code> is null, so there's no Back button. Only "See step 2".</li>
+        <li>This is the Sole Proprietorship step 1 (seed 1A). A Corporation sees SEC Company Registration as step 1, with the same layout.</li>
+        <li>Only Verified rows are listed. The research's "valid ID, email, mobile number" row is Unverified, so the seed leaves it out (RS-003-01 rule).</li>
+      </ul>`],
+      ['4. Category and line-of-business items (Step 5, Business Permit Application)', pair('Step 5', step(5)), `<ul>
+        <li>When <code>appliesTo</code> is set, show a chip under the item: "For {appliesTo} businesses", <code>rounded-full bg-brand/8 text-brand text-xs font-semibold</code> with lucide <code>Tag</code>. Blue, so it doesn't look like the gold condition note.</li>
+        <li><b>Order:</b> items whose name starts with "If your business" come last. The sample data lists one first on purpose, and the page still shows it last. The API should return them in that order (TE-004-BE-02 / US-006-BE-01). Until it does, the frontend sorts with a stable sort on <code>name.startsWith("If your business")</code>.</li>
+        <li>Long names wrap (<code>break-words</code>). Nothing is cut off at 360 px.</li>
+        <li>A step with no requirements shows "Nothing to bring for this step." in <code>text-muted-foreground</code> inside the What to bring card. None of the sample steps needs this, so it has no frame.</li>
+      </ul>`],
+      ['5. Last step (Step 10, BIR Registration)', pair('Step 10', step(10)), `<ul>
+        <li><code>nextNumber</code> is null, so the main button is "Back to my roadmap" (<code>Link to="/roadmap"</code>). "Back to step 9" stays as the outline button.</li>
+        <li>A roadmap with only one step (both numbers null) shows just "Back to my roadmap". The rules above cover it.</li>
+        <li>The top "My roadmap" link is still shown. It goes to the same place but is small, at the top, and lower in weight than the main button.</li>
+        <li>Browser Back works because every move is a normal route change (<code>Link</code>), not state.</li>
+      </ul>`],
+      ['6. Loading', pair('Loading', loading), `<ul>
+        <li>The <code>FullPageLoader</code> with the compass from US-005-UI-01. Title "Finding your step…", line "Getting the details for step {number}." (<code>number</code> comes from the URL, so it's known before the data loads).</li>
+      </ul>`],
+      ['7. Step not found (API 404)', pair('Not found', notFound), `<ul>
+        <li>Same <code>Centered</code> layout as <code>PageStates.tsx</code>. In place of the round icon: an inline SVG (<code>aria-hidden</code>, 260 px wide) that reuses the route motif from the roadmap and the loader. A white card shows the dashed gold route from an "A" chip (navy) to a "Biz" chip (brand), and a gold pin with a "?" that has wandered off the route, trailed by 3 faded gold dots. The pin bobs every 2.4 s, with its shadow shrinking in time. Add <code>motion-reduce:animate-none</code> on both. Keep it in the roadmap feature folder, since only this screen uses it. Button <code>Link to="/roadmap"</code> "Back to my roadmap".</li>
+        <li>The API also returns 404 when there's no business profile, and the frontend can't tell the two apart. That's fine: <code>/roadmap</code> then shows "Answer a few questions first" (US-005-UI-01), so the user still ends up in the right place.</li>
+        <li>A <code>:number</code> that isn't a whole number (for example <code>/roadmap/steps/abc</code>) shows this screen without calling the API.</li>
+      </ul>`],
+      ['8. Error', pair('Error', error), `<ul>
+        <li>In place of the red round icon: an inline SVG (<code>aria-hidden</code>, 260 px wide) in the same style as the step not-found screen. A white card shows the dashed gold route from the "A" chip, blocked halfway by a road barrier with red stripes and two red lights that blink in turn. The route past the barrier and the "Biz" chip are faded. Add <code>motion-reduce:animate-none</code> on the lights. Put it inside the shared <code>FullPageError</code>, so every page that fails to load shows the same screen. The roadmap (US-005-UI-01) and step detail (US-006-UI-01) designs show the same one.</li>
+        <li>Same layout as <code>FullPageError</code>. "Try again" refetches. The same open question as US-005-UI-01 applies: the shared component says "Retry" and has fixed body text. Change it once there, and don't fork it.</li>
+      </ul>`],
+    ]
+
+    document.getElementById('states').innerHTML = STATES.map(([title, frames, notes]) => `
+      <section class="state">
+        <h2>${title}</h2>
+        <div class="frames">${frames.map(([l, s, r]) => frame(l, s, r())).join('')}</div>
+        <div class="notes">${notes}</div>
+      </section>`).join('')
+  </script>
+</body>
+</html>

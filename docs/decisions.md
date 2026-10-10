@@ -13,7 +13,7 @@ docs are updated.
 | ORM / schema | EF Core + Npgsql. EF migrations are the only schema owner. Connect via the Supabase **session pooler (port 5432)**. | Typed, idiomatic, one tool. The transaction pooler (6543) breaks prepared statements. |
 | Backend layout | .NET 10, Minimal APIs, vertical feature slices. Two projects: `AsikaGo.Api` + `AsikaGo.Tests`. | One backlog story = one feature folder. The roadmap engine is a pure class, unit-testable without DB/HTTP. |
 | Frontend | Vite + TypeScript, React Router, TanStack Query, Tailwind + shadcn/ui. API types generated from the backend OpenAPI doc with `openapi-typescript`. | DTO changes break the frontend build, not production. |
-| Environments | Shared hosted Supabase project `asikago-dev`; `asikago-prod` at deploy time. | No Docker required on team laptops. Migrations are applied only from `main`. |
+| Environments | One hosted Supabase project, `asikago-dev`, serves local dev and the deployed app. No separate prod project. | Academic project with no real users. No Docker required on team laptops. Migrations run only through CI (`migrate-db` job) after a merge to `main`; never run `dotnet ef database update` by hand. |
 | Hosting | Frontend on Vercel, API on Render (Docker). | Free tiers, auto-deploy from GitHub. Render sleeps after 15 min idle; warm it up before demos. |
 | Repo / process | GitHub monorepo, Azure Boards for tickets, GitHub Actions CI, GitHub Flow. | Install the Azure Boards GitHub app; `AB#123` in commits/PRs links the ticket. |
 

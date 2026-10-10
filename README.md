@@ -61,7 +61,7 @@ Open http://localhost:5173. Sign in with Google or as a guest; the page calls
 |---|---|
 | Backend tests | `cd backend && dotnet test` |
 | Add a DB migration | `cd backend && dotnet ef migrations add <Name> --project src/AsikaGo.Api --output-dir Data/Migrations` |
-| Apply migrations to dev DB | `cd backend && dotnet ef database update --project src/AsikaGo.Api` (only from `main`) |
+| Apply migrations to dev DB | Automatic: CI's `migrate-db` job applies them when the PR merges to `main`. Don't run `dotnet ef database update` by hand. |
 | Regenerate API types after changing an endpoint | `cd backend && dotnet build`, then `cd frontend && npm run gen:api` |
 | Frontend lint / build | `cd frontend && npm run lint && npm run build` |
 

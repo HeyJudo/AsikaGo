@@ -6,7 +6,7 @@ COPY src/AsikaGo.Api/AsikaGo.Api.csproj src/AsikaGo.Api/
 RUN dotnet restore src/AsikaGo.Api/AsikaGo.Api.csproj
 
 COPY src/AsikaGo.Api/ src/AsikaGo.Api/
-RUN dotnet publish src/AsikaGo.Api/AsikaGo.Api.csproj -c Release -o /app --no-restore -p:OpenApiGenerateDocuments=false
+RUN dotnet publish src/AsikaGo.Api/AsikaGo.Api.csproj -c Release -o /app --no-restore -p:OpenApiGenerateDocumentsOnBuild=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
