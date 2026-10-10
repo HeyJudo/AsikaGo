@@ -53,4 +53,14 @@ public class HealthAndAuthTests : IClassFixture<WebApplicationFactory<Program>>
         var response = await client.PutAsJsonAsync("/api/business-profile", new { businessType = "Partnership" });
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+
+    [Theory]
+    [InlineData("/api/roadmap")]
+    [InlineData("/api/roadmap/steps/1")]
+    public async Task Roadmap_WithoutToken_ReturnsUnauthorized(string url)
+    {
+        using var client = _factory.CreateClient();
+        var response = await client.GetAsync(url);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }

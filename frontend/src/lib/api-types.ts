@@ -167,6 +167,96 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/roadmap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RoadmapResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/roadmap/steps/{number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    number: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["StepDetailResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -206,14 +296,76 @@ export interface components {
             email: null | string;
             isAnonymous: boolean;
         };
+        ProblemDetails: {
+            type?: null | string;
+            title?: null | string;
+            /** Format: int32 */
+            status?: null | number | string;
+            detail?: null | string;
+            instance?: null | string;
+        };
         /** @enum {unknown} */
         RegistrationStatus: "Planning" | "Started";
+        RequirementResponse: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: null | string;
+            appliesTo: null | string;
+            source: components["schemas"]["SourceResponse"];
+        };
+        RoadmapResponse: {
+            /** Format: uuid */
+            roadmapId: string;
+            /** Format: date-time */
+            createdAt: string;
+            businessType: string;
+            categoryName: string;
+            cityName: string;
+            registrationStatus: components["schemas"]["RegistrationStatus"];
+            steps: components["schemas"]["RoadmapStepResponse"][];
+        };
+        RoadmapStepResponse: {
+            /** Format: int32 */
+            number: number | string;
+            /** Format: uuid */
+            stepId: string;
+            name: string;
+            agency: string;
+            conditionNote: null | string;
+            /** Format: int32 */
+            requirementCount: number | string;
+        };
         SaveBusinessProfileRequest: {
             businessName: null | string;
             businessType: string;
             /** Format: uuid */
             categoryId: string;
             registrationStatus: null | components["schemas"]["RegistrationStatus"];
+        };
+        SourceResponse: {
+            name: string;
+            url: string;
+            /** Format: date */
+            dateVerified: string;
+        };
+        StepDetailResponse: {
+            /** Format: int32 */
+            number: number | string;
+            /** Format: int32 */
+            totalSteps: number | string;
+            /** Format: uuid */
+            stepId: string;
+            name: string;
+            agency: string;
+            description: string;
+            actions: string[];
+            conditionNote: null | string;
+            requirements: components["schemas"]["RequirementResponse"][];
+            /** Format: int32 */
+            previousNumber: null | number | string;
+            /** Format: int32 */
+            nextNumber: null | number | string;
         };
     };
     responses: never;
