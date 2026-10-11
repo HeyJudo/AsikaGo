@@ -11,32 +11,29 @@ import {
   Tag,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { FullPageError, FullPageLoader, NotFoundPage } from '@/components/PageStates'
-import { type RequirementResponse, useRoadmapStep } from '@/lib/queries'
+import { FullPageError, FullPageLoader } from '@/components/PageStates'
+import { StepNotFound } from '@/features/roadmap/StepNotFound'
+import { type Requirement, useRoadmapStep } from '@/lib/queries'
 
 function formatDate(iso: string): string {
-  try {
-    const dateStr = iso.includes('T') ? iso : `${iso}T00:00:00`
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    })
-  } catch {
-    return iso
-  }
+  const dateStr = iso.includes('T') ? iso : `${iso}T00:00:00`
+  return new Date(dateStr).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
 }
 
-function isLineOfBusiness(req: RequirementResponse): boolean {
+function isLineOfBusiness(req: Requirement): boolean {
   return req.name.startsWith('If your business')
 }
 
 export function StepDetailPage() {
   const { number } = useParams<{ number: string }>()
-  const stepNumber = number ? parseInt(number, 10) : NaN
+  const stepNumber = Number(number)
 
-  if (isNaN(stepNumber) || stepNumber < 1) {
-    return <NotFoundPage />
+  if (!Number.isInteger(stepNumber) || stepNumber < 1) {
+    return <StepNotFound />
   }
 
   return <StepDetailContent number={stepNumber} />
@@ -46,7 +43,7 @@ function StepDetailContent({ number }: { number: number }) {
   const { data: step, isLoading, isError, refetch } = useRoadmapStep(number)
 
   if (isLoading) {
-    return <FullPageLoader label="Loading step details..." />
+    return <FullPageLoader label="Finding your step…" />
   }
 
   if (isError) {
@@ -54,7 +51,7 @@ function StepDetailContent({ number }: { number: number }) {
   }
 
   if (!step) {
-    return <NotFoundPage />
+    return <StepNotFound />
   }
 
   const sortedRequirements = [...step.requirements].sort(
@@ -62,7 +59,7 @@ function StepDetailContent({ number }: { number: number }) {
   )
 
   return (
-    <div className="bg-[#e9ecf2] min-h-[calc(100svh-4rem)] p-4 md:p-8">
+    <div className="bg-cream min-h-[calc(100svh-4rem)] px-6 py-4 md:px-8 md:py-6">
       <div className="mx-auto flex max-w-3xl flex-col gap-4">
         <Link
           to="/roadmap"
@@ -73,10 +70,10 @@ function StepDetailContent({ number }: { number: number }) {
         </Link>
 
         <div>
-          <span className="bg-gold text-navy inline-block rounded-full px-3 py-0.5 text-xs font-bold">
+          <span className="bg-gold text-navy inline-block rounded-full px-3 py-0.5 text-sm font-bold">
             Step {step.number} of {step.totalSteps}
           </span>
-          <h1 className="text-navy mt-2 break-words text-2xl font-extrabold md:text-3xl">
+          <h1 className="text-navy mt-2 break-words text-3xl font-extrabold md:text-4xl">
             {step.name}
           </h1>
         </div>
@@ -116,11 +113,18 @@ function StepDetailContent({ number }: { number: number }) {
           </ol>
         </section>
 
-        <section className="border-brand rounded-2xl border-2 bg-white p-4 shadow-md md:p-6">
+        <section className="border-brand rounded-2xl border-2 bg-white p-4 shadow-lg shadow-brand/15 md:p-6">
           <h2 className="text-navy mb-3 flex items-center gap-2.5 text-xl font-bold">
             <ClipboardList className="text-brand size-5" />
             What to bring
           </h2>
+          <h2 className="text-navy mb-3 flex items-center gap-2.5 text-xl font-bold">
+            <ClipboardList className="text-brand size-5" />
+            What to bring
+          </h2>
+          {sortedRequirements.length === 0 && (
+            <p className="text-muted-foreground">Nothing to bring for this step.</p>
+          )}
           <ul className="flex flex-col list-none">
             {sortedRequirements.map((req, idx) => (
               <li
@@ -163,7 +167,6 @@ function StepDetailContent({ number }: { number: number }) {
 
         <section className="border-brand/40 rounded-2xl border bg-[#edf0fc] p-4 md:p-6">
           <h2 className="text-navy mb-3 flex items-center gap-2.5 text-lg font-bold">
-            <MapPin className="text-brand size-5" />
             Where to go
           </h2>
           <div className="flex items-center gap-3">
