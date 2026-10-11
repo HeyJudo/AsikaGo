@@ -73,7 +73,7 @@ export function RoadmapPage() {
   }, [roadmap])
 
   if (isLoading) {
-    return <FullPageLoader label="Finding your route…" />
+    return <FullPageLoader label="Finding your route…" message="We're putting your registration steps in order." />
   }
 
   if (isError) {
@@ -93,7 +93,7 @@ export function RoadmapPage() {
   const firstStepNumber = roadmap.steps[0] ? Number(roadmap.steps[0].number) : 1
 
   return (
-    <div className="bg-cream min-h-[calc(100svh-4rem)] px-4 py-8 sm:px-6 md:px-8 md:py-12">
+    <div className="bg-cream min-h-[calc(100svh-4rem)] px-6 py-8 md:px-8 md:py-12">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
         {visualizerSteps.length > 0 && <RoadmapVisualizer steps={visualizerSteps} />}
 

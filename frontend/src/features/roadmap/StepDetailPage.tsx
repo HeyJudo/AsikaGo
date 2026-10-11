@@ -118,10 +118,6 @@ function StepDetailContent({ number }: { number: number }) {
             <ClipboardList className="text-brand size-5" />
             What to bring
           </h2>
-          <h2 className="text-navy mb-3 flex items-center gap-2.5 text-xl font-bold">
-            <ClipboardList className="text-brand size-5" />
-            What to bring
-          </h2>
           {sortedRequirements.length === 0 && (
             <p className="text-muted-foreground">Nothing to bring for this step.</p>
           )}
