@@ -1,6 +1,7 @@
 using AsikaGo.Api.Data;
 using AsikaGo.Api.Features.Assessment;
 using AsikaGo.Api.Features.Me;
+using AsikaGo.Api.Features.Roadmap;
 using AsikaGo.Api.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
@@ -44,6 +45,7 @@ var api = app.MapGroup("/api").RequireAuthorization();
 api.MapMeEndpoints();
 api.MapAssessmentEndpoints();
 api.MapBusinessProfileEndpoints();
+api.MapRoadmapEndpoints();
 
 app.Run();
 
