@@ -5,6 +5,7 @@ import type { components } from '@/lib/api-types'
 
 export type Me = components['schemas']['MeResponse']
 export type BusinessProfile = components['schemas']['BusinessProfileResponse']
+export type RoadmapResponse = components['schemas']['RoadmapResponse']
 
 export type StepDetail = components['schemas']['StepDetailResponse']
 export type Requirement = components['schemas']['RequirementResponse']
@@ -49,6 +50,24 @@ export function useRoadmapStep(number: number) {
       }
     },
     enabled: !isNaN(number) && number > 0,
+    retry: (failCount, err) => {
+      if (err instanceof ApiError && err.status === 404) return false
+      return failCount < 3
+    },
+  })
+}
+
+export function useRoadmap() {
+  return useQuery<RoadmapResponse | null>({
+    queryKey: ['roadmap'],
+    queryFn: async () => {
+      try {
+        return await apiFetch<RoadmapResponse>('/api/roadmap')
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) return null
+        throw err
+      }
+    },
     retry: (failCount, err) => {
       if (err instanceof ApiError && err.status === 404) return false
       return failCount < 3

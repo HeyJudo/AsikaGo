@@ -4,6 +4,7 @@ import { HomePage } from '@/features/auth/HomePage'
 import { SignInPage } from '@/features/auth/SignInPage'
 import { AssessmentPage } from '@/features/assessment/AssessmentPage'
 import { MyBusinessPage } from '@/features/assessment/MyBusinessPage'
+import { RoadmapPage } from '@/features/roadmap/RoadmapPage'
 import { StepDetailPage } from '@/features/roadmap/StepDetailPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { FullPageError, NotFoundPage } from '@/components/PageStates'
@@ -28,6 +29,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <MyBusinessPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'roadmap',
+        element: (
+          <ProtectedRoute>
+            <RoadmapPage />
           </ProtectedRoute>
         ),
       },
