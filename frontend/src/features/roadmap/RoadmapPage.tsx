@@ -70,7 +70,7 @@ export function RoadmapPage() {
       name: s.name,
       conditionNote: s.conditionNote,
     }))
-  }, [roadmap?.steps])
+  }, [roadmap])
 
   if (isLoading) {
     return <FullPageLoader label="Finding your route…" />

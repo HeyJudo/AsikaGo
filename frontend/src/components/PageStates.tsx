@@ -3,7 +3,7 @@ import { motion } from 'motion/react'
 import { AlertCircle, Loader2, MapPinOff, RotateCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-function Centered({ children }: { children: React.ReactNode }) {
+export function Centered({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -27,17 +27,27 @@ export function FullPageLoader({ label = 'Loading' }: { label?: string }) {
   )
 }
 
-export function FullPageError({ onRetry }: { onRetry: () => void }) {
+export function FullPageError({
+  onRetry,
+  message,
+  retryLabel = 'Try again',
+}: {
+  onRetry: () => void
+  message?: string
+  retryLabel?: string
+}) {
   return (
     <Centered>
       <span className="flex size-16 items-center justify-center rounded-full bg-destructive/10">
         <AlertCircle className="size-8 text-destructive" aria-hidden="true" />
       </span>
       <h1 className="text-navy text-xl font-bold">Something went wrong.</h1>
-      <p className="text-muted-foreground max-w-sm text-sm">We couldn't load this page. Check your connection and try again.</p>
+      <p className="text-muted-foreground max-w-sm text-sm">
+        {message ?? "We couldn't load this page. Check your connection and try again."}
+      </p>
       <Button className="h-11 rounded-full px-6 font-semibold" onClick={onRetry}>
         <RotateCw aria-hidden="true" />
-        Retry
+        {retryLabel}
       </Button>
     </Centered>
   )
