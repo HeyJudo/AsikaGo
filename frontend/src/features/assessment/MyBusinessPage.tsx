@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router'
 import { motion, type Variants } from 'motion/react'
-import { AlertCircle, Check, MapIcon, MapPin, PenLine, Store } from 'lucide-react'
+import { AlertCircle, ArrowRight, Check, MapIcon, MapPin, PenLine, Store } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -156,21 +156,27 @@ export function MyBusinessPage() {
                     <p className="text-sm text-white/80">You told us about your business.</p>
                   </div>
                 </motion.li>
-                <motion.li variants={stop} className="relative flex gap-4">
-                  <motion.span
-                    animate={{ scale: [1, 1.15, 1] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                    className="bg-gold text-navy z-10 flex size-6 shrink-0 items-center justify-center rounded-full"
+                <motion.li variants={stop} className="relative">
+                  <Link
+                    to="/roadmap"
+                    className="group -m-2 flex min-h-[44px] items-center gap-4 rounded-xl p-2 transition-colors hover:bg-white/10"
                   >
-                    <MapPin className="size-4" aria-hidden="true" />
-                  </motion.span>
-                  <div>
-                    <p className="flex flex-wrap items-center gap-2 font-semibold">
-                      Your roadmap
-                      <span className="bg-gold text-navy rounded-full px-2 py-0.5 text-xs font-bold">You're here</span>
-                    </p>
-                    <p className="text-sm text-white/80">Step-by-step permits for Pasig City. Coming soon.</p>
-                  </div>
+                    <motion.span
+                      animate={{ scale: [1, 1.15, 1] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                      className="bg-gold text-navy z-10 flex size-6 shrink-0 items-center justify-center rounded-full"
+                    >
+                      <MapPin className="size-4" aria-hidden="true" />
+                    </motion.span>
+                    <div className="flex-1">
+                      <p className="flex flex-wrap items-center gap-2 font-semibold">
+                        Your roadmap
+                        <span className="bg-gold text-navy rounded-full px-2 py-0.5 text-xs font-bold">You're here</span>
+                      </p>
+                      <p className="text-sm text-white/80">Step-by-step permits for Pasig City.</p>
+                    </div>
+                    <ArrowRight className="size-5 shrink-0 text-white/70 transition-transform group-hover:translate-x-0.5 group-hover:text-white" aria-hidden="true" />
+                  </Link>
                 </motion.li>
                 <motion.li variants={stop} className="relative flex gap-4">
                   <span aria-hidden="true" className="bg-brand z-10 size-6 shrink-0 rounded-full border-2 border-white" />
@@ -182,14 +188,19 @@ export function MyBusinessPage() {
               </motion.ol>
             </section>
 
-            <Card>
-              <CardContent className="flex items-start gap-3">
-                <MapIcon className="text-brand mt-0.5 size-6 shrink-0" aria-hidden="true" />
-                <div>
-                  <p className="text-navy font-semibold">Your registration roadmap is coming soon.</p>
-                  <p className="text-muted-foreground text-sm">We're preparing every Pasig City permit you need, in the right order.</p>
-                </div>
-              </CardContent>
+            <Card className="hover:border-brand/50 transition-colors">
+              <Link to="/roadmap" className="block min-h-[44px]">
+                <CardContent className="flex items-center justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <MapIcon className="text-brand mt-0.5 size-6 shrink-0" aria-hidden="true" />
+                    <div>
+                      <p className="text-navy font-semibold">View your registration roadmap</p>
+                      <p className="text-muted-foreground text-sm">See every Pasig City permit you need, in the right order.</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="text-muted-foreground size-5 shrink-0" aria-hidden="true" />
+                </CardContent>
+              </Link>
             </Card>
           </motion.div>
         </div>
