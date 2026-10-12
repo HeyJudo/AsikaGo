@@ -196,6 +196,7 @@ namespace AsikaGo.Api.Data.Migrations
                         .HasColumnName("id");
 
                     b.Property<string>("Actions")
+                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("actions");
 

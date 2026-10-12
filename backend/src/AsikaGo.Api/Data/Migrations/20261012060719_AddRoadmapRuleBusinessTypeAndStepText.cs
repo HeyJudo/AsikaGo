@@ -20,7 +20,8 @@ namespace AsikaGo.Api.Data.Migrations
                 name: "actions",
                 table: "registration_steps",
                 type: "text",
-                nullable: true);
+                nullable: false,
+                defaultValue: "");
 
             migrationBuilder.AddColumn<string>(
                 name: "condition_note",

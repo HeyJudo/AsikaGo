@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AsikaGo.Api.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261012054402_AddRoadmapRuleBusinessTypeAndStepText")]
+    [Migration("20261012060719_AddRoadmapRuleBusinessTypeAndStepText")]
     partial class AddRoadmapRuleBusinessTypeAndStepText
     {
         /// <inheritdoc />
@@ -199,6 +199,7 @@ namespace AsikaGo.Api.Data.Migrations
                         .HasColumnName("id");
 
                     b.Property<string>("Actions")
+                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("actions");
 
