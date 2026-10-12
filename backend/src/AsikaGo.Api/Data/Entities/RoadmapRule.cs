@@ -7,6 +7,7 @@ public class RoadmapRule
     public BusinessCategory? Category { get; set; }
     public Guid? CityId { get; set; } // null = any city
     public City? City { get; set; }
+    public string? BusinessType { get; set; } // null = any business type
     public Guid StepId { get; set; }
     public RegistrationStep? Step { get; set; }
     public Guid? RequirementId { get; set; } // null = rule is about the whole step

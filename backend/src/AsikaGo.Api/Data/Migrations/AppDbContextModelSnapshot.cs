@@ -195,10 +195,18 @@ namespace AsikaGo.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("Actions")
+                        .HasColumnType("text")
+                        .HasColumnName("actions");
+
                     b.Property<string>("Agency")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("agency");
+
+                    b.Property<string>("ConditionNote")
+                        .HasColumnType("text")
+                        .HasColumnName("condition_note");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -327,6 +335,10 @@ namespace AsikaGo.Api.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<string>("BusinessType")
+                        .HasColumnType("text")
+                        .HasColumnName("business_type");
 
                     b.Property<Guid?>("CategoryId")
                         .HasColumnType("uuid")
