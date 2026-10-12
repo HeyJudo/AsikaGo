@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { Link, Navigate } from 'react-router'
 import { motion, type Variants } from 'motion/react'
 import { AlertCircle, ArrowRight, Check, MapIcon, MapPin, PenLine, Store } from 'lucide-react'
@@ -9,7 +8,7 @@ import { FullPageError, FullPageLoader } from '@/components/PageStates'
 import { GoogleButton } from '@/components/GoogleButton'
 import { useAuth } from '@/app/AuthProvider'
 import { useBusinessProfile } from '@/lib/queries'
-import { supabase } from '@/lib/supabase'
+import { useLinkGoogle } from '@/features/auth/useLinkGoogle'
 
 const list: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } }
 const item: Variants = {
@@ -32,22 +31,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function GuestBanner() {
-  const [pending, setPending] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  async function link() {
-    setPending(true)
-    setError(null)
-    const { error } = await supabase.auth.linkIdentity({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/my-business` },
-    })
-    // On success the browser redirects to Google, so only failures return here.
-    if (error) {
-      setError(error.message)
-      setPending(false)
-    }
-  }
+  const { link, pending, error } = useLinkGoogle('/my-business')
 
   return (
     <motion.div
