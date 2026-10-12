@@ -76,6 +76,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<UserRoadmap>(e =>
         {
             e.Property(u => u.CreatedAt).HasDefaultValueSql("now()");
+            e.HasIndex(u => u.BusinessId).IsUnique();
             e.HasOne(u => u.Business).WithMany().HasForeignKey(u => u.BusinessId).OnDelete(DeleteBehavior.Cascade);
         });
 

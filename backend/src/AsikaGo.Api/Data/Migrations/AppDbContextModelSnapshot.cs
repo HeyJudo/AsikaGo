@@ -433,6 +433,7 @@ namespace AsikaGo.Api.Data.Migrations
                         .HasName("pk_user_roadmaps");
 
                     b.HasIndex("BusinessId")
+                        .IsUnique()
                         .HasDatabaseName("ix_user_roadmaps_business_id");
 
                     b.ToTable("user_roadmaps", (string)null);
