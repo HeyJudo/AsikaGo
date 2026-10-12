@@ -165,39 +165,282 @@ public class RoadmapEngineTests
     [InlineData("G-12", "One Person Corporation", "Services", 62)]
     public void GenerateRoadmap_GoldenCases_MatchesFixture(string caseId, string businessType, string categoryName, int expectedTotalRequirements)
     {
-        Assert.NotNull(caseId);
         var engine = new RoadmapEngine();
         var categoryId = categoryName switch
         {
             "Food and Beverage" => FoodId,
             "Retail" => RetailId,
             "Services" => ServicesId,
-            _ => throw new ArgumentException()
+            _ => throw new ArgumentException($"Invalid category {categoryName} for case {caseId}")
         };
 
         var (steps, requirements, rules) = GetPasigFixture();
-
         var result = engine.GenerateRoadmap(businessType, categoryId, PasigId, rules, steps, requirements);
 
-        Assert.Equal(10, result.Steps.Count);
-        for (int i = 0; i < result.Steps.Count; i++)
+        Assert.True(result.Steps.Count == 10, $"Case {caseId}: expected 10 steps, got {result.Steps.Count}");
+
+        var expectedStepNames = new List<string>
+        {
+            businessType == "Sole Proprietorship" ? "DTI Business Name Registration" : "SEC Company Registration",
+            "Barangay Business Clearance",
+            "Certificate of Conformance",
+            "Fire Safety Inspection Certificate for Occupancy",
+            "Business Application Form and Documents",
+            "Tax Order of Payment",
+            "Pay Local Business Taxes and Fees",
+            "Health, Environment, and Fire Permits",
+            "Claim Business Permit and Sticker",
+            businessType == "Sole Proprietorship" ? "BIR Business Registration for Sole Proprietors" : "BIR Business Registration for Corporations and Partnerships"
+        };
+
+        for (int i = 0; i < 10; i++)
         {
             Assert.Equal(i + 1, result.Steps[i].Number);
-        }
-
-        if (businessType == "Sole Proprietorship")
-        {
-            Assert.Equal("DTI Business Name Registration", result.Steps[0].Step.Name);
-            Assert.Equal("BIR Business Registration for Sole Proprietors", result.Steps[9].Step.Name);
-        }
-        else
-        {
-            Assert.Equal("SEC Company Registration", result.Steps[0].Step.Name);
-            Assert.Equal("BIR Business Registration for Corporations and Partnerships", result.Steps[9].Step.Name);
+            Assert.Equal(expectedStepNames[i], result.Steps[i].Step.Name);
         }
 
         int totalReqs = result.Steps.Sum(s => s.Requirements.Count);
         Assert.Equal(expectedTotalRequirements, totalReqs);
+
+        foreach (var stepResult in result.Steps)
+        {
+            var sName = stepResult.Step.Name;
+            var reqNames = stepResult.Requirements.Select(r => r.Requirement.Name).ToList();
+
+            if (sName == "DTI Business Name Registration")
+            {
+                Assert.Equal(new[] {
+                    "Filipino citizen, at least 18 years old",
+                    "One valid government ID",
+                    "2 or 3 business names",
+                    "Email address and mobile number",
+                    "Registration fee"
+                }, reqNames);
+            }
+            else if (sName == "SEC Company Registration")
+            {
+                if (businessType == "Partnership")
+                {
+                    Assert.Equal(new[] {
+                        "Company name",
+                        "Articles of Partnership",
+                        "Valid IDs and TIN of every owner",
+                        "SEC registration fee"
+                    }, reqNames);
+                }
+                else
+                {
+                    Assert.Equal(new[] {
+                        "Company name",
+                        "Articles and By-Laws",
+                        "Treasurer's Affidavit and proof of paid-up capital",
+                        "Valid IDs and TIN of every owner",
+                        "SEC registration fee"
+                    }, reqNames);
+                }
+            }
+            else if (sName == "Barangay Business Clearance")
+            {
+                Assert.Equal(new[] {
+                    "Barangay clearance for renovation",
+                    "Copy of your DTI or SEC registration",
+                    "Contract of lease or land title",
+                    "Business insurance policy",
+                    "Space use fee",
+                    "Business plate fee"
+                }, reqNames);
+            }
+            else if (sName == "Certificate of Conformance")
+            {
+                Assert.Equal(new[] {
+                    "Tax Declaration of land and building",
+                    "Lease agreement",
+                    "Authorization letter or SPA",
+                    "Barangay clearance",
+                    "Occupancy Permit",
+                    "Certificate of No Objection",
+                    "Photos of your business place",
+                    "Google Map of your place"
+                }, reqNames);
+            }
+            else if (sName == "Fire Safety Inspection Certificate for Occupancy")
+            {
+                Assert.Equal(new[] { "Fire Safety Inspection Fee" }, reqNames);
+            }
+            else if (sName == "Business Application Form and Documents")
+            {
+                var common = new[] {
+                    "Valid government ID",
+                    "Unified Business Application Form",
+                    "DTI or SEC certificate",
+                    "Barangay Business Clearance",
+                    "Certificate of Conformance",
+                    "Fire Safety Inspection Certificate for Occupancy",
+                    "Proof of business location",
+                    "Color photo of your business place",
+                    "Location map",
+                    "Authorization letter and ID"
+                };
+                if (categoryName == "Food and Beverage")
+                {
+                    Assert.Equal(common.Concat(new[] {
+                        "If your business is a restaurant, fast food, canteen, eatery, or catering service that deals with animal meat: Veterinary Clearance from the Pasig City Department of Veterinary Services.",
+                        "If your business is a restobar, night club, or beer house: stay 200 meters away from public offices, schools, and churches. Bring Health Certificates for your workers, a Working Permit for each worker, and a Fire Safety Certificate.",
+                        "If your business is a water refilling station: Certification of Water Potability from the City Health Department, or a Certification of Sanitary Inspection.",
+                        "If your business makes food or beauty products: FDA (Food and Drug Administration) License."
+                    }).ToArray(), reqNames);
+                }
+                else if (categoryName == "Retail")
+                {
+                    Assert.Equal(common.Concat(new[] {
+                        "If your business is a pharmacy or drugstore: FDA (Food and Drug Administration) License.",
+                        "If your business is a pet shop: Animal Certification of Registration from the Bureau of Animal Industry, and Veterinary Clearance from the Pasig City Department of Veterinary Services.",
+                        "If your business is an LPG dealer or gasoline station: DOE (Department of Energy) Accreditation.",
+                        "If your business is a pawnshop, money changer, or remittance agency: Certification to Operate from the Bangko Sentral ng Pilipinas.",
+                        "If your business is an electronics or electrical equipment shop: DTI (Department of Trade and Industry) Accreditation Certificate."
+                    }).ToArray(), reqNames);
+                }
+                else if (categoryName == "Services")
+                {
+                    Assert.Equal(common.Concat(new[] {
+                        "If your business is an auto repair, electronics, or radio repair shop: DTI (Department of Trade and Industry) Accreditation Certificate.",
+                        "If your business is a junkshop, vulcanizing shop, carwash, or auto repair shop: a lot of at least 100 square meters, plus the lot title or your lease contract and the owner's TCT.",
+                        "If your business exercises a profession: PRC (Professional Regulation Commission) License and PTR (Professional Tax Receipt).",
+                        "If your business is a travel agency: DOT (Department of Tourism) Accreditation.",
+                        "If your business is a school or training center: DepEd (Department of Education) or CHED (Commission on Higher Education) Accreditation.",
+                        "If your business is a recruitment or manpower agency: License to Operate from DOLE (Department of Labor and Employment) or POEA, as the case may be.",
+                        "If your business is a rent-a-car or transport service: LTO (Land Transportation Office) Franchise.",
+                        "If your business is a real estate lessor: Proof of Ownership.",
+                        "If your business is a warehouse or depot: Certification that says what kind of goods you will store."
+                    }).ToArray(), reqNames);
+                }
+            }
+            else if (sName == "Tax Order of Payment")
+            {
+                Assert.Equal(new[] { "Validated application form and documents" }, reqNames);
+            }
+            else if (sName == "Pay Local Business Taxes and Fees")
+            {
+                Assert.Equal(new[] { "Tax Order of Payment" }, reqNames);
+            }
+            else if (sName == "Health, Environment, and Fire Permits")
+            {
+                if (categoryName == "Food and Beverage")
+                {
+                    Assert.Equal(new[] {
+                        "Sanitary Permit",
+                        "Health Certificate for food workers",
+                        "Pest control contract",
+                        "Environmental clearance from CENRO",
+                        "Fire Safety Inspection Permit for your business permit"
+                    }, reqNames);
+                }
+                else
+                {
+                    Assert.Equal(new[] {
+                        "Sanitary Permit",
+                        "Health Certificate",
+                        "Environmental clearance from CENRO",
+                        "Fire Safety Inspection Permit for your business permit"
+                    }, reqNames);
+                }
+            }
+            else if (sName == "Claim Business Permit and Sticker")
+            {
+                Assert.Equal(new[] {
+                    "Certificate of Conformance",
+                    "Fire Safety Inspection Certificate",
+                    "CENRO clearance",
+                    "Sanitary Permit",
+                    "Application form, Tax Order of Payment, and cedula"
+                }, reqNames);
+            }
+            else if (sName == "BIR Business Registration for Sole Proprietors")
+            {
+                Assert.Equal(new[] {
+                    "BIR Form 1901",
+                    "Valid government ID",
+                    "DTI Certificate of Business Name Registration",
+                    "Mayor's Permit or Business Permit",
+                    "Invoice option (choose one)",
+                    "Documentary stamp tax",
+                    "Special Power of Attorney and IDs",
+                    "Work visa or Alien Employment Permit",
+                    "DTI Certificate of Authority for BMBE",
+                    "Proof of registration or Permit to Operate",
+                    "Franchise documents"
+                }, reqNames);
+            }
+            else if (sName == "BIR Business Registration for Corporations and Partnerships")
+            {
+                if (businessType == "Partnership")
+                {
+                    Assert.Equal(new[] {
+                        "BIR Form 1903",
+                        "SEC Certificate of Recording",
+                        "Articles of Partnership",
+                        "Mayor's Permit or Business Permit",
+                        "Proof of business address",
+                        "Invoice option (choose one)",
+                        "Documentary stamp tax",
+                        "Special Power of Attorney and IDs",
+                        "Work visa or Alien Employment Permit",
+                        "DTI Certificate of Authority for BMBE",
+                        "Proof of registration or Permit to Operate",
+                        "Franchise documents"
+                    }, reqNames);
+                }
+                else
+                {
+                    Assert.Equal(new[] {
+                        "BIR Form 1903",
+                        "SEC Certificate of Incorporation",
+                        "Articles and By-Laws",
+                        "Mayor's Permit or Business Permit",
+                        "Proof of business address",
+                        "Invoice option (choose one)",
+                        "Documentary stamp tax",
+                        "Special Power of Attorney and IDs",
+                        "Work visa or Alien Employment Permit",
+                        "DTI Certificate of Authority for BMBE",
+                        "Proof of registration or Permit to Operate",
+                        "Franchise documents"
+                    }, reqNames);
+                }
+            }
+
+            for (int rIdx = 0; rIdx < stepResult.Requirements.Count; rIdx++)
+            {
+                var reqResult = stepResult.Requirements[rIdx];
+                if (stepResult.Step.Name == "Business Application Form and Documents" && rIdx >= 10)
+                {
+                    Assert.True(categoryId.Equals(reqResult.AppliesToCategoryId), $"Case {caseId}: expected AppliesToCategoryId {categoryId} for req {reqResult.Requirement.Name}");
+                }
+                else if (stepResult.Step.Name == "Health, Environment, and Fire Permits")
+                {
+                    if (categoryName == "Food and Beverage" && (reqResult.Requirement.Name == "Health Certificate for food workers" || reqResult.Requirement.Name == "Pest control contract"))
+                    {
+                        Assert.True(categoryId.Equals(reqResult.AppliesToCategoryId), $"Case {caseId}: expected AppliesToCategoryId {categoryId} for req {reqResult.Requirement.Name}");
+                    }
+                    else if (categoryName == "Retail" && reqResult.Requirement.Name == "Health Certificate")
+                    {
+                        Assert.True(categoryId.Equals(reqResult.AppliesToCategoryId), $"Case {caseId}: expected AppliesToCategoryId {categoryId} for req {reqResult.Requirement.Name}");
+                    }
+                    else if (categoryName == "Services" && reqResult.Requirement.Name == "Health Certificate")
+                    {
+                        Assert.True(categoryId.Equals(reqResult.AppliesToCategoryId), $"Case {caseId}: expected AppliesToCategoryId {categoryId} for req {reqResult.Requirement.Name}");
+                    }
+                    else
+                    {
+                        Assert.Null(reqResult.AppliesToCategoryId);
+                    }
+                }
+                else
+                {
+                    Assert.Null(reqResult.AppliesToCategoryId);
+                }
+            }
+        }
     }
 
     private static (List<RegistrationStep> Steps, List<Requirement> Requirements, List<RoadmapRule> Rules) GetPasigFixture()
@@ -235,19 +478,36 @@ public class RoadmapEngineTests
         var rules = new List<RoadmapRule>();
 
         // Step 1A reqs (5)
+        var s1aNames = new[]
+        {
+            "Filipino citizen, at least 18 years old",
+            "One valid government ID",
+            "2 or 3 business names",
+            "Email address and mobile number",
+            "Registration fee"
+        };
         for (int i = 1; i <= 5; i++)
         {
             var reqId = new Guid($"55555555-5555-5555-5555-00000001a00{i}");
-            requirements.Add(new Requirement { Id = reqId, StepId = s1aId, Name = $"1A Req {i}" });
+            requirements.Add(new Requirement { Id = reqId, StepId = s1aId, Name = s1aNames[i - 1] });
             rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s1aId, RequirementId = reqId, BusinessType = "Sole Proprietorship", Effect = RoadmapRuleEffect.Include, SortOrder = i });
         }
         rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s1aId, BusinessType = "Sole Proprietorship", Effect = RoadmapRuleEffect.Include, SortOrder = 1 });
 
         // Step 1B reqs (6)
+        var s1bNames = new[]
+        {
+            "Company name",
+            "Articles and By-Laws",
+            "Articles of Partnership",
+            "Treasurer's Affidavit and proof of paid-up capital",
+            "Valid IDs and TIN of every owner",
+            "SEC registration fee"
+        };
         for (int i = 1; i <= 6; i++)
         {
             var reqId = new Guid($"55555555-5555-5555-5555-00000001b0{i:D2}");
-            requirements.Add(new Requirement { Id = reqId, StepId = s1bId, Name = $"1B Req {i}" });
+            requirements.Add(new Requirement { Id = reqId, StepId = s1bId, Name = s1bNames[i - 1] });
             if (i == 1 || i == 5 || i == 6)
             {
                 foreach (var bt in new[] { "Partnership", "Corporation", "One Person Corporation" })
@@ -283,66 +543,126 @@ public class RoadmapEngineTests
         rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s9Id, Effect = RoadmapRuleEffect.Include, SortOrder = 9 });
 
         // Step 2 reqs (6)
+        var s2Names = new[]
+        {
+            "Barangay clearance for renovation",
+            "Copy of your DTI or SEC registration",
+            "Contract of lease or land title",
+            "Business insurance policy",
+            "Space use fee",
+            "Business plate fee"
+        };
         for (int i = 1; i <= 6; i++)
         {
             var reqId = new Guid($"55555555-5555-5555-5555-00000000200{i}");
-            requirements.Add(new Requirement { Id = reqId, StepId = s2Id, Name = $"Step2 Req {i}" });
+            requirements.Add(new Requirement { Id = reqId, StepId = s2Id, Name = s2Names[i - 1] });
             rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s2Id, RequirementId = reqId, Effect = RoadmapRuleEffect.Include, SortOrder = i });
         }
 
         // Step 3 reqs (8)
+        var s3Names = new[]
+        {
+            "Tax Declaration of land and building",
+            "Lease agreement",
+            "Authorization letter or SPA",
+            "Barangay clearance",
+            "Occupancy Permit",
+            "Certificate of No Objection",
+            "Photos of your business place",
+            "Google Map of your place"
+        };
         for (int i = 1; i <= 8; i++)
         {
             var reqId = new Guid($"55555555-5555-5555-5555-00000000300{i}");
-            requirements.Add(new Requirement { Id = reqId, StepId = s3Id, Name = $"Step3 Req {i}" });
+            requirements.Add(new Requirement { Id = reqId, StepId = s3Id, Name = s3Names[i - 1] });
             rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s3Id, RequirementId = reqId, Effect = RoadmapRuleEffect.Include, SortOrder = i });
         }
 
         // Step 4 reqs (1)
         var req4Id = new Guid("55555555-5555-5555-5555-000000004001");
-        requirements.Add(new Requirement { Id = req4Id, StepId = s4Id, Name = "Step4 Req 1" });
+        requirements.Add(new Requirement { Id = req4Id, StepId = s4Id, Name = "Fire Safety Inspection Fee" });
         rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s4Id, RequirementId = req4Id, Effect = RoadmapRuleEffect.Include, SortOrder = 1 });
 
         // Step 5 common reqs (10)
+        var s5CommonNames = new[]
+        {
+            "Valid government ID",
+            "Unified Business Application Form",
+            "DTI or SEC certificate",
+            "Barangay Business Clearance",
+            "Certificate of Conformance",
+            "Fire Safety Inspection Certificate for Occupancy",
+            "Proof of business location",
+            "Color photo of your business place",
+            "Location map",
+            "Authorization letter and ID"
+        };
         for (int i = 1; i <= 10; i++)
         {
             var reqId = new Guid($"55555555-5555-5555-5555-000000005{i:D3}");
-            requirements.Add(new Requirement { Id = reqId, StepId = s5Id, Name = $"Step5 Common Req {i}" });
+            requirements.Add(new Requirement { Id = reqId, StepId = s5Id, Name = s5CommonNames[i - 1] });
             rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s5Id, RequirementId = reqId, Effect = RoadmapRuleEffect.Include, SortOrder = i });
         }
 
         // Step 5 F&B reqs (4: 5011..5014)
+        var s5FbNames = new[]
+        {
+            "If your business is a restaurant, fast food, canteen, eatery, or catering service that deals with animal meat: Veterinary Clearance from the Pasig City Department of Veterinary Services.",
+            "If your business is a restobar, night club, or beer house: stay 200 meters away from public offices, schools, and churches. Bring Health Certificates for your workers, a Working Permit for each worker, and a Fire Safety Certificate.",
+            "If your business is a water refilling station: Certification of Water Potability from the City Health Department, or a Certification of Sanitary Inspection.",
+            "If your business makes food or beauty products: FDA (Food and Drug Administration) License."
+        };
         for (int i = 11; i <= 14; i++)
         {
             var reqId = new Guid($"55555555-5555-5555-5555-000000005{i:D3}");
-            requirements.Add(new Requirement { Id = reqId, StepId = s5Id, Name = $"Step5 FB Req {i}" });
+            requirements.Add(new Requirement { Id = reqId, StepId = s5Id, Name = s5FbNames[i - 11] });
             rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s5Id, RequirementId = reqId, CategoryId = FoodId, Effect = RoadmapRuleEffect.Include, SortOrder = i });
         }
 
         // Step 5 Retail reqs (5: 5015..5019)
+        var s5RetailNames = new[]
+        {
+            "If your business is a pharmacy or drugstore: FDA (Food and Drug Administration) License.",
+            "If your business is a pet shop: Animal Certification of Registration from the Bureau of Animal Industry, and Veterinary Clearance from the Pasig City Department of Veterinary Services.",
+            "If your business is an LPG dealer or gasoline station: DOE (Department of Energy) Accreditation.",
+            "If your business is a pawnshop, money changer, or remittance agency: Certification to Operate from the Bangko Sentral ng Pilipinas.",
+            "If your business is an electronics or electrical equipment shop: DTI (Department of Trade and Industry) Accreditation Certificate."
+        };
         for (int i = 15; i <= 19; i++)
         {
             var reqId = new Guid($"55555555-5555-5555-5555-000000005{i:D3}");
-            requirements.Add(new Requirement { Id = reqId, StepId = s5Id, Name = $"Step5 Retail Req {i}" });
+            requirements.Add(new Requirement { Id = reqId, StepId = s5Id, Name = s5RetailNames[i - 15] });
             rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s5Id, RequirementId = reqId, CategoryId = RetailId, Effect = RoadmapRuleEffect.Include, SortOrder = i });
         }
 
         // Step 5 Services reqs (9: 5020..5028)
+        var s5ServicesNames = new[]
+        {
+            "If your business is an auto repair, electronics, or radio repair shop: DTI (Department of Trade and Industry) Accreditation Certificate.",
+            "If your business is a junkshop, vulcanizing shop, carwash, or auto repair shop: a lot of at least 100 square meters, plus the lot title or your lease contract and the owner's TCT.",
+            "If your business exercises a profession: PRC (Professional Regulation Commission) License and PTR (Professional Tax Receipt).",
+            "If your business is a travel agency: DOT (Department of Tourism) Accreditation.",
+            "If your business is a school or training center: DepEd (Department of Education) or CHED (Commission on Higher Education) Accreditation.",
+            "If your business is a recruitment or manpower agency: License to Operate from DOLE (Department of Labor and Employment) or POEA, as the case may be.",
+            "If your business is a rent-a-car or transport service: LTO (Land Transportation Office) Franchise.",
+            "If your business is a real estate lessor: Proof of Ownership.",
+            "If your business is a warehouse or depot: Certification that says what kind of goods you will store."
+        };
         for (int i = 20; i <= 28; i++)
         {
             var reqId = new Guid($"55555555-5555-5555-5555-000000005{i:D3}");
-            requirements.Add(new Requirement { Id = reqId, StepId = s5Id, Name = $"Step5 Services Req {i}" });
+            requirements.Add(new Requirement { Id = reqId, StepId = s5Id, Name = s5ServicesNames[i - 20] });
             rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s5Id, RequirementId = reqId, CategoryId = ServicesId, Effect = RoadmapRuleEffect.Include, SortOrder = i });
         }
 
         // Step 6 req (1)
         var req6Id = new Guid("55555555-5555-5555-5555-000000006001");
-        requirements.Add(new Requirement { Id = req6Id, StepId = s6Id, Name = "Step6 Req 1" });
+        requirements.Add(new Requirement { Id = req6Id, StepId = s6Id, Name = "Validated application form and documents" });
         rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s6Id, RequirementId = req6Id, Effect = RoadmapRuleEffect.Include, SortOrder = 1 });
 
         // Step 7 req (1)
         var req7Id = new Guid("55555555-5555-5555-5555-000000007001");
-        requirements.Add(new Requirement { Id = req7Id, StepId = s7Id, Name = "Step7 Req 1" });
+        requirements.Add(new Requirement { Id = req7Id, StepId = s7Id, Name = "Tax Order of Payment" });
         rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s7Id, RequirementId = req7Id, Effect = RoadmapRuleEffect.Include, SortOrder = 1 });
 
         // Step 8 common reqs
@@ -372,27 +692,66 @@ public class RoadmapEngineTests
         rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s8Id, RequirementId = req8Services, CategoryId = ServicesId, Effect = RoadmapRuleEffect.Include, SortOrder = 2 });
 
         // Step 9 reqs (5)
+        var s9Names = new[]
+        {
+            "Certificate of Conformance",
+            "Fire Safety Inspection Certificate",
+            "CENRO clearance",
+            "Sanitary Permit",
+            "Application form, Tax Order of Payment, and cedula"
+        };
         for (int i = 1; i <= 5; i++)
         {
             var reqId = new Guid($"55555555-5555-5555-5555-00000000900{i}");
-            requirements.Add(new Requirement { Id = reqId, StepId = s9Id, Name = $"Step9 Req {i}" });
+            requirements.Add(new Requirement { Id = reqId, StepId = s9Id, Name = s9Names[i - 1] });
             rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s9Id, RequirementId = reqId, Effect = RoadmapRuleEffect.Include, SortOrder = i });
         }
 
         // Step 10A reqs (11)
+        var s10aNames = new[]
+        {
+            "BIR Form 1901",
+            "Valid government ID",
+            "DTI Certificate of Business Name Registration",
+            "Mayor's Permit or Business Permit",
+            "Invoice option (choose one)",
+            "Documentary stamp tax",
+            "Special Power of Attorney and IDs",
+            "Work visa or Alien Employment Permit",
+            "DTI Certificate of Authority for BMBE",
+            "Proof of registration or Permit to Operate",
+            "Franchise documents"
+        };
         for (int i = 1; i <= 11; i++)
         {
             var reqId = new Guid($"55555555-5555-5555-5555-00000010a0{i:D2}");
-            requirements.Add(new Requirement { Id = reqId, StepId = s10aId, Name = $"10A Req {i}" });
+            requirements.Add(new Requirement { Id = reqId, StepId = s10aId, Name = s10aNames[i - 1] });
             rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s10aId, RequirementId = reqId, BusinessType = "Sole Proprietorship", Effect = RoadmapRuleEffect.Include, SortOrder = i });
         }
         rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s10aId, BusinessType = "Sole Proprietorship", Effect = RoadmapRuleEffect.Include, SortOrder = 10 });
 
         // Step 10B reqs (14)
+        var s10bNames = new[]
+        {
+            "BIR Form 1903",
+            "SEC Certificate of Incorporation",
+            "SEC Certificate of Recording",
+            "Articles and By-Laws",
+            "Articles of Partnership",
+            "Mayor's Permit or Business Permit",
+            "Proof of business address",
+            "Invoice option (choose one)",
+            "Documentary stamp tax",
+            "Special Power of Attorney and IDs",
+            "Work visa or Alien Employment Permit",
+            "DTI Certificate of Authority for BMBE",
+            "Proof of registration or Permit to Operate",
+            "Franchise documents"
+        };
         for (int i = 1; i <= 14; i++)
         {
             var reqId = new Guid($"55555555-5555-5555-5555-00000010b0{i:D2}");
-            requirements.Add(new Requirement { Id = reqId, StepId = s10bId, Name = $"10B Req {i}" });
+            requirements.Add(new Requirement { Id = reqId, StepId = s10bId, Name = s10bNames[i - 1] });
             if (i == 1 || (i >= 6 && i <= 14))
             {
                 foreach (var bt in new[] { "Partnership", "Corporation", "One Person Corporation" })
