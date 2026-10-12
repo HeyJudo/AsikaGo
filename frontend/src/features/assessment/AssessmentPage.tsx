@@ -287,12 +287,12 @@ export function AssessmentPage() {
         body: JSON.stringify(payload),
       }),
     onSuccess: (saved) => {
-      // Seed the cache so /my-business doesn't see the stale null profile and bounce back
+      // Seed the cache so My Business doesn't see the stale null profile and bounce back
       queryClient.setQueryData(['business-profile'], saved)
       // A changed profile can change the roadmap, so refetch it instead of showing the cached one
       queryClient.removeQueries({ queryKey: ['roadmap'] })
       queryClient.removeQueries({ queryKey: ['roadmap-step'] })
-      void navigate('/my-business')
+      void navigate('/roadmap')
     },
     onError: (err) => {
       if (!showServerErrors(err)) setSaveNetworkError(true)
