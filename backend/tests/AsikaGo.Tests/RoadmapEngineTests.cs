@@ -183,8 +183,99 @@ public class RoadmapEngineTests
         var result = engine.GenerateRoadmap("Sole Proprietorship", FoodId, PasigId, rules, steps, requirements);
 
         Assert.Equal(2, result.Steps.Count);
+        Assert.Equal(1, result.Steps[0].Number);
+        Assert.Equal(2, result.Steps[1].Number);
         Assert.Equal("DTI Business Name Registration", result.Steps[0].Step.Name);
         var reqRes = Assert.Single(result.Steps[1].Requirements);
         Assert.Equal(FoodId, reqRes.AppliesToCategoryId);
+    }
+
+    [Fact]
+    public void GenerateRoadmap_CityIdFilter_RespectsMatchAndMismatch()
+    {
+        var engine = new RoadmapEngine();
+        var stepId = Guid.NewGuid();
+        var steps = new List<RegistrationStep>
+        {
+            new() { Id = stepId, Name = "City Step", Agency = "City", Description = "Desc", Actions = "Action" }
+        };
+        var rules = new List<RoadmapRule>
+        {
+            new() { Id = Guid.NewGuid(), StepId = stepId, CityId = PasigId, Effect = RoadmapRuleEffect.Include, SortOrder = 1 }
+        };
+
+        var matchingResult = engine.GenerateRoadmap("Sole Proprietorship", FoodId, PasigId, rules, steps, []);
+        Assert.Single(matchingResult.Steps);
+
+        var otherCityId = Guid.NewGuid();
+        var mismatchResult = engine.GenerateRoadmap("Sole Proprietorship", FoodId, otherCityId, rules, steps, []);
+        Assert.Empty(mismatchResult.Steps);
+    }
+
+    [Fact]
+    public void GenerateRoadmap_CategoryIdFilter_RespectsMatchAndMismatch()
+    {
+        var engine = new RoadmapEngine();
+        var stepId = Guid.NewGuid();
+        var reqId = Guid.NewGuid();
+        var steps = new List<RegistrationStep>
+        {
+            new() { Id = stepId, Name = "Step", Agency = "Agency", Description = "Desc", Actions = "Action" }
+        };
+        var reqs = new List<Requirement>
+        {
+            new() { Id = reqId, StepId = stepId, Name = "Req" }
+        };
+        var rules = new List<RoadmapRule>
+        {
+            new() { Id = Guid.NewGuid(), StepId = stepId, Effect = RoadmapRuleEffect.Include, SortOrder = 1 },
+            new() { Id = Guid.NewGuid(), StepId = stepId, RequirementId = reqId, CategoryId = FoodId, Effect = RoadmapRuleEffect.Include, SortOrder = 1 }
+        };
+
+        var matchingResult = engine.GenerateRoadmap("Sole Proprietorship", FoodId, PasigId, rules, steps, reqs);
+        Assert.Single(matchingResult.Steps[0].Requirements);
+
+        var mismatchResult = engine.GenerateRoadmap("Sole Proprietorship", RetailId, PasigId, rules, steps, reqs);
+        Assert.Empty(mismatchResult.Steps[0].Requirements);
+    }
+
+    [Fact]
+    public void GenerateRoadmap_SortingAndStability_OrdersCorrectlyAndNumbersConsecutively()
+    {
+        var engine = new RoadmapEngine();
+        var step1Id = Guid.NewGuid();
+        var step2Id = Guid.NewGuid();
+        var req1Id = Guid.NewGuid();
+        var req2Id = Guid.NewGuid();
+
+        var steps = new List<RegistrationStep>
+        {
+            new() { Id = step2Id, Name = "Second Step", Agency = "Agency", Description = "Desc", Actions = "Action" },
+            new() { Id = step1Id, Name = "First Step", Agency = "Agency", Description = "Desc", Actions = "Action" }
+        };
+        var reqs = new List<Requirement>
+        {
+            new() { Id = req2Id, StepId = step1Id, Name = "Req B" },
+            new() { Id = req1Id, StepId = step1Id, Name = "Req A" }
+        };
+        var rules = new List<RoadmapRule>
+        {
+            new() { Id = Guid.NewGuid(), StepId = step1Id, Effect = RoadmapRuleEffect.Include, SortOrder = 1 },
+            new() { Id = Guid.NewGuid(), StepId = step2Id, Effect = RoadmapRuleEffect.Include, SortOrder = 2 },
+            new() { Id = Guid.NewGuid(), StepId = step1Id, RequirementId = req1Id, Effect = RoadmapRuleEffect.Include, SortOrder = 1 },
+            new() { Id = Guid.NewGuid(), StepId = step1Id, RequirementId = req2Id, Effect = RoadmapRuleEffect.Include, SortOrder = 2 }
+        };
+
+        var result = engine.GenerateRoadmap("Sole Proprietorship", FoodId, PasigId, rules, steps, reqs);
+
+        Assert.Equal(2, result.Steps.Count);
+        Assert.Equal(1, result.Steps[0].Number);
+        Assert.Equal("First Step", result.Steps[0].Step.Name);
+        Assert.Equal(2, result.Steps[1].Number);
+        Assert.Equal("Second Step", result.Steps[1].Step.Name);
+
+        Assert.Equal(2, result.Steps[0].Requirements.Count);
+        Assert.Equal("Req A", result.Steps[0].Requirements[0].Requirement.Name);
+        Assert.Equal("Req B", result.Steps[0].Requirements[1].Requirement.Name);
     }
 }
