@@ -23,6 +23,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- ponytail: wildcard so the Docker build (backend/ only, no database/) still compiles -->
+    <EmbeddedResource Include="..\..\..\database\seed\*.sql" LogicalName="seed/%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <OpenApiGenerateDocumentsOptions Include="--file-name AsikaGo.Api" />
   </ItemGroup>
 
