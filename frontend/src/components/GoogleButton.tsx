@@ -12,19 +12,19 @@ function GoogleIcon() {
   )
 }
 
-export function GoogleButton({ className, ...props }: React.ComponentProps<'button'>) {
+export function GoogleButton({ className, children = 'Continue with Google', ...props }: React.ComponentProps<'button'>) {
   return (
     <button
       type="button"
       className={cn(
         // Hex values follow Google's dark-theme sign-in branding requirements.
-        'inline-flex min-h-11 w-full items-center justify-center gap-3 rounded-full border border-[#8E918F] bg-[#131314] px-6 text-sm font-medium text-white transition-opacity outline-none hover:opacity-90 focus-visible:ring-3 focus-visible:ring-brand/50 disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex min-h-11 w-full items-center justify-center gap-3 rounded-full border border-[#8E918F] bg-[#131314] px-6 text-sm font-medium text-white transition-colors outline-none hover:border-white hover:bg-[#3C4043] focus-visible:ring-3 focus-visible:ring-brand/50 disabled:pointer-events-none disabled:opacity-50',
         className,
       )}
       {...props}
     >
       <GoogleIcon />
-      Continue with Google
+      {children}
     </button>
   )
 }
