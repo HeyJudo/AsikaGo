@@ -1,4 +1,5 @@
 using AsikaGo.Api.Data;
+using AsikaGo.Api.Data.Entities;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 
@@ -55,24 +56,84 @@ public static class RoadmapEndpoints
         var userId = GetUserId(http);
         if (userId is null) return TypedResults.Unauthorized();
 
-        var profile = await db.BusinessProfiles
-            .Where(b => b.UserId == userId.Value)
-            .Select(b => new { b.BusinessType, CategoryName = b.Category!.Name, CityName = b.City!.Name, b.RegistrationStatus, b.CreatedAt })
-            .FirstOrDefaultAsync(ct);
-        if (profile is null) return NoProfile();
+        var roadmap = await LoadRoadmap(db, userId.Value, ct);
+        if (roadmap is null) return NoProfile();
 
-        var steps = PlaceholderSteps
-            .Select(s => new RoadmapStepResponse(s.Number, s.StepId, s.Name, s.Agency, s.ConditionNote, s.Requirements.Count))
+        var profile = roadmap.Profile;
+        var steps = roadmap.Steps
+            .Select((s, i) => new RoadmapStepResponse(i + 1, s.Step.Id, s.Step.Name, s.Step.Agency, s.Step.ConditionNote, s.Requirements.Count))
             .ToList();
 
         return TypedResults.Ok(new RoadmapResponse(
-            new Guid("00000000-0000-0000-0000-00000000c001"),
-            profile.CreatedAt,
-            profile.BusinessType,
-            profile.CategoryName,
-            profile.CityName,
-            profile.RegistrationStatus,
-            steps));
+            roadmap.Id, roadmap.CreatedAt, profile.BusinessType, profile.Category!.Name, profile.City!.Name,
+            profile.RegistrationStatus, steps));
+    }
+
+    // The step list is the saved snapshot (D14). Requirements come from the current rules.
+    private sealed record LoadedRoadmap(
+        Guid Id,
+        DateTimeOffset CreatedAt,
+        BusinessProfile Profile,
+        IReadOnlyList<(RegistrationStep Step, IReadOnlyList<EngineRequirementResult> Requirements)> Steps);
+
+    private static async Task<LoadedRoadmap?> LoadRoadmap(AppDbContext db, Guid userId, CancellationToken ct)
+    {
+        var profile = await db.BusinessProfiles.AsNoTracking()
+            .Include(b => b.Category)
+            .Include(b => b.City)
+            .FirstOrDefaultAsync(b => b.UserId == userId, ct);
+        if (profile is null) return null;
+
+        var engine = new RoadmapEngine().GenerateRoadmap(
+            profile.BusinessType, profile.CategoryId, profile.CityId,
+            await db.RoadmapRules.AsNoTracking().ToListAsync(ct),
+            await db.RegistrationSteps.AsNoTracking().ToListAsync(ct),
+            await db.Requirements.AsNoTracking().Include(r => r.Source).ToListAsync(ct));
+
+        var roadmap = await FindRoadmap(db, profile.Id, ct) ?? await SaveRoadmap(db, profile.Id, engine, ct);
+
+        var saved = await db.RoadmapProgress.AsNoTracking()
+            .Include(p => p.Step)
+            .Where(p => p.RoadmapId == roadmap.Id)
+            .OrderBy(p => p.SortOrder).ThenBy(p => p.StepId)
+            .ToListAsync(ct);
+
+        var steps = saved
+            .Select(p => (p.Step!, engine.Steps.FirstOrDefault(s => s.Step.Id == p.StepId)?.Requirements ?? []))
+            .ToList();
+
+        return new LoadedRoadmap(roadmap.Id, roadmap.CreatedAt, profile, steps);
+    }
+
+    private static Task<UserRoadmap?> FindRoadmap(AppDbContext db, Guid businessId, CancellationToken ct) =>
+        db.UserRoadmaps.AsNoTracking().FirstOrDefaultAsync(r => r.BusinessId == businessId, ct);
+
+    private static async Task<UserRoadmap> SaveRoadmap(AppDbContext db, Guid businessId, RoadmapEngineResult engine, CancellationToken ct)
+    {
+        var roadmap = new UserRoadmap { Id = Guid.NewGuid(), BusinessId = businessId, CreatedAt = DateTimeOffset.UtcNow };
+        db.UserRoadmaps.Add(roadmap);
+        db.RoadmapProgress.AddRange(engine.Steps.Select(s => new RoadmapProgress
+        {
+            Id = Guid.NewGuid(),
+            RoadmapId = roadmap.Id,
+            StepId = s.Step.Id,
+            SortOrder = s.SortOrder,
+            Status = RoadmapStepStatus.NotStarted,
+        }));
+
+        try
+        {
+            await db.SaveChangesAsync(ct); // one SaveChanges = one transaction
+            return roadmap;
+        }
+        catch (DbUpdateException)
+        {
+            // A parallel first call saved this business's roadmap first (unique business_id). Use that one.
+            db.ChangeTracker.Clear();
+            var winner = await FindRoadmap(db, businessId, ct);
+            if (winner is null) throw;
+            return winner;
+        }
     }
 
     private static async Task<Results<Ok<StepDetailResponse>, UnauthorizedHttpResult, ProblemHttpResult>> GetStep(
