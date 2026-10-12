@@ -121,6 +121,11 @@ function StepDetailContent({ number }: { number: number }) {
           {sortedRequirements.length === 0 && (
             <p className="text-muted-foreground">Nothing to bring for this step.</p>
           )}
+          {sortedRequirements.some((req) => req.appliesTo) && (
+            <p className="text-muted-foreground mb-3 text-sm">
+              Some items only apply to certain businesses. Labels show which businesses each item applies to.
+            </p>
+          )}
           <ul className="flex flex-col list-none">
             {sortedRequirements.map((req, idx) => (
               <li
