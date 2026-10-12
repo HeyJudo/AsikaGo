@@ -150,44 +150,274 @@ public class RoadmapEngineTests
         }
     }
 
-    [Fact]
-    public void GenerateRoadmap_GoldenCasesFixtureSimulation()
+    [Theory]
+    [InlineData("G-01", "Sole Proprietorship", "Food and Beverage", 57)]
+    [InlineData("G-02", "Sole Proprietorship", "Retail", 57)]
+    [InlineData("G-03", "Sole Proprietorship", "Services", 61)]
+    [InlineData("G-04", "Partnership", "Food and Beverage", 57)]
+    [InlineData("G-05", "Partnership", "Retail", 57)]
+    [InlineData("G-06", "Partnership", "Services", 61)]
+    [InlineData("G-07", "Corporation", "Food and Beverage", 58)]
+    [InlineData("G-08", "Corporation", "Retail", 58)]
+    [InlineData("G-09", "Corporation", "Services", 62)]
+    [InlineData("G-10", "One Person Corporation", "Food and Beverage", 58)]
+    [InlineData("G-11", "One Person Corporation", "Retail", 58)]
+    [InlineData("G-12", "One Person Corporation", "Services", 62)]
+    public void GenerateRoadmap_GoldenCases_MatchesFixture(string caseId, string businessType, string categoryName, int expectedTotalRequirements)
     {
-        // Simulates golden case fixture verification for G-01 (Sole Proprietorship, Food and Beverage)
+        Assert.NotNull(caseId);
         var engine = new RoadmapEngine();
-        var step1Id = Guid.NewGuid();
-        var step2Id = Guid.NewGuid();
+        var categoryId = categoryName switch
+        {
+            "Food and Beverage" => FoodId,
+            "Retail" => RetailId,
+            "Services" => ServicesId,
+            _ => throw new ArgumentException()
+        };
+
+        var (steps, requirements, rules) = GetPasigFixture();
+
+        var result = engine.GenerateRoadmap(businessType, categoryId, PasigId, rules, steps, requirements);
+
+        Assert.Equal(10, result.Steps.Count);
+        for (int i = 0; i < result.Steps.Count; i++)
+        {
+            Assert.Equal(i + 1, result.Steps[i].Number);
+        }
+
+        if (businessType == "Sole Proprietorship")
+        {
+            Assert.Equal("DTI Business Name Registration", result.Steps[0].Step.Name);
+            Assert.Equal("BIR Business Registration for Sole Proprietors", result.Steps[9].Step.Name);
+        }
+        else
+        {
+            Assert.Equal("SEC Company Registration", result.Steps[0].Step.Name);
+            Assert.Equal("BIR Business Registration for Corporations and Partnerships", result.Steps[9].Step.Name);
+        }
+
+        int totalReqs = result.Steps.Sum(s => s.Requirements.Count);
+        Assert.Equal(expectedTotalRequirements, totalReqs);
+    }
+
+    private static (List<RegistrationStep> Steps, List<Requirement> Requirements, List<RoadmapRule> Rules) GetPasigFixture()
+    {
+        var s1aId = new Guid("44444444-4444-4444-4444-00000000001a");
+        var s1bId = new Guid("44444444-4444-4444-4444-00000000001b");
+        var s2Id = new Guid("44444444-4444-4444-4444-000000000002");
+        var s3Id = new Guid("44444444-4444-4444-4444-000000000003");
+        var s4Id = new Guid("44444444-4444-4444-4444-000000000004");
+        var s5Id = new Guid("44444444-4444-4444-4444-000000000005");
+        var s6Id = new Guid("44444444-4444-4444-4444-000000000006");
+        var s7Id = new Guid("44444444-4444-4444-4444-000000000007");
+        var s8Id = new Guid("44444444-4444-4444-4444-000000000008");
+        var s9Id = new Guid("44444444-4444-4444-4444-000000000009");
+        var s10aId = new Guid("44444444-4444-4444-4444-00000000010a");
+        var s10bId = new Guid("44444444-4444-4444-4444-00000000010b");
 
         var steps = new List<RegistrationStep>
         {
-            new() { Id = step1Id, Name = "DTI Business Name Registration", Agency = "DTI", Description = "DTI desc", Actions = "Action 1" },
-            new() { Id = step2Id, Name = "Barangay Business Clearance", Agency = "Barangay", Description = "Barangay desc", Actions = "Action 2" }
+            new() { Id = s1aId, Name = "DTI Business Name Registration", Agency = "DTI", Description = "Desc", Actions = "Action" },
+            new() { Id = s1bId, Name = "SEC Company Registration", Agency = "SEC", Description = "Desc", Actions = "Action" },
+            new() { Id = s2Id, Name = "Barangay Business Clearance", Agency = "Barangay", Description = "Desc", Actions = "Action" },
+            new() { Id = s3Id, Name = "Certificate of Conformance", Agency = "CPDO", Description = "Desc", Actions = "Action" },
+            new() { Id = s4Id, Name = "Fire Safety Inspection Certificate for Occupancy", Agency = "BFP", Description = "Desc", Actions = "Action" },
+            new() { Id = s5Id, Name = "Business Application Form and Documents", Agency = "BPLD", Description = "Desc", Actions = "Action" },
+            new() { Id = s6Id, Name = "Tax Order of Payment", Agency = "BPLD", Description = "Desc", Actions = "Action" },
+            new() { Id = s7Id, Name = "Pay Local Business Taxes and Fees", Agency = "Treasurer", Description = "Desc", Actions = "Action" },
+            new() { Id = s8Id, Name = "Health, Environment, and Fire Permits", Agency = "BOSS", Description = "Desc", Actions = "Action" },
+            new() { Id = s9Id, Name = "Claim Business Permit and Sticker", Agency = "BOSS", Description = "Desc", Actions = "Action" },
+            new() { Id = s10aId, Name = "BIR Business Registration for Sole Proprietors", Agency = "BIR", Description = "Desc", Actions = "Action" },
+            new() { Id = s10bId, Name = "BIR Business Registration for Corporations and Partnerships", Agency = "BIR", Description = "Desc", Actions = "Action" }
         };
 
-        var req1Id = Guid.NewGuid();
-        var req2Id = Guid.NewGuid();
-        var requirements = new List<Requirement>
+        var requirements = new List<Requirement>();
+        var rules = new List<RoadmapRule>();
+
+        // Step 1A reqs (5)
+        for (int i = 1; i <= 5; i++)
         {
-            new() { Id = req1Id, StepId = step1Id, Name = "Valid ID" },
-            new() { Id = req2Id, StepId = step2Id, Name = "Lease Contract", Description = "If renting" }
-        };
+            var reqId = new Guid($"55555555-5555-5555-5555-00000001a00{i}");
+            requirements.Add(new Requirement { Id = reqId, StepId = s1aId, Name = $"1A Req {i}" });
+            rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s1aId, RequirementId = reqId, BusinessType = "Sole Proprietorship", Effect = RoadmapRuleEffect.Include, SortOrder = i });
+        }
+        rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s1aId, BusinessType = "Sole Proprietorship", Effect = RoadmapRuleEffect.Include, SortOrder = 1 });
 
-        var rules = new List<RoadmapRule>
+        // Step 1B reqs (6)
+        for (int i = 1; i <= 6; i++)
         {
-            new() { Id = Guid.NewGuid(), StepId = step1Id, Effect = RoadmapRuleEffect.Include, SortOrder = 1, BusinessType = "Sole Proprietorship" },
-            new() { Id = Guid.NewGuid(), StepId = step2Id, Effect = RoadmapRuleEffect.Include, SortOrder = 2 },
-            new() { Id = Guid.NewGuid(), StepId = step1Id, RequirementId = req1Id, Effect = RoadmapRuleEffect.Include, SortOrder = 1 },
-            new() { Id = Guid.NewGuid(), StepId = step2Id, RequirementId = req2Id, CategoryId = FoodId, Effect = RoadmapRuleEffect.Include, SortOrder = 1 }
-        };
+            var reqId = new Guid($"55555555-5555-5555-5555-00000001b0{i:D2}");
+            requirements.Add(new Requirement { Id = reqId, StepId = s1bId, Name = $"1B Req {i}" });
+            if (i == 1 || i == 5 || i == 6)
+            {
+                foreach (var bt in new[] { "Partnership", "Corporation", "One Person Corporation" })
+                {
+                    rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s1bId, RequirementId = reqId, BusinessType = bt, Effect = RoadmapRuleEffect.Include, SortOrder = i });
+                }
+            }
+            else if (i == 2 || i == 4)
+            {
+                foreach (var bt in new[] { "Corporation", "One Person Corporation" })
+                {
+                    rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s1bId, RequirementId = reqId, BusinessType = bt, Effect = RoadmapRuleEffect.Include, SortOrder = i });
+                }
+            }
+            else if (i == 3)
+            {
+                rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s1bId, RequirementId = reqId, BusinessType = "Partnership", Effect = RoadmapRuleEffect.Include, SortOrder = i });
+            }
+        }
+        foreach (var bt in new[] { "Partnership", "Corporation", "One Person Corporation" })
+        {
+            rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s1bId, BusinessType = bt, Effect = RoadmapRuleEffect.Include, SortOrder = 1 });
+        }
 
-        var result = engine.GenerateRoadmap("Sole Proprietorship", FoodId, PasigId, rules, steps, requirements);
+        // Steps 2-9 common rules
+        rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s2Id, Effect = RoadmapRuleEffect.Include, SortOrder = 2 });
+        rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s3Id, Effect = RoadmapRuleEffect.Include, SortOrder = 3 });
+        rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s4Id, Effect = RoadmapRuleEffect.Include, SortOrder = 4 });
+        rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s5Id, Effect = RoadmapRuleEffect.Include, SortOrder = 5 });
+        rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s6Id, Effect = RoadmapRuleEffect.Include, SortOrder = 6 });
+        rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s7Id, Effect = RoadmapRuleEffect.Include, SortOrder = 7 });
+        rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s8Id, Effect = RoadmapRuleEffect.Include, SortOrder = 8 });
+        rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s9Id, Effect = RoadmapRuleEffect.Include, SortOrder = 9 });
 
-        Assert.Equal(2, result.Steps.Count);
-        Assert.Equal(1, result.Steps[0].Number);
-        Assert.Equal(2, result.Steps[1].Number);
-        Assert.Equal("DTI Business Name Registration", result.Steps[0].Step.Name);
-        var reqRes = Assert.Single(result.Steps[1].Requirements);
-        Assert.Equal(FoodId, reqRes.AppliesToCategoryId);
+        // Step 2 reqs (6)
+        for (int i = 1; i <= 6; i++)
+        {
+            var reqId = new Guid($"55555555-5555-5555-5555-00000000200{i}");
+            requirements.Add(new Requirement { Id = reqId, StepId = s2Id, Name = $"Step2 Req {i}" });
+            rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s2Id, RequirementId = reqId, Effect = RoadmapRuleEffect.Include, SortOrder = i });
+        }
+
+        // Step 3 reqs (8)
+        for (int i = 1; i <= 8; i++)
+        {
+            var reqId = new Guid($"55555555-5555-5555-5555-00000000300{i}");
+            requirements.Add(new Requirement { Id = reqId, StepId = s3Id, Name = $"Step3 Req {i}" });
+            rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s3Id, RequirementId = reqId, Effect = RoadmapRuleEffect.Include, SortOrder = i });
+        }
+
+        // Step 4 reqs (1)
+        var req4Id = new Guid("55555555-5555-5555-5555-000000004001");
+        requirements.Add(new Requirement { Id = req4Id, StepId = s4Id, Name = "Step4 Req 1" });
+        rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s4Id, RequirementId = req4Id, Effect = RoadmapRuleEffect.Include, SortOrder = 1 });
+
+        // Step 5 common reqs (10)
+        for (int i = 1; i <= 10; i++)
+        {
+            var reqId = new Guid($"55555555-5555-5555-5555-000000005{i:D3}");
+            requirements.Add(new Requirement { Id = reqId, StepId = s5Id, Name = $"Step5 Common Req {i}" });
+            rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s5Id, RequirementId = reqId, Effect = RoadmapRuleEffect.Include, SortOrder = i });
+        }
+
+        // Step 5 F&B reqs (4: 5011..5014)
+        for (int i = 11; i <= 14; i++)
+        {
+            var reqId = new Guid($"55555555-5555-5555-5555-000000005{i:D3}");
+            requirements.Add(new Requirement { Id = reqId, StepId = s5Id, Name = $"Step5 FB Req {i}" });
+            rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s5Id, RequirementId = reqId, CategoryId = FoodId, Effect = RoadmapRuleEffect.Include, SortOrder = i });
+        }
+
+        // Step 5 Retail reqs (5: 5015..5019)
+        for (int i = 15; i <= 19; i++)
+        {
+            var reqId = new Guid($"55555555-5555-5555-5555-000000005{i:D3}");
+            requirements.Add(new Requirement { Id = reqId, StepId = s5Id, Name = $"Step5 Retail Req {i}" });
+            rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s5Id, RequirementId = reqId, CategoryId = RetailId, Effect = RoadmapRuleEffect.Include, SortOrder = i });
+        }
+
+        // Step 5 Services reqs (9: 5020..5028)
+        for (int i = 20; i <= 28; i++)
+        {
+            var reqId = new Guid($"55555555-5555-5555-5555-000000005{i:D3}");
+            requirements.Add(new Requirement { Id = reqId, StepId = s5Id, Name = $"Step5 Services Req {i}" });
+            rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s5Id, RequirementId = reqId, CategoryId = ServicesId, Effect = RoadmapRuleEffect.Include, SortOrder = i });
+        }
+
+        // Step 6 req (1)
+        var req6Id = new Guid("55555555-5555-5555-5555-000000006001");
+        requirements.Add(new Requirement { Id = req6Id, StepId = s6Id, Name = "Step6 Req 1" });
+        rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s6Id, RequirementId = req6Id, Effect = RoadmapRuleEffect.Include, SortOrder = 1 });
+
+        // Step 7 req (1)
+        var req7Id = new Guid("55555555-5555-5555-5555-000000007001");
+        requirements.Add(new Requirement { Id = req7Id, StepId = s7Id, Name = "Step7 Req 1" });
+        rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s7Id, RequirementId = req7Id, Effect = RoadmapRuleEffect.Include, SortOrder = 1 });
+
+        // Step 8 common reqs
+        foreach (var (rId, sOrder, name) in new[] { ("55555555-5555-5555-5555-000000008001", 1, "Sanitary Permit"), ("55555555-5555-5555-5555-000000008006", 6, "Environmental clearance from CENRO"), ("55555555-5555-5555-5555-000000008007", 7, "Fire Safety Inspection Permit for your business permit") })
+        {
+            var reqId = new Guid(rId);
+            requirements.Add(new Requirement { Id = reqId, StepId = s8Id, Name = name });
+            rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s8Id, RequirementId = reqId, Effect = RoadmapRuleEffect.Include, SortOrder = sOrder });
+        }
+
+        // Step 8 F&B reqs
+        foreach (var (rId, sOrder, name) in new[] { ("55555555-5555-5555-5555-000000008002", 2, "Health Certificate for food workers"), ("55555555-5555-5555-5555-000000008005", 5, "Pest control contract") })
+        {
+            var reqId = new Guid(rId);
+            requirements.Add(new Requirement { Id = reqId, StepId = s8Id, Name = name });
+            rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s8Id, RequirementId = reqId, CategoryId = FoodId, Effect = RoadmapRuleEffect.Include, SortOrder = sOrder });
+        }
+
+        // Step 8 Retail req
+        var req8Retail = new Guid("55555555-5555-5555-5555-000000008003");
+        requirements.Add(new Requirement { Id = req8Retail, StepId = s8Id, Name = "Health Certificate" });
+        rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s8Id, RequirementId = req8Retail, CategoryId = RetailId, Effect = RoadmapRuleEffect.Include, SortOrder = 2 });
+
+        // Step 8 Services req
+        var req8Services = new Guid("55555555-5555-5555-5555-000000008004");
+        requirements.Add(new Requirement { Id = req8Services, StepId = s8Id, Name = "Health Certificate" });
+        rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s8Id, RequirementId = req8Services, CategoryId = ServicesId, Effect = RoadmapRuleEffect.Include, SortOrder = 2 });
+
+        // Step 9 reqs (5)
+        for (int i = 1; i <= 5; i++)
+        {
+            var reqId = new Guid($"55555555-5555-5555-5555-00000000900{i}");
+            requirements.Add(new Requirement { Id = reqId, StepId = s9Id, Name = $"Step9 Req {i}" });
+            rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s9Id, RequirementId = reqId, Effect = RoadmapRuleEffect.Include, SortOrder = i });
+        }
+
+        // Step 10A reqs (11)
+        for (int i = 1; i <= 11; i++)
+        {
+            var reqId = new Guid($"55555555-5555-5555-5555-00000010a0{i:D2}");
+            requirements.Add(new Requirement { Id = reqId, StepId = s10aId, Name = $"10A Req {i}" });
+            rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s10aId, RequirementId = reqId, BusinessType = "Sole Proprietorship", Effect = RoadmapRuleEffect.Include, SortOrder = i });
+        }
+        rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s10aId, BusinessType = "Sole Proprietorship", Effect = RoadmapRuleEffect.Include, SortOrder = 10 });
+
+        // Step 10B reqs (14)
+        for (int i = 1; i <= 14; i++)
+        {
+            var reqId = new Guid($"55555555-5555-5555-5555-00000010b0{i:D2}");
+            requirements.Add(new Requirement { Id = reqId, StepId = s10bId, Name = $"10B Req {i}" });
+            if (i == 1 || (i >= 6 && i <= 14))
+            {
+                foreach (var bt in new[] { "Partnership", "Corporation", "One Person Corporation" })
+                {
+                    rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s10bId, RequirementId = reqId, BusinessType = bt, Effect = RoadmapRuleEffect.Include, SortOrder = i });
+                }
+            }
+            else if (i == 2 || i == 4)
+            {
+                foreach (var bt in new[] { "Corporation", "One Person Corporation" })
+                {
+                    rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s10bId, RequirementId = reqId, BusinessType = bt, Effect = RoadmapRuleEffect.Include, SortOrder = i });
+                }
+            }
+            else if (i == 3 || i == 5)
+            {
+                rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s10bId, RequirementId = reqId, BusinessType = "Partnership", Effect = RoadmapRuleEffect.Include, SortOrder = i });
+            }
+        }
+        foreach (var bt in new[] { "Partnership", "Corporation", "One Person Corporation" })
+        {
+            rules.Add(new RoadmapRule { Id = Guid.NewGuid(), StepId = s10bId, BusinessType = bt, Effect = RoadmapRuleEffect.Include, SortOrder = 10 });
+        }
+
+        return (steps, requirements, rules);
     }
 
     [Fact]
