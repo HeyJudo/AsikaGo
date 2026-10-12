@@ -160,4 +160,62 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
         var second = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
         Assert.Equal(new[] { SecId, BarangayId }, second.Steps.Select(s => s.StepId));
     }
+
+    [Fact]
+    public async Task GetStep_Barangay_ReturnsDetailRequirementsAndNeighbours()
+    {
+        using var client = Client(await UserWithProfile());
+        var response = await client.GetAsync("/api/roadmap/steps/2");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var step = await Read<StepDetailResponse>(response);
+        Assert.Equal((2, 3, BarangayId), (step.Number, step.TotalSteps, step.StepId));
+        Assert.Equal(("Barangay", "Barangay hall", "Barangay step."), (step.Name, step.Agency, step.Description));
+        Assert.Equal(new[] { "Go to the barangay hall.", "Pay the fee." }, step.Actions);
+        Assert.Null(step.ConditionNote);
+        Assert.Equal((1, 3), (step.PreviousNumber, step.NextNumber));
+
+        Assert.Equal(new[] { ValidIdReq, SanitaryReq }, step.Requirements.Select(r => r.Id));
+        Assert.Equal(new string?[] { null, "Food and Beverage" }, step.Requirements.Select(r => r.AppliesTo));
+        Assert.Equal("Any government ID.", step.Requirements[0].Description);
+        Assert.Equal(new SourceResponse("Test Charter", "https://example.test/charter", new DateOnly(2026, 10, 5)), step.Requirements[0].Source);
+        Assert.Null(step.Requirements[1].Source);
+    }
+
+    [Fact]
+    public async Task GetStep_FirstAndLast_HaveNoPreviousOrNext()
+    {
+        using var client = Client(await UserWithProfile());
+        var first = await Read<StepDetailResponse>(await client.GetAsync("/api/roadmap/steps/1"));
+        var last = await Read<StepDetailResponse>(await client.GetAsync("/api/roadmap/steps/3"));
+
+        Assert.Equal((SecId, (int?)null, (int?)2), (first.StepId, first.PreviousNumber, first.NextNumber));
+        Assert.Equal((FireId, (int?)2, (int?)null), (last.StepId, last.PreviousNumber, last.NextNumber));
+        Assert.Equal("Only if your place is newly built or renovated", last.ConditionNote);
+        Assert.Empty(last.Requirements);
+    }
+
+    [Fact]
+    public async Task GetStep_BeforeGetRoadmap_BuildsTheRoadmapOnce()
+    {
+        var user = await UserWithProfile();
+        using var client = Client(user);
+        var step = await Read<StepDetailResponse>(await client.GetAsync("/api/roadmap/steps/1"));
+        var roadmap = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+
+        Assert.Equal(roadmap.Steps[0].StepId, step.StepId);
+        Assert.Equal(1, SavedRoadmapCount(user));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(4)]
+    public async Task GetStep_NumberNotInRoadmap_Returns404Problem(int number)
+    {
+        using var client = Client(await UserWithProfile());
+        var response = await client.GetAsync($"/api/roadmap/steps/{number}");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+    }
 }

@@ -37,7 +37,7 @@ public sealed record RequirementResponse(
     string Name,
     string? Description,
     string? AppliesTo,
-    SourceResponse Source);
+    SourceResponse? Source);
 
 public sealed record SourceResponse(
     string Name,
