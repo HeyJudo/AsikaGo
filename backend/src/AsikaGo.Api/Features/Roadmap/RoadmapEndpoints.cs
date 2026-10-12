@@ -51,13 +51,18 @@ public static class RoadmapEndpoints
             .FirstOrDefaultAsync(b => b.UserId == userId, ct);
         if (profile is null) return null;
 
-        var engine = new RoadmapEngine().GenerateRoadmap(
-            profile.BusinessType, profile.CategoryId, profile.CityId,
-            await db.RoadmapRules.AsNoTracking().ToListAsync(ct),
-            await db.RegistrationSteps.AsNoTracking().ToListAsync(ct),
-            await db.Requirements.AsNoTracking().Include(r => r.Source).ToListAsync(ct));
+        var engine = new RoadmapEngine();
+        var rules = await db.RoadmapRules.AsNoTracking().ToListAsync(ct);
+        var requirements = await db.Requirements.AsNoTracking().Include(r => r.Source).ToListAsync(ct);
 
-        var roadmap = await FindRoadmap(db, profile.Id, ct) ?? await SaveRoadmap(db, profile.Id, engine, ct);
+        var roadmap = await FindRoadmap(db, profile.Id, ct);
+        if (roadmap is null)
+        {
+            var generated = engine.GenerateRoadmap(
+                profile.BusinessType, profile.CategoryId, profile.CityId,
+                rules, await db.RegistrationSteps.AsNoTracking().ToListAsync(ct), requirements);
+            roadmap = await SaveRoadmap(db, profile.Id, generated, ct);
+        }
 
         var saved = await db.RoadmapProgress.AsNoTracking()
             .Include(p => p.Step)
@@ -66,7 +71,8 @@ public static class RoadmapEndpoints
             .ToListAsync(ct);
 
         var steps = saved
-            .Select(p => (p.Step!, engine.Steps.FirstOrDefault(s => s.Step.Id == p.StepId)?.Requirements ?? []))
+            .Select(p => (p.Step!, engine.GetStepRequirements(
+                p.StepId, profile.BusinessType, profile.CategoryId, profile.CityId, rules, requirements)))
             .ToList();
 
         return new LoadedRoadmap(roadmap.Id, roadmap.CreatedAt, profile, steps);

@@ -24,6 +24,8 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
     private static readonly Guid ValidIdReq = new("77777777-0000-0000-0000-0000000000b1");
     private static readonly Guid SanitaryReq = new("77777777-0000-0000-0000-0000000000b2");
     private static readonly Guid RetailReq = new("77777777-0000-0000-0000-0000000000b3");
+    private static readonly Guid PartnershipId = new("77777777-0000-0000-0000-0000000000a5");
+    private static readonly Guid PartnershipDeedReq = new("77777777-0000-0000-0000-0000000000b4");
 
     private static readonly JsonSerializerOptions JsonOptions =
         new() { PropertyNameCaseInsensitive = true, Converters = { new JsonStringEnumConverter() } };
@@ -48,11 +50,13 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
             new RegistrationStep { Id = DtiId, Name = "DTI", Agency = "DTI", Description = "DTI step.", Actions = "Register online." },
             new RegistrationStep { Id = SecId, Name = "SEC", Agency = "SEC", Description = "SEC step.", Actions = "Register on eSPARC." },
             new RegistrationStep { Id = BarangayId, Name = "Barangay", Agency = "Barangay hall", Description = "Barangay step.", Actions = "Go to the barangay hall.\r\nPay the fee." },
+            new RegistrationStep { Id = PartnershipId, Name = "Partnership", Agency = "SEC", Description = "Partnership step.", Actions = "Register the partnership." },
             new RegistrationStep { Id = FireId, Name = "Fire", Agency = "BFP", Description = "Fire step.", Actions = "Ask for an inspection.", ConditionNote = "Only if your place is newly built or renovated" });
         db.Requirements.AddRange(
             new Requirement { Id = ValidIdReq, StepId = BarangayId, Name = "Valid ID", Description = "Any government ID.", SourceId = SourceId },
             new Requirement { Id = SanitaryReq, StepId = BarangayId, Name = "Sanitary permit" },
-            new Requirement { Id = RetailReq, StepId = BarangayId, Name = "Retail permit" });
+            new Requirement { Id = RetailReq, StepId = BarangayId, Name = "Retail permit" },
+            new Requirement { Id = PartnershipDeedReq, StepId = PartnershipId, Name = "Partnership deed" });
         db.RoadmapRules.AddRange(
             Rule(DtiId, sortOrder: 1, businessType: "Sole Proprietorship"),
             Rule(SecId, sortOrder: 1, businessType: "Corporation"),
@@ -60,7 +64,9 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
             Rule(FireId, sortOrder: 3),
             Rule(BarangayId, sortOrder: 1, requirementId: ValidIdReq),
             Rule(BarangayId, sortOrder: 2, requirementId: SanitaryReq, categoryId: FoodId),
-            Rule(BarangayId, sortOrder: 3, requirementId: RetailReq, categoryId: RetailId));
+            Rule(BarangayId, sortOrder: 3, requirementId: RetailReq, categoryId: RetailId),
+            Rule(PartnershipId, sortOrder: 1, businessType: "Partnership"),
+            Rule(PartnershipId, sortOrder: 1, requirementId: PartnershipDeedReq));
         db.SaveChanges();
     }
 
@@ -217,5 +223,39 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
         var response = await client.GetAsync($"/api/roadmap/steps/{number}");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public async Task GetStep_SavedStepNoLongerInRules_KeepsItsRequirements()
+    {
+        using var client = Client(await UserWithProfile("Partnership"));
+        var roadmap = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        Assert.Equal(new[] { PartnershipId, BarangayId, FireId }, roadmap.Steps.Select(s => s.StepId));
+
+        // A knowledge-base edit removes the step's include rule after the roadmap was saved.
+        RoadmapRule stepRule;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            stepRule = db.RoadmapRules.Single(r => r.StepId == PartnershipId && r.RequirementId == null);
+            db.RoadmapRules.Remove(stepRule);
+            db.SaveChanges();
+        }
+
+        try
+        {
+            var after = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+            var step = await Read<StepDetailResponse>(await client.GetAsync("/api/roadmap/steps/1"));
+
+            Assert.Equal(1, after.Steps[0].RequirementCount);
+            Assert.Equal(new[] { PartnershipDeedReq }, step.Requirements.Select(r => r.Id));
+        }
+        finally
+        {
+            using var scope = _factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.RoadmapRules.Add(stepRule);
+            db.SaveChanges();
+        }
     }
 }
