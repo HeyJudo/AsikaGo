@@ -123,7 +123,7 @@ function StepDetailContent({ number }: { number: number }) {
           )}
           {sortedRequirements.some((req) => req.appliesTo) && (
             <p className="text-muted-foreground mb-3 text-sm">
-              Some items only apply to certain businesses. The ones for yours are marked.
+              Some items only apply to certain businesses. Labels show which businesses each item applies to.
             </p>
           )}
           <ul className="flex flex-col list-none">
