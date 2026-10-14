@@ -138,6 +138,7 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
         using var client = Client(await UserWithProfile("Sole Proprietorship"));
         var roadmap = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
         Assert.Equal(new[] { DtiId, BarangayId, FireId }, roadmap.Steps.Select(s => s.StepId));
+        Assert.Equal((1, DtiId), (roadmap.Steps[0].Number, roadmap.Steps[0].StepId));
     }
 
     [Fact]
