@@ -393,7 +393,14 @@
             ]
           },
           "source": {
-            "$ref": "#/components/schemas/SourceResponse"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SourceResponse"
+              }
+            ]
           }
         }
       },

@@ -50,38 +50,55 @@ public class RoadmapEngine
 
         foreach (var (step, stepRule, stepSortOrder) in orderedSteps)
         {
-            // 3. Evaluate requirements for this step
-            var stepReqs = reqList.Where(req => req.StepId == step.Id).ToList();
-            var reqResults = new List<EngineRequirementResult>();
-
-            foreach (var req in stepReqs)
-            {
-                var reqRules = matchingRules.Where(r => r.RequirementId == req.Id).ToList();
-
-                var reqHasExclude = reqRules.Any(r => r.Effect == RoadmapRuleEffect.Exclude);
-                if (reqHasExclude) continue;
-
-                var reqIncludeRules = reqRules.Where(r => r.Effect == RoadmapRuleEffect.Include).ToList();
-                if (reqIncludeRules.Count > 0)
-                {
-                    var bestReqRule = reqIncludeRules.OrderBy(r => r.SortOrder).ThenBy(r => r.Id).First();
-                    reqResults.Add(new EngineRequirementResult(
-                        req,
-                        bestReqRule.CategoryId,
-                        bestReqRule.SortOrder));
-                }
-            }
-
-            // Order requirements by sort order, secondary sort by Requirement ID for stability
-            var orderedReqs = reqResults
-                .OrderBy(r => r.SortOrder)
-                .ThenBy(r => r.Requirement.Id)
-                .ToList();
+            var orderedReqs = RequirementsFor(step.Id, matchingRules, reqList);
 
             finalSteps.Add(new EngineStepResult(step, stepNumber++, stepSortOrder, orderedReqs));
         }
 
         return new RoadmapEngineResult(finalSteps);
+    }
+
+    // Requirements of one step for this profile. Used for saved roadmaps too, so it does not
+    // check whether the current rules would still include the step (D14).
+    public IReadOnlyList<EngineRequirementResult> GetStepRequirements(
+        Guid stepId,
+        string businessType,
+        Guid categoryId,
+        Guid cityId,
+        IEnumerable<RoadmapRule> rules,
+        IEnumerable<Requirement> requirements)
+    {
+        var matchingRules = rules.Where(r => RuleMatches(r, businessType, categoryId, cityId)).ToList();
+        return RequirementsFor(stepId, matchingRules, requirements.ToList());
+    }
+
+    private static List<EngineRequirementResult> RequirementsFor(Guid stepId, List<RoadmapRule> matchingRules, List<Requirement> reqList)
+    {
+        var reqResults = new List<EngineRequirementResult>();
+
+        foreach (var req in reqList.Where(req => req.StepId == stepId))
+        {
+            var reqRules = matchingRules.Where(r => r.RequirementId == req.Id).ToList();
+
+            var reqHasExclude = reqRules.Any(r => r.Effect == RoadmapRuleEffect.Exclude);
+            if (reqHasExclude) continue;
+
+            var reqIncludeRules = reqRules.Where(r => r.Effect == RoadmapRuleEffect.Include).ToList();
+            if (reqIncludeRules.Count > 0)
+            {
+                var bestReqRule = reqIncludeRules.OrderBy(r => r.SortOrder).ThenBy(r => r.Id).First();
+                reqResults.Add(new EngineRequirementResult(
+                    req,
+                    bestReqRule.CategoryId,
+                    bestReqRule.SortOrder));
+            }
+        }
+
+        // Order requirements by sort order, secondary sort by Requirement ID for stability
+        return reqResults
+            .OrderBy(r => r.SortOrder)
+            .ThenBy(r => r.Requirement.Id)
+            .ToList();
     }
 
     private static bool RuleMatches(RoadmapRule rule, string businessType, Guid categoryId, Guid cityId)

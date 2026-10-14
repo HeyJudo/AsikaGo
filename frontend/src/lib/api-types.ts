@@ -312,7 +312,7 @@ export interface components {
             name: string;
             description: null | string;
             appliesTo: null | string;
-            source: components["schemas"]["SourceResponse"];
+            source: null | components["schemas"]["SourceResponse"];
         };
         RoadmapResponse: {
             /** Format: uuid */
