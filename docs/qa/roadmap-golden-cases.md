@@ -1486,3 +1486,23 @@ Column 1 is Step 1A for Sole Proprietorship and Step 1B for the other three type
 | Line-of-business rows by category in Step 5 | G-01/04/07/10 (4), G-02/05/08/11 (5), G-03/06/09/12 (9) |
 | "All categories" requirements show no `appliesTo` | every case |
 
+## 6. Live check results (US-007-BE-01, AB#86)
+
+- Date: 2026-10-14
+- Environment: asikago-dev (Supabase), local backend at commit 40536e9, one guest user.
+- Method: expected roadmaps derived from `database/seed/001_pasig_knowledge_base.sql`, matched to sections 3 and 4 (no differences), then compared with `PUT /api/business-profile`, `GET /api/roadmap`, and `GET /api/roadmap/steps/{n}` for every case. Compared: step list, numbers, name, agency, `conditionNote`, `requirementCount`, requirement name, order, description, and `appliesTo`. Each PUT was confirmed in `business_profiles` and `user_roadmaps`.
+
+| Case | Result | Differences |
+| --- | --- | --- |
+| G-01 | Pass | None |
+| G-02 | Pass | None |
+| G-03 | Pass | None |
+| G-04 | Pass | None |
+| G-05 | Pass | None |
+| G-06 | Pass | None |
+| G-07 | Pass | None |
+| G-08 | Pass | None |
+| G-09 | Pass | None |
+| G-10 | Pass | None |
+| G-11 | Pass | None |
+| G-12 | Pass | None |
