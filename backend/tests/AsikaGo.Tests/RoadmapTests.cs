@@ -167,6 +167,60 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(new[] { SecId, BarangayId }, second.Steps.Select(s => s.StepId));
     }
 
+    private static async Task PutProfile(HttpClient client, string name, string businessType, Guid categoryId, string status)
+    {
+        var json = $"{{\"businessName\":\"{name}\",\"businessType\":\"{businessType}\",\"categoryId\":\"{categoryId}\",\"registrationStatus\":\"{status}\"}}";
+        var response = await client.PutAsync("/api/business-profile", new StringContent(json, Encoding.UTF8, "application/json"));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task PutProfile_BusinessTypeChanges_DeletesOldRoadmapAndNextGetBuildsNew()
+    {
+        var user = await UserWithProfile();
+        using var client = Client(user);
+        var first = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+
+        await PutProfile(client, "Shop", "Sole Proprietorship", FoodId, "Started");
+        Assert.Equal(0, SavedRoadmapCount(user));
+
+        var second = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        Assert.NotEqual(first.RoadmapId, second.RoadmapId);
+        Assert.Equal(new[] { DtiId, BarangayId, FireId }, second.Steps.Select(s => s.StepId));
+        Assert.Equal(1, SavedRoadmapCount(user));
+    }
+
+    [Fact]
+    public async Task PutProfile_CategoryChanges_DeletesOldRoadmapAndNextGetBuildsNew()
+    {
+        var user = await UserWithProfile();
+        using var client = Client(user);
+        var first = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+
+        await PutProfile(client, "Shop", "Corporation", RetailId, "Started");
+        Assert.Equal(0, SavedRoadmapCount(user));
+
+        var second = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        Assert.NotEqual(first.RoadmapId, second.RoadmapId);
+        Assert.Equal("Retail", second.CategoryName);
+        Assert.Equal(1, SavedRoadmapCount(user));
+    }
+
+    [Fact]
+    public async Task PutProfile_OnlyNameAndRegistrationStatusChange_KeepsRoadmap()
+    {
+        var user = await UserWithProfile();
+        using var client = Client(user);
+        var first = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+
+        await PutProfile(client, "Renamed Shop", "Corporation", FoodId, "Planning");
+
+        var second = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        Assert.Equal(first.RoadmapId, second.RoadmapId);
+        Assert.Equal(new[] { SecId, BarangayId, FireId }, second.Steps.Select(s => s.StepId));
+        Assert.Equal(1, SavedRoadmapCount(user));
+    }
+
     [Fact]
     public async Task GetStep_Barangay_ReturnsDetailRequirementsAndNeighbours()
     {

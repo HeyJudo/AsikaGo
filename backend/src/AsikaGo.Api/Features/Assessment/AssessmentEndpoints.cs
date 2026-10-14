@@ -117,6 +117,13 @@ public static class AssessmentEndpoints
         }
         else
         {
+            // D10: a new business type or category invalidates the saved roadmap. Progress rows cascade in the DB.
+            if (existing.BusinessType != request.BusinessType || existing.CategoryId != request.CategoryId)
+            {
+                var oldRoadmap = await db.UserRoadmaps.FirstOrDefaultAsync(r => r.BusinessId == existing.Id, ct);
+                if (oldRoadmap is not null) db.UserRoadmaps.Remove(oldRoadmap);
+            }
+
             existing.BusinessName = name;
             existing.BusinessType = request.BusinessType!;
             existing.CategoryId = request.CategoryId;
