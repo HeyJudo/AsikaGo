@@ -14,7 +14,9 @@ function SiteHeader() {
   const { user, loading } = useAuth()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
-  const onSignIn = useLocation().pathname === '/sign-in'
+  const { pathname } = useLocation()
+  const onSignIn = pathname === '/sign-in'
+  const onMyBusiness = pathname === '/my-business'
 
   async function signOut() {
     await supabase.auth.signOut()
@@ -28,13 +30,20 @@ function SiteHeader() {
         to="/"
         className="flex min-h-11 items-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-white"
       >
-        <img src={logo} alt="AsikaGo" className="h-8 w-auto sm:h-9 md:h-12" />
+        <img src={logo} alt="AsikaGo" className="h-6 w-auto sm:h-9 md:h-12" />
       </Link>
 
       {!loading &&
         (user ? (
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="bg-gold text-navy flex size-10 shrink-0 items-center justify-center rounded-full">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <Link
+              to="/my-business"
+              className="inline-flex min-h-11 items-center whitespace-nowrap rounded-sm px-1 text-xs font-semibold text-white decoration-gold decoration-2 underline-offset-8 outline-none hover:underline aria-[current=page]:underline focus-visible:ring-2 focus-visible:ring-white sm:text-sm"
+              aria-current={onMyBusiness ? 'page' : undefined}
+            >
+              My Business
+            </Link>
+            <span className="bg-gold text-navy hidden size-10 shrink-0 items-center justify-center rounded-full sm:flex">
               <UserRound className="size-5" aria-hidden="true" />
             </span>
             <span className="hidden min-w-0 max-w-48 truncate text-sm font-semibold text-white sm:block">
@@ -42,7 +51,7 @@ function SiteHeader() {
             </span>
             <Button
               variant="outline"
-              className="h-11 shrink-0 rounded-full border-white bg-transparent px-4 font-semibold text-white hover:bg-white/15 hover:text-white focus-visible:border-white focus-visible:ring-white/50 dark:bg-transparent dark:hover:bg-white/15"
+              className="h-11 shrink-0 rounded-full border-white bg-transparent px-3 sm:px-4 font-semibold text-white hover:bg-white/15 hover:text-white focus-visible:border-white focus-visible:ring-white/50 dark:bg-transparent dark:hover:bg-white/15"
               onClick={() => void signOut()}
             >
               <LogOut aria-hidden="true" />
