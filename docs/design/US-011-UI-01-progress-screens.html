@@ -438,9 +438,9 @@
         <a class="btn-google" href="#">${GOOGLE_G}Save with Google</a>
       </div>`
 
-    // role="progressbar" carries the same words as the visible text.
-    const progressBar = (done, total, label) => `
-      <div role="progressbar" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}" aria-valuetext="${label}">
+    // role="progressbar": name says what the bar tracks, valuetext carries the same words as the visible text.
+    const progressBar = (done, total, label, name = 'Steps done') => `
+      <div role="progressbar" aria-label="${name}" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${done}" aria-valuetext="${label}">
         <div class="bar"><span style="width:${(done / total) * 100}%"></span></div>
       </div>`
 
@@ -655,7 +655,7 @@
         </div>
         <section class="progress" aria-label="Documents ready">
           <div class="progress-row"><b>${d.preparedCount} of ${d.totalCount} ready</b></div>
-          ${progressBar(d.preparedCount, d.totalCount, `${d.preparedCount} of ${d.totalCount} documents ready`)}
+          ${progressBar(d.preparedCount, d.totalCount, `${d.preparedCount} of ${d.totalCount} documents ready`, 'Documents ready')}
           <p class="muted-sm" style="margin: 8px 0 0">Some items may not apply to you.</p>
         </section>
         ${d.steps.map(docStep).join('')}`)}`
@@ -751,7 +751,7 @@
     const STATES = [
       ['Screen 1 · Roadmap (/roadmap)', '1. In progress (3 of 10 steps done)', pair('In progress', (m) => roadmapPage(ROADMAP, { mobile: m })), `<ul>
         <li>Order on the page: guest banner, visualizer, title and subtitle (and the D20 hint), progress card, main button with the documents link, step list. Everything else on the page stays as it is in <code>RoadmapPage.tsx</code>.</li>
-        <li><b>Progress card</b> (new): <code>Card</code>-shaped <code>rounded-xl border bg-white p-4 md:px-6 md:py-5 shadow-xs</code>. Row: "{completedSteps} of {steps.length} steps done" in <code>font-bold</code>, and "{progressPercent}%" in <code>text-brand text-2xl font-extrabold</code>. Bar: <code>h-3 rounded-full bg-cream-deep</code> track with a <code>bg-gold</code> fill at <code>width: completedSteps / steps.length</code>. The wrapper has <code>role="progressbar"</code>, <code>aria-valuemin={0}</code>, <code>aria-valuemax={steps.length}</code>, <code>aria-valuenow={completedSteps}</code>, and <code>aria-valuetext="3 of 10 steps done"</code>. Use the API's <code>progressPercent</code> for the number, never compute it in the frontend (D18).</li>
+        <li><b>Progress card</b> (new): <code>Card</code>-shaped <code>rounded-xl border bg-white p-4 md:px-6 md:py-5 shadow-xs</code>. Row: "{completedSteps} of {steps.length} steps done" in <code>font-bold</code>, and "{progressPercent}%" in <code>text-brand text-2xl font-extrabold</code>. Bar: <code>h-3 rounded-full bg-cream-deep</code> track with a <code>bg-gold</code> fill at <code>width: completedSteps / steps.length</code>. The wrapper has <code>role="progressbar"</code>, <code>aria-label="Steps done"</code>, <code>aria-valuemin={0}</code>, <code>aria-valuemax={steps.length}</code>, <code>aria-valuenow={completedSteps}</code>, and <code>aria-valuetext="3 of 10 steps done"</code>. Use the API's <code>progressPercent</code> for the number, never compute it in the frontend (D18).</li>
         <li><b>Main button</b>: "Next: Step {nextStepNumber}" replaces "See step 1", <code>Link to="/roadmap/steps/{nextStepNumber}"</code>. Same <code>h-11 rounded-full</code> button, full width on mobile, <code>sm:w-auto</code>. The text is the one in the ticket and in US-011-FE-01.</li>
         <li><b>Documents link</b> (US-008-FE-01): <code>Link to="/roadmap/documents"</code>, lucide <code>ClipboardList</code>, "See all documents to bring", then "(20 of 57 ready)" in <code>text-muted-foreground text-sm font-medium</code>. Both numbers are sums over <code>steps</code> (<code>preparedCount</code>, <code>requirementCount</code>), so no new field is needed. <code>min-h-11 text-brand font-semibold hover:underline</code>. It's a link, not a button, so the Next button stays the one main action. Desktop: same row as the button, <code>md:flex-row md:items-center md:gap-6</code>.</li>
         <li><b>Status mark per step</b> (from <code>status</code>, D17): <code>Completed</code> → the number badge turns <code>bg-gold text-navy</code> with lucide <code>Check</code> (<code>strokeWidth={3}</code>), and a "Done" chip under the agency, the same chip as Point A (<code>bg-gold text-navy rounded-full text-xs font-bold</code>, with a small <code>Check</code>). <code>InProgress</code> → chip "In progress · {preparedCount} of {requirementCount} ready" in <code>bg-brand/10 text-brand rounded-full text-xs font-bold</code>, with a half-filled ring before it. <code>NotStarted</code> → nothing. A done row shows no ready count: what counts is that the step is done, not its papers (D17).</li>
@@ -803,7 +803,7 @@
 
       ['Screen 3 · All documents (/roadmap/documents)', '10. Normal (20 of 57 ready)', pair('Normal', () => documentsPage(DOCUMENTS)), `<ul>
         <li>New route <code>/roadmap/documents</code>, inside <code>ProtectedRoute</code> and <code>AppLayout</code> like step detail. Data: <code>GET /api/roadmap/documents</code> (<code>DocumentsResponse</code>). Same page shell as step detail: <code>bg-cream px-6 py-4 md:px-8 md:py-6</code>, <code>max-w-3xl flex-col gap-4</code>, and the same "My roadmap" top link.</li>
-        <li>Title "All documents to bring" and the line "Tick each one when you have it ready." <b>Count card</b>: the roadmap's progress card with "{preparedCount} of {totalCount} ready" and the gold bar. No percent here: the API gives a percent for steps only. <code>aria-valuetext="20 of 57 documents ready"</code>. Under the bar: "Some items may not apply to you." in <code>mt-2 text-sm text-muted-foreground</code>. The total counts every item, including "If your business is…" items and papers asked for again in Step 9, so users can finish without reaching 57.</li>
+        <li>Title "All documents to bring" and the line "Tick each one when you have it ready." <b>Count card</b>: the roadmap's progress card with "{preparedCount} of {totalCount} ready" and the gold bar. No percent here: the API gives a percent for steps only. <code>aria-label="Documents ready"</code>, <code>aria-valuetext="20 of 57 documents ready"</code>. Under the bar: "Some items may not apply to you." in <code>mt-2 text-sm text-muted-foreground</code>. The total counts every item, including "If your business is…" items and papers asked for again in Step 9, so users can finish without reaching 57.</li>
         <li><b>One card per step</b>, in step order: <code>Card</code> <code>rounded-2xl border bg-white p-4 md:p-6</code>. Head: gold pill "Step {number}" (<code>text-xs</code> version of the step detail pill), step name as <code>h2 text-lg font-bold</code>, then the status chip ("Done", or "In progress" without the count, because "{n} of {m} ready" sits on the right in <code>text-sm font-bold text-brand whitespace-nowrap</code>).</li>
         <li>Checkbox rows: the same component as step detail, with name and the "For Food and Beverage businesses" label only. No description or source, to keep 57 items short. The step detail has both, one tap away.</li>
         <li>Footer: text link "Open step {number}" with <code>ArrowRight</code> → <code>/roadmap/steps/{number}</code>, <code>min-h-11</code>.</li>
@@ -825,7 +825,7 @@
       ['Screen 4 · My Business (/my-business)', '14. Progress panel, normal (3 of 10)', pair('Normal', () => myBusinessPage(ROADMAP)), `<ul>
         <li>Only the middle stop of "Your route progress:" changes. Point A, Biz, the dashed line, the blue panel, and the rest of <code>MyBusinessPage.tsx</code> stay as they are.</li>
         <li>Data: <code>useRoadmap()</code> next to <code>useBusinessProfile()</code>. No new endpoint.</li>
-        <li>Middle stop: the gold pin dot stays (drop the "You're here" pill and the old link). Then <code>text-4xl font-extrabold</code> "{progressPercent}%", the progress bar from the roadmap with a <code>bg-white/25</code> track and <code>bg-gold</code> fill (<code>role="progressbar"</code>, <code>aria-valuetext="3 of 10 steps done"</code>), "{completedSteps} of {steps.length} steps done" in <code>font-semibold</code>.</li>
+        <li>Middle stop: the gold pin dot stays (drop the "You're here" pill and the old link). Then <code>text-4xl font-extrabold</code> "{progressPercent}%", the progress bar from the roadmap with a <code>bg-white/25</code> track and <code>bg-gold</code> fill (<code>role="progressbar"</code>, <code>aria-label="Steps done"</code>, <code>aria-valuetext="3 of 10 steps done"</code>), "{completedSteps} of {steps.length} steps done" in <code>font-semibold</code>.</li>
         <li>Then a <code>Link</code> to <code>/roadmap/steps/{nextStepNumber}</code>: "Next: Step 4 · {that step's name}" with <code>ArrowRight</code>, <code>-mx-2 flex min-h-11 items-center gap-2 rounded-xl px-2 py-1.5 font-semibold hover:bg-white/10 break-words</code>. Long names wrap on 360 px. Take the name from <code>steps.find(s =&gt; s.number === nextStepNumber)</code>.</li>
         <li><b>No roadmap yet</b> (US-011-FE-02): can't happen today. The page sends users without a profile to <code>/assessment</code>, and <code>GET /api/roadmap</code> builds the roadmap on the first call. If <code>useRoadmap()</code> still returns no data, keep today's "Your roadmap" link in this stop. No new frame.</li>
       </ul>`],
