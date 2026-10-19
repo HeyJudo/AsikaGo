@@ -147,3 +147,15 @@ source: https://assets.pasigcity.gov.ph/storage/attachments/business_permit_and_
 | Services | If your business is a rent-a-car or transport service: LTO (Land Transportation Office) Franchise. | pasig-forms | Yes |
 | Services | If your business is a real estate lessor: Proof of Ownership. | pasig-forms | Yes |
 | Services | If your business is a warehouse or depot: Certification that says what kind of goods you will store. | pasig-forms | Yes |
+
+## 5. Open research questions
+
+Recorded Oct 19, 2026 (Sprint 4 planning). The seed keeps the "ask the office"
+or "confirm" wording for open questions until a researcher confirms them.
+
+| Question | Status | Seed rows affected |
+|---|---|---|
+| Do all Pasig barangays ask for the same Barangay Business Clearance documents? | **Answered.** The researcher confirmed every barangay asks for the same documents. Seed text update: S4-BE-01 (Sprint 4). Fees are still based on Brgy. San Antonio only. | Step 2 description |
+| Does a sari-sari store count as a food business that needs a Health Certificate? | Open | Food and Beverage health requirements |
+| Does the "Meat market" Veterinary Clearance apply only to businesses that handle meat? | Open | Section 4, Veterinary Clearance rows |
+| Are businesses in a mall or the Ortigas Center exempt from the Certificate of Conformance? | Open | Step 3 condition note, Step 9 Certificate of Conformance |
