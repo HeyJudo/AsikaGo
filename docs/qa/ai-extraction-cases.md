@@ -15,6 +15,8 @@ Each case is a business description written the way a real user might type it. G
 - **Categories (3):** Retail, Food and Beverage, Services
 - **Expected = null** for a field means the description does not say enough to pick it. A case is "unclear" when at least one field is null.
 - A case is **correct** only when both fields match the expected values.
+- A case is **wrong** when any field has a value that doesn't match the expected value.
+- A case is **null** when nothing is wrong but the model returned null for a field where we expected a value.
 
 ## Test cases
 
