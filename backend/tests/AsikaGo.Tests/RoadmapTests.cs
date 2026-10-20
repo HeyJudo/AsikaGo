@@ -230,6 +230,7 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
         await PutProfile(client, "Shop", "Corporation", RetailId, "Started");
         var first = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
         var doneAt = new DateTimeOffset(2026, 10, 20, 0, 0, 0, TimeSpan.Zero);
+        var sharedRowIds = SavedSteps(user).Where(p => p.StepId != RetailStepId).Select(p => p.Id).ToList();
 
         using (var scope = _factory.Services.CreateScope())
         {
@@ -250,6 +251,7 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(first.RoadmapId, second.RoadmapId);
         var saved = SavedSteps(user);
         Assert.Equal(new[] { SecId, BarangayId, FireId }, saved.Select(p => p.StepId));
+        Assert.Equal(sharedRowIds, saved.Select(p => p.Id));
         Assert.Equal(new[] { 1, 2, 3 }, saved.Select(p => p.SortOrder));
         Assert.Equal(RoadmapStepStatus.Completed, saved[1].Status);
         Assert.Equal(doneAt, saved[1].CompletedAt);
