@@ -57,10 +57,27 @@ public class HealthAndAuthTests : IClassFixture<WebApplicationFactory<Program>>
     [Theory]
     [InlineData("/api/roadmap")]
     [InlineData("/api/roadmap/steps/1")]
-    public async Task Roadmap_WithoutToken_ReturnsUnauthorized(string url)
+    [InlineData("/api/roadmap/documents")]
+    public async Task Roadmap_Get_WithoutToken_ReturnsUnauthorized(string url)
     {
         using var client = _factory.CreateClient();
         var response = await client.GetAsync(url);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Roadmap_PutStepStatus_WithoutToken_ReturnsUnauthorized()
+    {
+        using var client = _factory.CreateClient();
+        var response = await client.PutAsJsonAsync("/api/roadmap/steps/1/status", new { completed = true });
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Roadmap_PutRequirement_WithoutToken_ReturnsUnauthorized()
+    {
+        using var client = _factory.CreateClient();
+        var response = await client.PutAsJsonAsync("/api/roadmap/requirements/77777777-0000-0000-0000-0000000000b1", new { isPrepared = true });
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }
