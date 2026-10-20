@@ -209,6 +209,16 @@
           "204": {
             "description": "No Content"
           },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Unauthorized",
             "content": {
@@ -261,6 +271,16 @@
         "responses": {
           "204": {
             "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
           },
           "401": {
             "description": "Unauthorized",
@@ -505,6 +525,53 @@
           }
         }
       },
+      "HttpValidationProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
       "MeResponse": {
         "required": [
           "id",
@@ -578,7 +645,8 @@
           "name",
           "description",
           "appliesTo",
-          "source"
+          "source",
+          "isPrepared"
         ],
         "type": "object",
         "properties": {
@@ -612,8 +680,7 @@
             ]
           },
           "isPrepared": {
-            "type": "boolean",
-            "default": false
+            "type": "boolean"
           }
         }
       },
@@ -625,7 +692,10 @@
           "categoryName",
           "cityName",
           "registrationStatus",
-          "steps"
+          "steps",
+          "completedSteps",
+          "progressPercent",
+          "nextStepNumber"
         ],
         "type": "object",
         "properties": {
@@ -661,8 +731,7 @@
               "integer",
               "string"
             ],
-            "format": "int32",
-            "default": 0
+            "format": "int32"
           },
           "progressPercent": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -670,8 +739,7 @@
               "integer",
               "string"
             ],
-            "format": "int32",
-            "default": 0
+            "format": "int32"
           },
           "nextStepNumber": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -680,8 +748,7 @@
               "integer",
               "string"
             ],
-            "format": "int32",
-            "default": 1
+            "format": "int32"
           }
         }
       },
@@ -692,7 +759,9 @@
           "name",
           "agency",
           "conditionNote",
-          "requirementCount"
+          "requirementCount",
+          "status",
+          "preparedCount"
         ],
         "type": "object",
         "properties": {
@@ -737,8 +806,7 @@
               "integer",
               "string"
             ],
-            "format": "int32",
-            "default": 0
+            "format": "int32"
           }
         }
       },
@@ -747,8 +815,7 @@
           "NotStarted",
           "InProgress",
           "Completed"
-        ],
-        "default": "NotStarted"
+        ]
       },
       "SaveBusinessProfileRequest": {
         "required": [
@@ -816,7 +883,9 @@
           "conditionNote",
           "requirements",
           "previousNumber",
-          "nextNumber"
+          "nextNumber",
+          "status",
+          "completedAt"
         ],
         "type": "object",
         "properties": {
@@ -904,7 +973,10 @@
         "type": "object",
         "properties": {
           "isPrepared": {
-            "type": "boolean"
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -915,7 +987,10 @@
         "type": "object",
         "properties": {
           "completed": {
-            "type": "boolean"
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       }

@@ -15,10 +15,12 @@ public static class RoadmapEndpoints
         group.MapGet("/steps/{number:int}", GetStep).ProducesProblem(StatusCodes.Status404NotFound);
         group.MapPut("/steps/{number:int}/status", UpdateStepStatus)
              .Produces(StatusCodes.Status204NoContent)
+             .ProducesValidationProblem()
              .ProducesProblem(StatusCodes.Status401Unauthorized)
              .ProducesProblem(StatusCodes.Status404NotFound);
         group.MapPut("/requirements/{requirementId:guid}", UpdateRequirement)
              .Produces(StatusCodes.Status204NoContent)
+             .ProducesValidationProblem()
              .ProducesProblem(StatusCodes.Status401Unauthorized)
              .ProducesProblem(StatusCodes.Status404NotFound);
         group.MapGet("/documents", GetDocuments)
@@ -47,16 +49,21 @@ public static class RoadmapEndpoints
                 s.Step.Agency,
                 s.Step.ConditionNote,
                 s.Requirements.Count,
-                Status: RoadmapStepStatus.NotStarted,
-                PreparedCount: 0))
+                RoadmapStepStatus.NotStarted,
+                0))
             .ToList();
 
         return TypedResults.Ok(new RoadmapResponse(
-            roadmap.Id, roadmap.CreatedAt, profile.BusinessType, profile.Category!.Name, profile.City!.Name,
-            profile.RegistrationStatus, steps,
-            CompletedSteps: 0,
-            ProgressPercent: 0,
-            NextStepNumber: roadmap.Steps.Count > 0 ? 1 : null));
+            roadmap.Id,
+            roadmap.CreatedAt,
+            profile.BusinessType,
+            profile.Category!.Name,
+            profile.City!.Name,
+            profile.RegistrationStatus,
+            steps,
+            0,
+            0,
+            roadmap.Steps.Count > 0 ? 1 : null));
     }
 
     // The step list is the saved snapshot (D14). Requirements come from the current rules.
@@ -164,19 +171,25 @@ public static class RoadmapEndpoints
                     r.Requirement.Description,
                     r.AppliesToCategoryId is null ? null : categoryName,
                     ToSource(r.Requirement.Source),
-                    IsPrepared: false))
+                    false))
                 .ToList(),
             number == 1 ? null : number - 1,
             number == total ? null : number + 1,
-            Status: RoadmapStepStatus.NotStarted,
-            CompletedAt: null));
+            RoadmapStepStatus.NotStarted,
+            null));
     }
 
-    private static async Task<Results<NoContent, UnauthorizedHttpResult, ProblemHttpResult>> UpdateStepStatus(
+    private static async Task<Results<NoContent, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> UpdateStepStatus(
         HttpContext http, AppDbContext db, int number, UpdateStepStatusRequest request, CancellationToken ct)
     {
         var userId = GetUserId(http);
         if (userId is null) return TypedResults.Unauthorized();
+
+        if (request?.Completed is null)
+        {
+            Dictionary<string, string[]> errors = new() { { "completed", ["The completed field is required."] } };
+            return TypedResults.ValidationProblem(errors);
+        }
 
         var roadmap = await LoadRoadmap(db, userId.Value, ct);
         if (roadmap is null) return NoProfile();
@@ -187,11 +200,17 @@ public static class RoadmapEndpoints
         return TypedResults.NoContent();
     }
 
-    private static async Task<Results<NoContent, UnauthorizedHttpResult, ProblemHttpResult>> UpdateRequirement(
+    private static async Task<Results<NoContent, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> UpdateRequirement(
         HttpContext http, AppDbContext db, Guid requirementId, UpdateRequirementRequest request, CancellationToken ct)
     {
         var userId = GetUserId(http);
         if (userId is null) return TypedResults.Unauthorized();
+
+        if (request?.IsPrepared is null)
+        {
+            Dictionary<string, string[]> errors = new() { { "isPrepared", ["The isPrepared field is required."] } };
+            return TypedResults.ValidationProblem(errors);
+        }
 
         var roadmap = await LoadRoadmap(db, userId.Value, ct);
         if (roadmap is null) return NoProfile();
@@ -223,7 +242,7 @@ public static class RoadmapEndpoints
                 r.Requirement.Description,
                 r.AppliesToCategoryId is null ? null : categoryName,
                 ToSource(r.Requirement.Source),
-                IsPrepared: false
+                false
             )).ToList()
         )).ToList();
 

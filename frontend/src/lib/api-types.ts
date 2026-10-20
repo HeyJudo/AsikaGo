@@ -287,6 +287,15 @@ export interface paths {
                     };
                     content?: never;
                 };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
                 /** @description Unauthorized */
                 401: {
                     headers: {
@@ -343,6 +352,15 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
                 };
                 /** @description Unauthorized */
                 401: {
@@ -471,6 +489,17 @@ export interface components {
             status: components["schemas"]["RoadmapStepStatus"];
             requirements: components["schemas"]["RequirementResponse"][];
         };
+        HttpValidationProblemDetails: {
+            type?: null | string;
+            title?: null | string;
+            /** Format: int32 */
+            status?: null | number | string;
+            detail?: null | string;
+            instance?: null | string;
+            errors?: {
+                [key: string]: string[];
+            };
+        };
         MeResponse: {
             /** Format: uuid */
             id: string;
@@ -494,7 +523,6 @@ export interface components {
             description: null | string;
             appliesTo: null | string;
             source: null | components["schemas"]["SourceResponse"];
-            /** @default false */
             isPrepared: boolean;
         };
         RoadmapResponse: {
@@ -507,20 +535,11 @@ export interface components {
             cityName: string;
             registrationStatus: components["schemas"]["RegistrationStatus"];
             steps: components["schemas"]["RoadmapStepResponse"][];
-            /**
-             * Format: int32
-             * @default 0
-             */
+            /** Format: int32 */
             completedSteps: number | string;
-            /**
-             * Format: int32
-             * @default 0
-             */
+            /** Format: int32 */
             progressPercent: number | string;
-            /**
-             * Format: int32
-             * @default 1
-             */
+            /** Format: int32 */
             nextStepNumber: null | number | string;
         };
         RoadmapStepResponse: {
@@ -533,17 +552,11 @@ export interface components {
             conditionNote: null | string;
             /** Format: int32 */
             requirementCount: number | string;
-            status?: components["schemas"]["RoadmapStepStatus"];
-            /**
-             * Format: int32
-             * @default 0
-             */
+            status: components["schemas"]["RoadmapStepStatus"];
+            /** Format: int32 */
             preparedCount: number | string;
         };
-        /**
-         * @default NotStarted
-         * @enum {unknown}
-         */
+        /** @enum {unknown} */
         RoadmapStepStatus: "NotStarted" | "InProgress" | "Completed";
         SaveBusinessProfileRequest: {
             businessName: null | string;
@@ -575,15 +588,15 @@ export interface components {
             previousNumber: null | number | string;
             /** Format: int32 */
             nextNumber: null | number | string;
-            status?: components["schemas"]["RoadmapStepStatus"];
+            status: components["schemas"]["RoadmapStepStatus"];
             /** Format: date-time */
-            completedAt?: null | string;
+            completedAt: null | string;
         };
         UpdateRequirementRequest: {
-            isPrepared: boolean;
+            isPrepared: null | boolean;
         };
         UpdateStepStatusRequest: {
-            completed: boolean;
+            completed: null | boolean;
         };
     };
     responses: never;

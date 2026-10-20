@@ -318,4 +318,50 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
             db.SaveChanges();
         }
     }
+
+    [Fact]
+    public async Task GetDocuments_ReturnsDocumentsResponse()
+    {
+        using var client = Client(await UserWithProfile());
+        var response = await client.GetAsync("/api/roadmap/documents");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var docs = await Read<DocumentsResponse>(response);
+        Assert.NotNull(docs.Steps);
+        Assert.True(docs.TotalCount >= 0);
+    }
+
+    [Fact]
+    public async Task UpdateStepStatus_MissingCompleted_ReturnsValidationProblem()
+    {
+        using var client = Client(await UserWithProfile());
+        var response = await client.PutAsJsonAsync("/api/roadmap/steps/1/status", new { });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public async Task UpdateRequirement_MissingIsPrepared_ReturnsValidationProblem()
+    {
+        using var client = Client(await UserWithProfile());
+        var response = await client.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public async Task UpdateStepStatus_Valid_ReturnsNoContent()
+    {
+        using var client = Client(await UserWithProfile());
+        var response = await client.PutAsJsonAsync("/api/roadmap/steps/2/status", new { completed = true });
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateRequirement_Valid_ReturnsNoContent()
+    {
+        using var client = Client(await UserWithProfile());
+        var response = await client.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true });
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
 }

@@ -10,9 +10,9 @@ public sealed record RoadmapResponse(
     string CityName,
     RegistrationStatus RegistrationStatus,
     IReadOnlyList<RoadmapStepResponse> Steps,
-    int CompletedSteps = 0,
-    int ProgressPercent = 0,
-    int? NextStepNumber = 1);
+    int CompletedSteps,
+    int ProgressPercent,
+    int? NextStepNumber);
 
 public sealed record RoadmapStepResponse(
     int Number,
@@ -21,8 +21,8 @@ public sealed record RoadmapStepResponse(
     string Agency,
     string? ConditionNote,
     int RequirementCount,
-    RoadmapStepStatus Status = RoadmapStepStatus.NotStarted,
-    int PreparedCount = 0);
+    RoadmapStepStatus Status,
+    int PreparedCount);
 
 public sealed record StepDetailResponse(
     int Number,
@@ -36,8 +36,8 @@ public sealed record StepDetailResponse(
     IReadOnlyList<RequirementResponse> Requirements,
     int? PreviousNumber,
     int? NextNumber,
-    RoadmapStepStatus Status = RoadmapStepStatus.NotStarted,
-    DateTimeOffset? CompletedAt = null);
+    RoadmapStepStatus Status,
+    DateTimeOffset? CompletedAt);
 
 public sealed record RequirementResponse(
     Guid Id,
@@ -45,16 +45,16 @@ public sealed record RequirementResponse(
     string? Description,
     string? AppliesTo,
     SourceResponse? Source,
-    bool IsPrepared = false);
+    bool IsPrepared);
 
 public sealed record SourceResponse(
     string Name,
     string Url,
     DateOnly DateVerified);
 
-public sealed record UpdateStepStatusRequest(bool Completed);
+public sealed record UpdateStepStatusRequest(bool? Completed);
 
-public sealed record UpdateRequirementRequest(bool IsPrepared);
+public sealed record UpdateRequirementRequest(bool? IsPrepared);
 
 public sealed record DocumentsResponse(
     int TotalCount,
