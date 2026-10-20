@@ -178,24 +178,33 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
+    private List<RoadmapProgress> SavedSteps(Guid user)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        return db.RoadmapProgress
+            .Where(p => db.UserRoadmaps.Any(r => r.Id == p.RoadmapId && db.BusinessProfiles.Any(b => b.Id == r.BusinessId && b.UserId == user)))
+            .OrderBy(p => p.SortOrder)
+            .ToList();
+    }
+
     [Fact]
-    public async Task PutProfile_BusinessTypeChanges_DeletesOldRoadmapAndNextGetBuildsNew()
+    public async Task PutProfile_BusinessTypeChanges_RebuildsSameRoadmapInPlace()
     {
         var user = await UserWithProfile();
         using var client = Client(user);
         var first = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
 
         await PutProfile(client, "Shop", "Sole Proprietorship", FoodId, "Started");
-        Assert.Equal(0, SavedRoadmapCount(user));
+        Assert.Equal(1, SavedRoadmapCount(user));
 
         var second = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
-        Assert.NotEqual(first.RoadmapId, second.RoadmapId);
+        Assert.Equal(first.RoadmapId, second.RoadmapId);
         Assert.Equal(new[] { DtiId, BarangayId, FireId }, second.Steps.Select(s => s.StepId));
-        Assert.Equal(1, SavedRoadmapCount(user));
     }
 
     [Fact]
-    public async Task PutProfile_CategoryChanges_DeletesOldRoadmapAndNextGetBuildsNew()
+    public async Task PutProfile_CategoryChanges_RebuildsSameRoadmapInPlace()
     {
         var user = await UserWithProfile();
         using var client = Client(user);
@@ -203,13 +212,80 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(new[] { SecId, BarangayId, FireId }, first.Steps.Select(s => s.StepId));
 
         await PutProfile(client, "Shop", "Corporation", RetailId, "Started");
-        Assert.Equal(0, SavedRoadmapCount(user));
 
         var second = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        Assert.Equal(first.RoadmapId, second.RoadmapId);
         Assert.Equal(new[] { SecId, BarangayId, FireId, RetailStepId }, second.Steps.Select(s => s.StepId));
-        Assert.NotEqual(first.RoadmapId, second.RoadmapId);
         Assert.Equal("Retail", second.CategoryName);
-        Assert.Equal(1, SavedRoadmapCount(user));
+        var retail = SavedSteps(user).Single(p => p.StepId == RetailStepId);
+        Assert.Equal(RoadmapStepStatus.NotStarted, retail.Status);
+        Assert.Null(retail.CompletedAt);
+    }
+
+    [Fact]
+    public async Task PutProfile_RetailToFood_KeepsDoneStepDropsRetailStepKeepsRequirementProgress()
+    {
+        var user = Guid.NewGuid();
+        using var client = Client(user);
+        await PutProfile(client, "Shop", "Corporation", RetailId, "Started");
+        var first = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        var doneAt = new DateTimeOffset(2026, 10, 20, 0, 0, 0, TimeSpan.Zero);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var rows = db.RoadmapProgress.Where(p => p.RoadmapId == first.RoadmapId).ToList();
+            var barangay = rows.Single(p => p.StepId == BarangayId);
+            barangay.Status = RoadmapStepStatus.Completed;
+            barangay.CompletedAt = doneAt;
+            barangay.SortOrder = 99;
+            rows.Single(p => p.StepId == RetailStepId).Status = RoadmapStepStatus.Completed;
+            db.RequirementProgress.Add(new RequirementProgress { RoadmapId = first.RoadmapId, RequirementId = RetailReq, IsPrepared = true, UpdatedAt = doneAt });
+            db.SaveChanges();
+        }
+
+        await PutProfile(client, "Shop", "Corporation", FoodId, "Started");
+
+        var second = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        Assert.Equal(first.RoadmapId, second.RoadmapId);
+        var saved = SavedSteps(user);
+        Assert.Equal(new[] { SecId, BarangayId, FireId }, saved.Select(p => p.StepId));
+        Assert.Equal(new[] { 1, 2, 3 }, saved.Select(p => p.SortOrder));
+        Assert.Equal(RoadmapStepStatus.Completed, saved[1].Status);
+        Assert.Equal(doneAt, saved[1].CompletedAt);
+        Assert.Equal(RoadmapStepStatus.NotStarted, saved[0].Status);
+        Assert.Equal(RoadmapStepStatus.NotStarted, saved[2].Status);
+        Assert.DoesNotContain(saved, p => p.StepId == RetailStepId);
+
+        using var scope2 = _factory.Services.CreateScope();
+        var db2 = scope2.ServiceProvider.GetRequiredService<AppDbContext>();
+        Assert.True(db2.RequirementProgress.Any(r => r.RoadmapId == first.RoadmapId && r.RequirementId == RetailReq && r.IsPrepared));
+    }
+
+    [Fact]
+    public async Task PutProfile_SameTypeAndCategory_ChangesNothing()
+    {
+        var user = await UserWithProfile();
+        using var client = Client(user);
+        await client.GetAsync("/api/roadmap");
+        var before = SavedSteps(user).Select(p => (p.Id, p.StepId, p.Status, p.SortOrder)).ToList();
+
+        await PutProfile(client, "Renamed Shop", "Corporation", FoodId, "Planning");
+
+        Assert.Equal(before, SavedSteps(user).Select(p => (p.Id, p.StepId, p.Status, p.SortOrder)).ToList());
+    }
+
+    [Fact]
+    public async Task PutProfile_ChangeBeforeRoadmapBuilt_NextGetBuildsNewRoadmap()
+    {
+        var user = await UserWithProfile();
+        using var client = Client(user);
+
+        await PutProfile(client, "Shop", "Sole Proprietorship", FoodId, "Started");
+        Assert.Equal(0, SavedRoadmapCount(user));
+
+        var roadmap = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        Assert.Equal(new[] { DtiId, BarangayId, FireId }, roadmap.Steps.Select(s => s.StepId));
     }
 
     [Fact]
