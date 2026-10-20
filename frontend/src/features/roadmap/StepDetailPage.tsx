@@ -209,6 +209,14 @@ function StepDetailContent({ number }: { number: number }) {
           </div>
         </section>
 
+        {/* Save error: shown for both mark-done and undo failures */}
+        {saveError && (
+          <Alert variant="destructive">
+            <AlertCircle className="size-4" />
+            <AlertDescription>We couldn't save this. Check your connection and try again.</AlertDescription>
+          </Alert>
+        )}
+
         {/* Mark-done card: shown only when the step is not completed */}
         {!done && (
           <section className="border-border rounded-2xl border bg-white p-4 shadow-sm md:p-6">
@@ -217,12 +225,6 @@ function StepDetailContent({ number }: { number: number }) {
               Done with this step?
             </h2>
             <p className="text-navy mb-3 leading-relaxed">Mark it as done after you finish at the office.</p>
-            {saveError && (
-              <Alert variant="destructive" className="mb-3">
-                <AlertCircle className="size-4" />
-                <AlertDescription>We couldn't save this. Check your connection and try again.</AlertDescription>
-              </Alert>
-            )}
             <Button
               className="bg-brand hover:bg-brand-dark h-11 w-full rounded-full px-6 font-semibold text-white md:w-auto"
               disabled={isPending}
