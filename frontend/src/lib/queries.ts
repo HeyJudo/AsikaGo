@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '@/app/AuthProvider'
 import { ApiError, apiFetch } from '@/lib/api'
 import type { components } from '@/lib/api-types'
@@ -53,6 +53,22 @@ export function useRoadmapStep(number: number) {
     retry: (failCount, err) => {
       if (err instanceof ApiError && err.status === 404) return false
       return failCount < 3
+    },
+  })
+}
+
+export function useUpdateStepStatus(stepNumber: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (completed: boolean) =>
+      apiFetch<void>(`/api/roadmap/steps/${stepNumber}/status`, {
+        method: 'PUT',
+        body: JSON.stringify({ completed }),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['roadmap'] })
+      void queryClient.invalidateQueries({ queryKey: ['roadmap-step', stepNumber] })
+      void queryClient.invalidateQueries({ queryKey: ['roadmap-documents'] })
     },
   })
 }

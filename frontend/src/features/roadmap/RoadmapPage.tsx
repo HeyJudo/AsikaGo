@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router'
-import { AlertCircle, ArrowRight, Check, ChevronRight, Flag, Info } from 'lucide-react'
+import { AlertCircle, ArrowRight, Check, ChevronRight, Flag, Info, PartyPopper } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { GoogleButton } from '@/components/GoogleButton'
@@ -95,6 +95,7 @@ export function RoadmapPage() {
       number: Number(s.number),
       name: s.name,
       conditionNote: s.conditionNote,
+      status: s.status,
     }))
   }, [roadmap])
 
@@ -116,14 +117,14 @@ export function RoadmapPage() {
     return <NoProfileState />
   }
 
-  const firstStepNumber = roadmap.steps[0] ? Number(roadmap.steps[0].number) : 1
-
   return (
     <div className="bg-cream min-h-[calc(100svh-4rem)] px-6 py-8 md:px-8 md:py-12">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
         {user?.is_anonymous && <GuestBanner />}
 
-        {visualizerSteps.length > 0 && <RoadmapVisualizer steps={visualizerSteps} />}
+        {visualizerSteps.length > 0 && (
+          <RoadmapVisualizer steps={visualizerSteps} nextStepNumber={roadmap.nextStepNumber != null ? Number(roadmap.nextStepNumber) : null} />
+        )}
 
         <div>
           <h1 className="text-navy text-3xl font-extrabold md:text-4xl">
@@ -135,20 +136,57 @@ export function RoadmapPage() {
           {roadmap.registrationStatus === 'Started' && (
             <div className="bg-gold/15 text-navy mt-3 flex items-start gap-2 rounded-lg px-3 py-2 text-sm">
               <Info className="text-brand mt-0.5 size-4.5 shrink-0" aria-hidden="true" />
-              <p>Already done some steps? You'll be able to mark them as done soon.</p>
+              <p>Already done some steps? Open a step and mark it as done.</p>
             </div>
           )}
         </div>
 
-        <Button
-          asChild
-          className="bg-brand hover:bg-brand-dark h-11 w-full self-start rounded-full px-6 font-semibold text-white sm:w-auto"
+        {/* Progress card */}
+        <section
+          className="rounded-xl border bg-white p-4 shadow-xs md:px-6 md:py-5"
+          role="progressbar"
+          aria-label="Steps done"
+          aria-valuemin={0}
+          aria-valuemax={roadmap.steps.length}
+          aria-valuenow={Number(roadmap.completedSteps)}
+          aria-valuetext={`${roadmap.completedSteps} of ${roadmap.steps.length} steps done`}
         >
-          <Link to={`/roadmap/steps/${firstStepNumber}`}>
-            See step {firstStepNumber}
-            <ArrowRight className="size-4" aria-hidden="true" />
-          </Link>
-        </Button>
+          <div className="mb-2.5 flex items-baseline justify-between gap-3">
+            <b className="text-navy font-bold">{roadmap.completedSteps} of {roadmap.steps.length} steps done</b>
+            <span className="text-brand text-2xl font-extrabold leading-none">{roadmap.progressPercent}%</span>
+          </div>
+          <div className="bg-cream-deep h-3 overflow-hidden rounded-full">
+            <div
+              className="bg-gold h-full rounded-full transition-[width]"
+              style={{ width: `${roadmap.progressPercent}%` }}
+            />
+          </div>
+        </section>
+
+        {/* Main action row */}
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-6">
+          {roadmap.nextStepNumber != null ? (
+            <Button
+              asChild
+              className="bg-brand hover:bg-brand-dark h-11 w-full rounded-full px-6 font-semibold text-white sm:w-auto"
+            >
+              <Link to={`/roadmap/steps/${roadmap.nextStepNumber}`}>
+                Next: Step {roadmap.nextStepNumber}
+                <ArrowRight className="size-4" aria-hidden="true" />
+              </Link>
+            </Button>
+          ) : (
+            <div
+              role="status"
+              className="border-gold/60 bg-gold/15 flex items-center gap-3 rounded-xl border px-4 py-3.5 font-semibold text-navy"
+            >
+              <span className="bg-gold grid size-10 shrink-0 place-items-center rounded-full">
+                <PartyPopper className="text-navy size-5" aria-hidden="true" />
+              </span>
+              You're done. Every step is marked as done.
+            </div>
+          )}
+        </div>
 
         <div className="relative flex flex-col gap-3">
           <div
@@ -174,20 +212,49 @@ export function RoadmapPage() {
           <ol className="flex flex-col gap-3">
             {roadmap.steps.map((step) => {
               const num = Number(step.number)
+              const done = step.status === 'Completed'
+              const inProgress = step.status === 'InProgress'
               return (
                 <li key={step.stepId || num}>
                   <Link
                     to={`/roadmap/steps/${num}`}
                     className="group relative flex min-h-[44px] items-center gap-3 rounded-xl outline-none"
                   >
-                    <span className="bg-brand group-hover:text-brand group-focus-visible:text-brand z-10 flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white transition-colors group-hover:bg-white group-hover:ring-2 group-hover:ring-brand group-hover:ring-offset-2 group-focus-visible:bg-white group-focus-visible:ring-2 group-focus-visible:ring-brand group-focus-visible:ring-offset-2">
-                      <span className="sr-only">Step </span>
-                      {num}
+                    <span
+                      className={
+                        done
+                          ? 'bg-gold text-navy z-10 flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold transition-colors group-hover:ring-2 group-hover:ring-brand group-hover:ring-offset-2 group-focus-visible:ring-2 group-focus-visible:ring-brand group-focus-visible:ring-offset-2'
+                          : 'bg-brand group-hover:text-brand group-focus-visible:text-brand z-10 flex size-8 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white transition-colors group-hover:bg-white group-hover:ring-2 group-hover:ring-brand group-hover:ring-offset-2 group-focus-visible:bg-white group-focus-visible:ring-2 group-focus-visible:ring-brand group-focus-visible:ring-offset-2'
+                      }
+                    >
+                      {done ? (
+                        <>
+                          <Check className="size-4.5" strokeWidth={3} aria-hidden="true" />
+                          <span className="sr-only">Step {num}, done</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="sr-only">Step </span>
+                          {num}
+                        </>
+                      )}
                     </span>
                     <div className="border-border group-hover:border-brand group-focus-visible:border-brand flex min-w-0 flex-1 items-center gap-3 rounded-xl border bg-white p-3.5 shadow-xs transition-all group-hover:ring-3 group-hover:ring-brand/35 group-focus-visible:ring-3 group-focus-visible:ring-brand/35 md:p-4">
                       <div className="min-w-0 flex-1">
                         <p className="text-navy font-semibold leading-snug break-words">{step.name}</p>
                         <p className="text-muted-foreground mt-0.5 text-sm leading-normal break-words">{step.agency}</p>
+                        {done && (
+                          <span className="bg-gold text-navy mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold">
+                            <Check className="size-3" strokeWidth={3} aria-hidden="true" />
+                            Done
+                          </span>
+                        )}
+                        {inProgress && (
+                          <span className="bg-brand/10 text-brand mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold">
+                            <span className="border-brand size-2 rounded-full border-2 border-r-transparent" aria-hidden="true" />
+                            In progress · {step.preparedCount} of {step.requirementCount} ready
+                          </span>
+                        )}
                         {step.conditionNote && (
                           <span className="bg-gold/20 text-navy mt-2 inline-flex items-start gap-1.5 rounded-md px-2 py-1 text-xs font-medium leading-normal sm:text-[13px]">
                             <Info className="text-brand mt-0.5 size-3.5 shrink-0" aria-hidden="true" />

@@ -1,19 +1,24 @@
 import { Link, useParams } from 'react-router'
 import {
+  AlertCircle,
   ArrowLeft,
   ArrowRight,
+  Check,
+  CircleCheck,
   ClipboardList,
   ExternalLink,
   FileText,
   Info,
   ListChecks,
+  LoaderCircle,
   MapPin,
   Tag,
 } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { FullPageError, FullPageLoader } from '@/components/PageStates'
 import { StepNotFound } from '@/features/roadmap/StepNotFound'
-import { type Requirement, useRoadmapStep } from '@/lib/queries'
+import { type Requirement, useRoadmapStep, useUpdateStepStatus } from '@/lib/queries'
 
 function formatDate(iso: string): string {
   const dateStr = iso.includes('T') ? iso : `${iso}T00:00:00`
@@ -41,6 +46,7 @@ export function StepDetailPage() {
 
 function StepDetailContent({ number }: { number: number }) {
   const { data: step, isLoading, isError, refetch } = useRoadmapStep(number)
+  const { mutate: updateStatus, isPending, isError: saveError } = useUpdateStepStatus(number)
 
   if (isLoading) {
     return <FullPageLoader label="Finding your step…" />
@@ -53,6 +59,8 @@ function StepDetailContent({ number }: { number: number }) {
   if (!step) {
     return <StepNotFound />
   }
+
+  const done = step.status === 'Completed'
 
   const sortedRequirements = [...step.requirements].sort(
     (a, b) => (isLineOfBusiness(a) ? 1 : 0) - (isLineOfBusiness(b) ? 1 : 0),
@@ -70,13 +78,56 @@ function StepDetailContent({ number }: { number: number }) {
         </Link>
 
         <div>
-          <span className="bg-gold text-navy inline-block rounded-full px-3 py-0.5 text-sm font-bold">
-            Step {step.number} of {step.totalSteps}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="bg-gold text-navy inline-block rounded-full px-3 py-0.5 text-sm font-bold">
+              Step {step.number} of {step.totalSteps}
+            </span>
+            {done && (
+              <span className="bg-gold text-navy inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold">
+                <Check className="size-3" strokeWidth={3} aria-hidden="true" />
+                Done
+              </span>
+            )}
+            {step.status === 'InProgress' && (
+              <span className="bg-brand/10 text-brand inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold">
+                <span className="border-brand size-2 rounded-full border-2 border-r-transparent" aria-hidden="true" />
+                In progress · {step.requirements.filter((r) => r.isPrepared).length} of {step.requirements.length} ready
+              </span>
+            )}
+          </div>
           <h1 className="text-navy mt-2 break-words text-3xl font-extrabold md:text-4xl">
             {step.name}
           </h1>
         </div>
+
+        {/* Done-box: shown when the step is completed */}
+        {done && (
+          <div
+            role="status"
+            className="border-gold/70 bg-gold/20 flex flex-col items-start gap-3 rounded-2xl border p-3.5 font-semibold leading-relaxed text-navy md:flex-row md:items-center md:justify-between md:p-4"
+          >
+            <p className="flex items-center gap-2.5">
+              <span className="bg-gold grid size-8 shrink-0 place-items-center rounded-full">
+                <Check className="text-navy size-4.5" strokeWidth={3} aria-hidden="true" />
+              </span>
+              You marked this step as done{step.completedAt ? ` on ${formatDate(step.completedAt)}` : ''}.
+            </p>
+            <Button
+              variant="outline"
+              className="border-brand text-brand hover:bg-brand/5 h-11 shrink-0 rounded-full bg-white px-6 font-semibold"
+              disabled={isPending}
+              onClick={() => updateStatus(false)}
+            >
+              Mark as not done
+            </Button>
+          </div>
+        )}
+        {done && saveError && (
+          <Alert variant="destructive">
+            <AlertCircle className="size-4" />
+            <AlertDescription>We couldn't save this. Check your connection and try again.</AlertDescription>
+          </Alert>
+        )}
 
         {step.conditionNote && (
           <div
@@ -178,6 +229,41 @@ function StepDetailContent({ number }: { number: number }) {
           </div>
         </section>
 
+        {/* Mark-done card: shown only when the step is not completed */}
+        {!done && (
+          <section className="border-border rounded-2xl border bg-white p-4 shadow-sm md:p-6">
+            <h2 className="text-navy mb-2 flex items-center gap-2.5 text-lg font-bold">
+              <CircleCheck className="text-brand size-5" />
+              Done with this step?
+            </h2>
+            <p className="text-navy mb-3 leading-relaxed">Mark it as done after you finish at the office.</p>
+            <Button
+              className="bg-brand hover:bg-brand-dark h-11 w-full rounded-full px-6 font-semibold text-white md:w-auto"
+              disabled={isPending}
+              aria-busy={isPending}
+              onClick={() => updateStatus(true)}
+            >
+              {isPending ? (
+                <>
+                  <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
+                  Saving…
+                </>
+              ) : (
+                <>
+                  <Check className="size-4" aria-hidden="true" />
+                  Mark this step as done
+                </>
+              )}
+            </Button>
+            {saveError && (
+              <Alert variant="destructive" className="mt-3">
+                <AlertCircle className="size-4" />
+                <AlertDescription>We couldn't save this. Check your connection and try again.</AlertDescription>
+              </Alert>
+            )}
+          </section>
+        )}
+
         <nav
           className="mt-2 flex flex-col gap-3 md:flex-row-reverse md:justify-between"
           aria-label="Steps"
@@ -185,7 +271,11 @@ function StepDetailContent({ number }: { number: number }) {
           {step.nextNumber ? (
             <Button
               asChild
-              className="bg-brand hover:bg-brand-dark h-11 rounded-full px-6 font-semibold text-white"
+              className={done
+                ? 'bg-brand hover:bg-brand-dark h-11 rounded-full px-6 font-semibold text-white'
+                : 'border-brand text-brand hover:bg-brand/5 h-11 rounded-full border bg-white px-6 font-semibold'
+              }
+              variant={done ? 'default' : 'outline'}
             >
               <Link to={`/roadmap/steps/${step.nextNumber}`}>
                 See step {step.nextNumber}
@@ -195,7 +285,11 @@ function StepDetailContent({ number }: { number: number }) {
           ) : (
             <Button
               asChild
-              className="bg-brand hover:bg-brand-dark h-11 rounded-full px-6 font-semibold text-white"
+              className={done
+                ? 'bg-brand hover:bg-brand-dark h-11 rounded-full px-6 font-semibold text-white'
+                : 'border-brand text-brand hover:bg-brand/5 h-11 rounded-full border bg-white px-6 font-semibold'
+              }
+              variant={done ? 'default' : 'outline'}
             >
               <Link to="/roadmap">Back to my roadmap</Link>
             </Button>
