@@ -6,9 +6,9 @@ import { cn } from 'cn'
 import { Button } from '@/components/ui/button'
 import { buildRoute, waypoints, VIEW_H, VIEW_W } from './routeGeometry'
 
-// The fields of RoadmapResponse.steps this draws. Swap in the generated step type from
-// src/lib/api-types.ts once US-005-BE-01 publishes it, so a renamed field breaks the build.
-type Step = { number: number; name: string; conditionNote?: string | null }
+// The fields of RoadmapResponse.steps this draws. Switched to the generated step type fields
+// from src/lib/api-types.ts (US-005-BE-01 is live).
+type Step = { number: number; name: string; conditionNote?: string | null; status: string }
 
 // Timeline in seconds: the road draws itself, the stops pop in as it reaches them, then the pin drives A → Biz.
 const DRAW = 1.4
@@ -19,8 +19,8 @@ const EASE_OUT_CUBIC = [0.33, 1, 0.68, 1] as const
 const reachedAt = (f: number) => DRAW * (1 - Math.cbrt(1 - f))
 
 // Animated A-to-Biz road above the step list on /roadmap. Decorative: the list carries the content,
-// so the drawing is aria-hidden and only "Replay" is focusable. It shows the route, not progress (US-011).
-export function RoadmapVisualizer({ steps }: { steps: Step[] }) {
+// so the drawing is aria-hidden and only "Replay" is focusable. Done stops show gold with a check.
+export function RoadmapVisualizer({ steps, nextStepNumber }: { steps: Step[]; nextStepNumber: number | null }) {
   const navigate = useNavigate()
   const reduced = useReducedMotion()
   const pts = useMemo(() => waypoints(steps.length), [steps.length])
@@ -46,14 +46,18 @@ export function RoadmapVisualizer({ steps }: { steps: Step[] }) {
     progress.set(0)
     userScrolled.current = false
     scroller.current?.scrollTo({ left: 0 })
-    const controls = animate(progress, 1, {
+    // Park the pin at the next step's stop. When all steps are done, drive to Biz as before.
+    const target = nextStepNumber != null
+      ? route.fractions[nextStepNumber] ?? 1
+      : 1
+    const controls = animate(progress, target, {
       delay: DRIVE_DELAY,
       duration: DRIVE,
       ease: 'easeInOut',
-      onComplete: () => setArrived(true),
+      onComplete: () => { if (nextStepNumber == null) setArrived(true) },
     })
     return () => controls.stop()
-  }, [run, reduced, progress])
+  }, [run, reduced, progress, nextStepNumber, route.fractions])
 
   // The swipe hint shows only when the road is actually wider than its box.
   useEffect(() => {
@@ -156,6 +160,7 @@ export function RoadmapVisualizer({ steps }: { steps: Step[] }) {
               {steps.map((s, i) => {
                 const [x, y] = pts[i + 1]
                 const on = tip === i
+                const done = s.status === 'Completed'
                 return (
                   <g
                     key={s.number}
@@ -177,7 +182,7 @@ export function RoadmapVisualizer({ steps }: { steps: Step[] }) {
                       ) : (
                         <circle r={22} fill="none" strokeWidth={4} className="stroke-white/45" />
                       )}
-                      {/* A short pulse as the pin passes. Nothing stays marked: progress isn't tracked yet (US-011). */}
+                      {/* A short pulse as the pin passes. */}
                       {passed > i && (
                         <motion.circle
                           r={22}
@@ -189,14 +194,31 @@ export function RoadmapVisualizer({ steps }: { steps: Step[] }) {
                           transition={{ duration: 0.8, ease: 'easeOut' }}
                         />
                       )}
-                      <circle r={17} className={cn('transition-colors', on ? 'fill-gold' : 'fill-white')} />
-                      <text
-                        y={6}
-                        textAnchor="middle"
-                        className={cn('text-[17px] font-extrabold transition-colors', on ? 'fill-navy' : 'fill-brand')}
-                      >
-                        {s.number}
-                      </text>
+                      {done ? (
+                        // Done stop: gold fill with a navy check, keeps gold on hover
+                        <>
+                          <circle r={17} className="fill-gold" />
+                          <path
+                            d="M-7 0 -2.5 4.5 7-5"
+                            fill="none"
+                            strokeWidth={3.5}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="stroke-navy"
+                          />
+                        </>
+                      ) : (
+                        <>
+                          <circle r={17} className={cn('transition-colors', on ? 'fill-gold' : 'fill-white')} />
+                          <text
+                            y={6}
+                            textAnchor="middle"
+                            className={cn('text-[17px] font-extrabold transition-colors', on ? 'fill-navy' : 'fill-brand')}
+                          >
+                            {s.number}
+                          </text>
+                        </>
+                      )}
                     </motion.g>
                   </g>
                 )
@@ -225,6 +247,7 @@ export function RoadmapVisualizer({ steps }: { steps: Step[] }) {
                 <motion.g
                   style={{ x: pinX, y: pinY }}
                   initial={{ opacity: 0 }}
+                  // Pin fades out only when all steps are done (it drives to Biz and fades).
                   animate={{ opacity: arrived ? 0 : 1 }}
                   transition={{ delay: arrived ? 0.7 : DRIVE_DELAY, duration: 0.4 }}
                 >
@@ -262,6 +285,14 @@ export function RoadmapVisualizer({ steps }: { steps: Step[] }) {
               <circle cx={12} cy={12} r={6} className="fill-white" />
             </svg>
             May not apply to you
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <svg viewBox="0 0 24 24" className="size-5.5">
+              <circle cx={12} cy={12} r={10} fill="none" strokeWidth={3} className="stroke-white/45" />
+              <circle cx={12} cy={12} r={8} className="fill-gold" />
+              <path d="M8.5 12l2.3 2.3 4.7-4.7" fill="none" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" className="stroke-navy" />
+            </svg>
+            Done
           </span>
         </div>
       </div>
