@@ -1,5 +1,6 @@
 using AsikaGo.Api.Data;
 using AsikaGo.Api.Data.Entities;
+using AsikaGo.Api.Features.Roadmap;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
@@ -117,11 +118,35 @@ public static class AssessmentEndpoints
         }
         else
         {
-            // D10: a new business type or category invalidates the saved roadmap. Progress rows cascade in the DB.
+            // D16: a new business type or category rebuilds the saved step list in place.
+            // Kept steps keep their status, removed steps are dropped, new steps start NotStarted. Requirement progress stays.
             if (existing.BusinessType != request.BusinessType || existing.CategoryId != request.CategoryId)
             {
-                var oldRoadmap = await db.UserRoadmaps.FirstOrDefaultAsync(r => r.BusinessId == existing.Id, ct);
-                if (oldRoadmap is not null) db.UserRoadmaps.Remove(oldRoadmap);
+                var roadmap = await db.UserRoadmaps.FirstOrDefaultAsync(r => r.BusinessId == existing.Id, ct);
+                if (roadmap is not null)
+                {
+                    var generated = new RoadmapEngine().GenerateRoadmap(
+                        request.BusinessType!, request.CategoryId, PasigId,
+                        await db.RoadmapRules.AsNoTracking().ToListAsync(ct),
+                        await db.RegistrationSteps.AsNoTracking().ToListAsync(ct),
+                        await db.Requirements.AsNoTracking().ToListAsync(ct));
+                    var rows = await db.RoadmapProgress.Where(p => p.RoadmapId == roadmap.Id).ToListAsync(ct);
+
+                    db.RoadmapProgress.RemoveRange(rows.Where(p => generated.Steps.All(s => s.Step.Id != p.StepId)));
+                    foreach (var step in generated.Steps)
+                    {
+                        var row = rows.FirstOrDefault(p => p.StepId == step.Step.Id);
+                        if (row is not null) row.SortOrder = step.SortOrder;
+                        else db.RoadmapProgress.Add(new RoadmapProgress
+                        {
+                            Id = Guid.NewGuid(),
+                            RoadmapId = roadmap.Id,
+                            StepId = step.Step.Id,
+                            SortOrder = step.SortOrder,
+                            Status = RoadmapStepStatus.NotStarted,
+                        });
+                    }
+                }
             }
 
             existing.BusinessName = name;
