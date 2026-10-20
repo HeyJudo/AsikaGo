@@ -177,6 +177,152 @@
           }
         }
       }
+    },
+    "/api/roadmap/steps/{number}/status": {
+      "put": {
+        "tags": [
+          "RoadmapEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStepStatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/roadmap/requirements/{requirementId}": {
+      "put": {
+        "tags": [
+          "RoadmapEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "requirementId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRequirementRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/roadmap/documents": {
+      "get": {
+        "tags": [
+          "RoadmapEndpoints"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -296,6 +442,69 @@
           }
         }
       },
+      "DocumentsResponse": {
+        "required": [
+          "totalCount",
+          "preparedCount",
+          "steps"
+        ],
+        "type": "object",
+        "properties": {
+          "totalCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "preparedCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentStepResponse"
+            }
+          }
+        }
+      },
+      "DocumentStepResponse": {
+        "required": [
+          "number",
+          "name",
+          "status",
+          "requirements"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RoadmapStepStatus"
+          },
+          "requirements": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RequirementResponse"
+            }
+          }
+        }
+      },
       "MeResponse": {
         "required": [
           "id",
@@ -401,6 +610,10 @@
                 "$ref": "#/components/schemas/SourceResponse"
               }
             ]
+          },
+          "isPrepared": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -441,6 +654,34 @@
             "items": {
               "$ref": "#/components/schemas/RoadmapStepResponse"
             }
+          },
+          "completedSteps": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32",
+            "default": 0
+          },
+          "progressPercent": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32",
+            "default": 0
+          },
+          "nextStepNumber": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32",
+            "default": 1
           }
         }
       },
@@ -486,8 +727,28 @@
               "string"
             ],
             "format": "int32"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RoadmapStepStatus"
+          },
+          "preparedCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32",
+            "default": 0
           }
         }
+      },
+      "RoadmapStepStatus": {
+        "enum": [
+          "NotStarted",
+          "InProgress",
+          "Completed"
+        ],
+        "default": "NotStarted"
       },
       "SaveBusinessProfileRequest": {
         "required": [
@@ -623,6 +884,38 @@
               "string"
             ],
             "format": "int32"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RoadmapStepStatus"
+          },
+          "completedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "UpdateRequirementRequest": {
+        "required": [
+          "isPrepared"
+        ],
+        "type": "object",
+        "properties": {
+          "isPrepared": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UpdateStepStatusRequest": {
+        "required": [
+          "completed"
+        ],
+        "type": "object",
+        "properties": {
+          "completed": {
+            "type": "boolean"
           }
         }
       }

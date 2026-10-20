@@ -13,6 +13,18 @@ public static class RoadmapEndpoints
 
         group.MapGet("/", GetRoadmap).ProducesProblem(StatusCodes.Status404NotFound);
         group.MapGet("/steps/{number:int}", GetStep).ProducesProblem(StatusCodes.Status404NotFound);
+        group.MapPut("/steps/{number:int}/status", UpdateStepStatus)
+             .Produces(StatusCodes.Status204NoContent)
+             .ProducesProblem(StatusCodes.Status401Unauthorized)
+             .ProducesProblem(StatusCodes.Status404NotFound);
+        group.MapPut("/requirements/{requirementId:guid}", UpdateRequirement)
+             .Produces(StatusCodes.Status204NoContent)
+             .ProducesProblem(StatusCodes.Status401Unauthorized)
+             .ProducesProblem(StatusCodes.Status404NotFound);
+        group.MapGet("/documents", GetDocuments)
+             .Produces<DocumentsResponse>(StatusCodes.Status200OK)
+             .ProducesProblem(StatusCodes.Status401Unauthorized)
+             .ProducesProblem(StatusCodes.Status404NotFound);
 
         return app;
     }
@@ -28,12 +40,23 @@ public static class RoadmapEndpoints
 
         var profile = roadmap.Profile;
         var steps = roadmap.Steps
-            .Select((s, i) => new RoadmapStepResponse(i + 1, s.Step.Id, s.Step.Name, s.Step.Agency, s.Step.ConditionNote, s.Requirements.Count))
+            .Select((s, i) => new RoadmapStepResponse(
+                i + 1,
+                s.Step.Id,
+                s.Step.Name,
+                s.Step.Agency,
+                s.Step.ConditionNote,
+                s.Requirements.Count,
+                Status: RoadmapStepStatus.NotStarted,
+                PreparedCount: 0))
             .ToList();
 
         return TypedResults.Ok(new RoadmapResponse(
             roadmap.Id, roadmap.CreatedAt, profile.BusinessType, profile.Category!.Name, profile.City!.Name,
-            profile.RegistrationStatus, steps));
+            profile.RegistrationStatus, steps,
+            CompletedSteps: 0,
+            ProgressPercent: 0,
+            NextStepNumber: roadmap.Steps.Count > 0 ? 1 : null));
     }
 
     // The step list is the saved snapshot (D14). Requirements come from the current rules.
@@ -140,10 +163,74 @@ public static class RoadmapEndpoints
                     r.Requirement.Name,
                     r.Requirement.Description,
                     r.AppliesToCategoryId is null ? null : categoryName,
-                    ToSource(r.Requirement.Source)))
+                    ToSource(r.Requirement.Source),
+                    IsPrepared: false))
                 .ToList(),
             number == 1 ? null : number - 1,
-            number == total ? null : number + 1));
+            number == total ? null : number + 1,
+            Status: RoadmapStepStatus.NotStarted,
+            CompletedAt: null));
+    }
+
+    private static async Task<Results<NoContent, UnauthorizedHttpResult, ProblemHttpResult>> UpdateStepStatus(
+        HttpContext http, AppDbContext db, int number, UpdateStepStatusRequest request, CancellationToken ct)
+    {
+        var userId = GetUserId(http);
+        if (userId is null) return TypedResults.Unauthorized();
+
+        var roadmap = await LoadRoadmap(db, userId.Value, ct);
+        if (roadmap is null) return NoProfile();
+
+        if (number < 1 || number > roadmap.Steps.Count)
+            return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, detail: $"Step {number} is not in your roadmap.");
+
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<Results<NoContent, UnauthorizedHttpResult, ProblemHttpResult>> UpdateRequirement(
+        HttpContext http, AppDbContext db, Guid requirementId, UpdateRequirementRequest request, CancellationToken ct)
+    {
+        var userId = GetUserId(http);
+        if (userId is null) return TypedResults.Unauthorized();
+
+        var roadmap = await LoadRoadmap(db, userId.Value, ct);
+        if (roadmap is null) return NoProfile();
+
+        var exists = roadmap.Steps.SelectMany(s => s.Requirements).Any(r => r.Requirement.Id == requirementId);
+        if (!exists)
+            return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, detail: $"Requirement {requirementId} is not in your roadmap.");
+
+        return TypedResults.NoContent();
+    }
+
+    private static async Task<Results<Ok<DocumentsResponse>, UnauthorizedHttpResult, ProblemHttpResult>> GetDocuments(
+        HttpContext http, AppDbContext db, CancellationToken ct)
+    {
+        var userId = GetUserId(http);
+        if (userId is null) return TypedResults.Unauthorized();
+
+        var roadmap = await LoadRoadmap(db, userId.Value, ct);
+        if (roadmap is null) return NoProfile();
+
+        var categoryName = roadmap.Profile.Category!.Name;
+        var stepResponses = roadmap.Steps.Select((s, i) => new DocumentStepResponse(
+            i + 1,
+            s.Step.Name,
+            RoadmapStepStatus.NotStarted,
+            s.Requirements.Select(r => new RequirementResponse(
+                r.Requirement.Id,
+                r.Requirement.Name,
+                r.Requirement.Description,
+                r.AppliesToCategoryId is null ? null : categoryName,
+                ToSource(r.Requirement.Source),
+                IsPrepared: false
+            )).ToList()
+        )).ToList();
+
+        int totalCount = stepResponses.Sum(s => s.Requirements.Count);
+        int preparedCount = 0;
+
+        return TypedResults.Ok(new DocumentsResponse(totalCount, preparedCount, stepResponses));
     }
 
     // ponytail: a source with no date_verified is sent as no source, because the UI line reads "checked <date>".

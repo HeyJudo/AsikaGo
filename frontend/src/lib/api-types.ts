@@ -257,6 +257,173 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/roadmap/steps/{number}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    number: number;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateStepStatusRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/roadmap/requirements/{requirementId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    requirementId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateRequirementRequest"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/roadmap/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DocumentsResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -290,6 +457,20 @@ export interface components {
             name: string;
             description: null | string;
         };
+        DocumentsResponse: {
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            preparedCount: number | string;
+            steps: components["schemas"]["DocumentStepResponse"][];
+        };
+        DocumentStepResponse: {
+            /** Format: int32 */
+            number: number | string;
+            name: string;
+            status: components["schemas"]["RoadmapStepStatus"];
+            requirements: components["schemas"]["RequirementResponse"][];
+        };
         MeResponse: {
             /** Format: uuid */
             id: string;
@@ -313,6 +494,8 @@ export interface components {
             description: null | string;
             appliesTo: null | string;
             source: null | components["schemas"]["SourceResponse"];
+            /** @default false */
+            isPrepared: boolean;
         };
         RoadmapResponse: {
             /** Format: uuid */
@@ -324,6 +507,21 @@ export interface components {
             cityName: string;
             registrationStatus: components["schemas"]["RegistrationStatus"];
             steps: components["schemas"]["RoadmapStepResponse"][];
+            /**
+             * Format: int32
+             * @default 0
+             */
+            completedSteps: number | string;
+            /**
+             * Format: int32
+             * @default 0
+             */
+            progressPercent: number | string;
+            /**
+             * Format: int32
+             * @default 1
+             */
+            nextStepNumber: null | number | string;
         };
         RoadmapStepResponse: {
             /** Format: int32 */
@@ -335,7 +533,18 @@ export interface components {
             conditionNote: null | string;
             /** Format: int32 */
             requirementCount: number | string;
+            status?: components["schemas"]["RoadmapStepStatus"];
+            /**
+             * Format: int32
+             * @default 0
+             */
+            preparedCount: number | string;
         };
+        /**
+         * @default NotStarted
+         * @enum {unknown}
+         */
+        RoadmapStepStatus: "NotStarted" | "InProgress" | "Completed";
         SaveBusinessProfileRequest: {
             businessName: null | string;
             businessType: string;
@@ -366,6 +575,15 @@ export interface components {
             previousNumber: null | number | string;
             /** Format: int32 */
             nextNumber: null | number | string;
+            status?: components["schemas"]["RoadmapStepStatus"];
+            /** Format: date-time */
+            completedAt?: null | string;
+        };
+        UpdateRequirementRequest: {
+            isPrepared: boolean;
+        };
+        UpdateStepStatusRequest: {
+            completed: boolean;
         };
     };
     responses: never;
