@@ -21,7 +21,7 @@ Each case is a business description written the way a real user might type it. G
 | # | Description (as typed by the user) | Language / style | Expected type | Expected category |
 | --- | --- | --- | --- | --- |
 | 1 | I want to open a small sari-sari store in Pasig. It's just me, in my own name. | English | Sole Proprietorship | Retail |
-| 2 | magbubukas ako ng tindahan ng mga damit sa Kapitolyo, ako lang mag-isa may-ari | Taglish | Sole Proprietorship | Retail |
+| 2 | magbubukas ako ng tindahan ng mga damit sa Kapitolyo, ako lang mag-isa may-ari, sa pangalan ko | Taglish | Sole Proprietorship | Retail |
 | 3 | me and my sister are partners, we will sell phone accesories in a stall | English, misspelled | Partnership | Retail |
 | 4 | We are a corporation with 3 stockholders selling appliances in a store in Ortigas. | English | Corporation | Retail |
 | 5 | OPC po kami, nagbebenta ng school supplies | Taglish, short | One Person Corporation | Retail |
@@ -29,8 +29,8 @@ Each case is a business description written the way a real user might type it. G
 | 7 | opening a coffe shop, kami ng 2 friends, partnership | English, misspelled | Partnership | Food and Beverage |
 | 8 | Our company, a corporation, will run a fast food restaurant | English | Corporation | Food and Beverage |
 | 9 | bakery lang po, one person corporation | Taglish, short | One Person Corporation | Food and Beverage |
-| 10 | I will sell milk tea from a small kiosk. Solo owner. | English, short | Sole Proprietorship | Food and Beverage |
-| 11 | laundry shop, ako lang may ari | Taglish, short | Sole Proprietorship | Services |
+| 10 | I will sell milk tea from a small kiosk. Solo owner, in my name. | English, short | Sole Proprietorship | Food and Beverage |
+| 11 | laundry shop, ako lang may ari, sa pangalan ko | Taglish, short | Sole Proprietorship | Services |
 | 12 | We are two partners opening a hair salon | English | Partnership | Services |
 | 13 | Corporation kami, mag-aalok ng IT consulting | Taglish | Corporation | Services |
 | 14 | I want to start a one person corporation offering graphic design services | English | One Person Corporation | Services |
