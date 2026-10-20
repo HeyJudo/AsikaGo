@@ -78,9 +78,23 @@ function StepDetailContent({ number }: { number: number }) {
         </Link>
 
         <div>
-          <span className="bg-gold text-navy inline-block rounded-full px-3 py-0.5 text-sm font-bold">
-            Step {step.number} of {step.totalSteps}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="bg-gold text-navy inline-block rounded-full px-3 py-0.5 text-sm font-bold">
+              Step {step.number} of {step.totalSteps}
+            </span>
+            {done && (
+              <span className="bg-gold text-navy inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold">
+                <Check className="size-3" strokeWidth={3} aria-hidden="true" />
+                Done
+              </span>
+            )}
+            {step.status === 'InProgress' && (
+              <span className="bg-brand/10 text-brand inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold">
+                <span className="border-brand size-2 rounded-full border-2 border-r-transparent" aria-hidden="true" />
+                In progress · {step.requirements.filter((r) => r.isPrepared).length} of {step.requirements.length} ready
+              </span>
+            )}
+          </div>
           <h1 className="text-navy mt-2 break-words text-3xl font-extrabold md:text-4xl">
             {step.name}
           </h1>
@@ -107,6 +121,12 @@ function StepDetailContent({ number }: { number: number }) {
               Mark as not done
             </Button>
           </div>
+        )}
+        {done && saveError && (
+          <Alert variant="destructive">
+            <AlertCircle className="size-4" />
+            <AlertDescription>We couldn't save this. Check your connection and try again.</AlertDescription>
+          </Alert>
         )}
 
         {step.conditionNote && (
@@ -209,14 +229,6 @@ function StepDetailContent({ number }: { number: number }) {
           </div>
         </section>
 
-        {/* Save error: shown for both mark-done and undo failures */}
-        {saveError && (
-          <Alert variant="destructive">
-            <AlertCircle className="size-4" />
-            <AlertDescription>We couldn't save this. Check your connection and try again.</AlertDescription>
-          </Alert>
-        )}
-
         {/* Mark-done card: shown only when the step is not completed */}
         {!done && (
           <section className="border-border rounded-2xl border bg-white p-4 shadow-sm md:p-6">
@@ -243,6 +255,12 @@ function StepDetailContent({ number }: { number: number }) {
                 </>
               )}
             </Button>
+            {saveError && (
+              <Alert variant="destructive" className="mt-3">
+                <AlertCircle className="size-4" />
+                <AlertDescription>We couldn't save this. Check your connection and try again.</AlertDescription>
+              </Alert>
+            )}
           </section>
         )}
 

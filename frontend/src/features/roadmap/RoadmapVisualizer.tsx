@@ -6,8 +6,7 @@ import { cn } from 'cn'
 import { Button } from '@/components/ui/button'
 import { buildRoute, waypoints, VIEW_H, VIEW_W } from './routeGeometry'
 
-// The fields of RoadmapResponse.steps this draws. Switched to the generated step type fields
-// from src/lib/api-types.ts (US-005-BE-01 is live).
+// The fields of RoadmapResponse.steps (src/lib/api-types.ts) that this draws.
 type Step = { number: number; name: string; conditionNote?: string | null; status: string }
 
 // Timeline in seconds: the road draws itself, the stops pop in as it reaches them, then the pin drives A → Biz.
