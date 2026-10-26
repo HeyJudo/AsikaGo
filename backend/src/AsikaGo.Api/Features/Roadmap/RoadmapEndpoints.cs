@@ -14,7 +14,7 @@ public static class RoadmapEndpoints
         group.MapGet("/", GetRoadmap).ProducesProblem(StatusCodes.Status404NotFound);
         group.MapGet("/steps/{number:int}", GetStep).ProducesProblem(StatusCodes.Status404NotFound);
         group.MapPut("/steps/{number:int}/status", UpdateStepStatus)
-             .Produces<RoadmapResponse>(StatusCodes.Status200OK)
+             .Produces(StatusCodes.Status204NoContent)
              .ProducesValidationProblem()
              .ProducesProblem(StatusCodes.Status401Unauthorized)
              .ProducesProblem(StatusCodes.Status404NotFound);
@@ -43,6 +43,7 @@ public static class RoadmapEndpoints
         return TypedResults.Ok(BuildRoadmapResponse(roadmap));
     }
 
+    // The step list is the saved snapshot (D14). Requirements come from the current rules.
     private sealed record LoadedRoadmap(
         Guid Id,
         DateTimeOffset CreatedAt,
@@ -71,13 +72,13 @@ public static class RoadmapEndpoints
             roadmap = await SaveRoadmap(db, profile.Id, generated, ct);
         }
 
-        var savedProgress = await db.RoadmapProgress
+        var savedProgress = await db.RoadmapProgress.AsNoTracking()
             .Include(p => p.Step)
             .Where(p => p.RoadmapId == roadmap.Id)
             .OrderBy(p => p.SortOrder).ThenBy(p => p.StepId)
             .ToListAsync(ct);
 
-        var reqProgress = await db.RequirementProgress
+        var reqProgress = await db.RequirementProgress.AsNoTracking()
             .Where(p => p.RoadmapId == roadmap.Id)
             .ToListAsync(ct);
 
@@ -106,12 +107,6 @@ public static class RoadmapEndpoints
             .Select((s, i) =>
             {
                 var preparedCount = s.Requirements.Count(r => preparedReqIds.Contains(r.Requirement.Id));
-                var status = s.Progress.Status;
-                if (status != RoadmapStepStatus.Completed && preparedCount > 0)
-                {
-                    status = RoadmapStepStatus.InProgress;
-                }
-
                 return new RoadmapStepResponse(
                     i + 1,
                     s.Step.Id,
@@ -119,7 +114,7 @@ public static class RoadmapEndpoints
                     s.Step.Agency,
                     s.Step.ConditionNote,
                     s.Requirements.Count,
-                    status,
+                    StepStatus(s.Progress, preparedCount),
                     preparedCount);
             })
             .ToList();
@@ -150,6 +145,10 @@ public static class RoadmapEndpoints
             nextStepNumber);
     }
 
+    // D17: only NotStarted and Completed are stored. A step that is not done but has a checked document is InProgress.
+    private static RoadmapStepStatus StepStatus(RoadmapProgress progress, int preparedCount) =>
+        progress.Status != RoadmapStepStatus.Completed && preparedCount > 0 ? RoadmapStepStatus.InProgress : progress.Status;
+
     private static Task<UserRoadmap?> FindRoadmap(AppDbContext db, Guid businessId, CancellationToken ct) =>
         db.UserRoadmaps.AsNoTracking().FirstOrDefaultAsync(r => r.BusinessId == businessId, ct);
 
@@ -168,11 +167,12 @@ public static class RoadmapEndpoints
 
         try
         {
-            await db.SaveChangesAsync(ct);
+            await db.SaveChangesAsync(ct); // one SaveChanges = one transaction
             return roadmap;
         }
         catch (DbUpdateException)
         {
+            // A parallel first call saved this business's roadmap first (unique business_id). Use that one.
             db.ChangeTracker.Clear();
             var winner = await FindRoadmap(db, businessId, ct);
             if (winner is null) throw;
@@ -199,6 +199,7 @@ public static class RoadmapEndpoints
             .Where(rp => rp.IsPrepared)
             .Select(rp => rp.RequirementId)
             .ToHashSet();
+        var preparedCount = requirements.Count(r => preparedReqIds.Contains(r.Requirement.Id));
 
         return TypedResults.Ok(new StepDetailResponse(
             number,
@@ -220,11 +221,11 @@ public static class RoadmapEndpoints
                 .ToList(),
             number == 1 ? null : number - 1,
             number == total ? null : number + 1,
-            progress.Status,
+            StepStatus(progress, preparedCount),
             progress.CompletedAt));
     }
 
-    private static async Task<Results<Ok<RoadmapResponse>, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> UpdateStepStatus(
+    private static async Task<Results<NoContent, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> UpdateStepStatus(
         HttpContext http, AppDbContext db, int number, UpdateStepStatusRequest request, CancellationToken ct)
     {
         var userId = GetUserId(http);
@@ -239,34 +240,28 @@ public static class RoadmapEndpoints
         var roadmap = await LoadRoadmap(db, userId.Value, ct);
         if (roadmap is null) return NoProfile();
 
-        var progressRows = await db.RoadmapProgress
-            .Where(p => p.RoadmapId == roadmap.Id)
-            .OrderBy(p => p.SortOrder).ThenBy(p => p.StepId)
-            .ToListAsync(ct);
-
-        if (number < 1 || number > progressRows.Count)
+        if (number < 1 || number > roadmap.Steps.Count)
             return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, detail: $"Step {number} is not in your roadmap.");
 
-        var targetProgress = progressRows[number - 1];
-        var trackedProgress = await db.RoadmapProgress.FindAsync([targetProgress.Id], ct);
-        if (trackedProgress is null)
-            return TypedResults.Problem(statusCode: StatusCodes.Status404NotFound, detail: $"Step {number} is not in your roadmap.");
+        var progress = await db.RoadmapProgress.SingleAsync(p => p.Id == roadmap.Steps[number - 1].Progress.Id, ct);
 
         if (request.Completed.Value)
         {
-            trackedProgress.Status = RoadmapStepStatus.Completed;
-            trackedProgress.CompletedAt = DateTimeOffset.UtcNow;
+            // Marking a done step done again keeps the first completion time.
+            if (progress.Status != RoadmapStepStatus.Completed)
+            {
+                progress.Status = RoadmapStepStatus.Completed;
+                progress.CompletedAt = DateTimeOffset.UtcNow;
+            }
         }
         else
         {
-            trackedProgress.Status = RoadmapStepStatus.NotStarted;
-            trackedProgress.CompletedAt = null;
+            progress.Status = RoadmapStepStatus.NotStarted;
+            progress.CompletedAt = null;
         }
 
         await db.SaveChangesAsync(ct);
-
-        var reloadedRoadmap = await LoadRoadmap(db, userId.Value, ct);
-        return TypedResults.Ok(BuildRoadmapResponse(reloadedRoadmap!));
+        return TypedResults.NoContent();
     }
 
     private static async Task<Results<NoContent, UnauthorizedHttpResult, ProblemHttpResult, ValidationProblem>> UpdateRequirement(
@@ -300,13 +295,24 @@ public static class RoadmapEndpoints
                 IsPrepared = request.IsPrepared.Value,
                 UpdatedAt = DateTimeOffset.UtcNow
             });
-        }
-        else
-        {
-            reqProgress.IsPrepared = request.IsPrepared.Value;
-            reqProgress.UpdatedAt = DateTimeOffset.UtcNow;
+
+            try
+            {
+                await db.SaveChangesAsync(ct);
+                return TypedResults.NoContent();
+            }
+            catch (DbUpdateException)
+            {
+                // A parallel first check of this document saved its row first (PK roadmap_id + requirement_id). Update that one.
+                db.ChangeTracker.Clear();
+                reqProgress = await db.RequirementProgress
+                    .FirstOrDefaultAsync(rp => rp.RoadmapId == roadmap.Id && rp.RequirementId == requirementId, ct);
+                if (reqProgress is null) throw;
+            }
         }
 
+        reqProgress.IsPrepared = request.IsPrepared.Value;
+        reqProgress.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(ct);
         return TypedResults.NoContent();
     }
@@ -340,7 +346,7 @@ public static class RoadmapEndpoints
             return new DocumentStepResponse(
                 i + 1,
                 s.Step.Name,
-                s.Progress.Status,
+                StepStatus(s.Progress, reqs.Count(r => r.IsPrepared)),
                 reqs);
         }).ToList();
 
@@ -350,6 +356,8 @@ public static class RoadmapEndpoints
         return TypedResults.Ok(new DocumentsResponse(totalCount, preparedCount, stepResponses));
     }
 
+    // ponytail: a source with no date_verified is sent as no source, because the UI line reads "checked <date>".
+    // Every seeded source has a date. Make dateVerified nullable in the contract if undated sources ever appear.
     private static SourceResponse? ToSource(SourceReference? source) =>
         source?.DateVerified is { } date ? new SourceResponse(source.Name, source.Url, date) : null;
 
