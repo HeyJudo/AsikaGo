@@ -428,11 +428,155 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
-    public async Task UpdateStepStatus_Valid_ReturnsNoContent()
+    public async Task UpdateStepStatus_SetsCompletedAndTimestamp()
     {
         using var client = Client(await UserWithProfile());
-        var response = await client.PutAsJsonAsync("/api/roadmap/steps/2/status", new { completed = true });
+        var response = await client.PutAsJsonAsync("/api/roadmap/steps/1/status", new { completed = true });
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var roadmap = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        Assert.Equal(RoadmapStepStatus.Completed, roadmap.Steps[0].Status);
+        Assert.Equal(1, roadmap.CompletedSteps);
+        Assert.Equal(33, roadmap.ProgressPercent);
+        Assert.Equal(2, roadmap.NextStepNumber);
+
+        var stepDetail = await Read<StepDetailResponse>(await client.GetAsync("/api/roadmap/steps/1"));
+        Assert.Equal(RoadmapStepStatus.Completed, stepDetail.Status);
+        Assert.NotNull(stepDetail.CompletedAt);
+    }
+
+    [Fact]
+    public async Task UpdateStepStatus_RevertToNotStartedClearsTimestamp()
+    {
+        using var client = Client(await UserWithProfile());
+        await client.PutAsJsonAsync("/api/roadmap/steps/1/status", new { completed = true });
+        var response = await client.PutAsJsonAsync("/api/roadmap/steps/1/status", new { completed = false });
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var roadmap = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        Assert.Equal(RoadmapStepStatus.NotStarted, roadmap.Steps[0].Status);
+        Assert.Equal(0, roadmap.CompletedSteps);
+        Assert.Equal(0, roadmap.ProgressPercent);
+        Assert.Equal(1, roadmap.NextStepNumber);
+
+        var stepDetail = await Read<StepDetailResponse>(await client.GetAsync("/api/roadmap/steps/1"));
+        Assert.Equal(RoadmapStepStatus.NotStarted, stepDetail.Status);
+        Assert.Null(stepDetail.CompletedAt);
+    }
+
+    [Fact]
+    public async Task UpdateStepStatus_CompleteAgain_KeepsOriginalCompletedAt()
+    {
+        using var client = Client(await UserWithProfile());
+        await client.PutAsJsonAsync("/api/roadmap/steps/1/status", new { completed = true });
+        var first = (await Read<StepDetailResponse>(await client.GetAsync("/api/roadmap/steps/1"))).CompletedAt;
+        Assert.NotNull(first);
+
+        var response = await client.PutAsJsonAsync("/api/roadmap/steps/1/status", new { completed = true });
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var second = (await Read<StepDetailResponse>(await client.GetAsync("/api/roadmap/steps/1"))).CompletedAt;
+        Assert.Equal(first, second);
+    }
+
+    [Fact]
+    public async Task UpdateStepStatus_AllComplete_NextStepNumberIsNull()
+    {
+        using var client = Client(await UserWithProfile());
+        await client.PutAsJsonAsync("/api/roadmap/steps/1/status", new { completed = true });
+        await client.PutAsJsonAsync("/api/roadmap/steps/2/status", new { completed = true });
+        var response = await client.PutAsJsonAsync("/api/roadmap/steps/3/status", new { completed = true });
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var roadmap = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        Assert.Equal(3, roadmap.CompletedSteps);
+        Assert.Equal(100, roadmap.ProgressPercent);
+        Assert.Null(roadmap.NextStepNumber);
+    }
+
+    [Fact]
+    public async Task UpdateStepStatus_InvalidStepNumber_Returns404()
+    {
+        using var client = Client(await UserWithProfile());
+        var response = await client.PutAsJsonAsync("/api/roadmap/steps/99/status", new { completed = true });
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public async Task UpdateStepStatus_NoBusinessProfile_Returns404()
+    {
+        using var client = Client(Guid.NewGuid());
+        var response = await client.PutAsJsonAsync("/api/roadmap/steps/1/status", new { completed = true });
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public async Task UpdateStepStatus_OtherUsersRoadmap_IsNotChanged()
+    {
+        using var a = Client(await UserWithProfile());
+        using var b = Client(await UserWithProfile());
+        var response = await b.PutAsJsonAsync("/api/roadmap/steps/1/status", new { completed = true });
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var forA = await Read<StepDetailResponse>(await a.GetAsync("/api/roadmap/steps/1"));
+        Assert.Equal(RoadmapStepStatus.NotStarted, forA.Status);
+        Assert.Null(forA.CompletedAt);
+        var forB = await Read<StepDetailResponse>(await b.GetAsync("/api/roadmap/steps/1"));
+        Assert.Equal(RoadmapStepStatus.Completed, forB.Status);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(0)]
+    [InlineData(4)]
+    public async Task UpdateStepStatus_StepZeroAndTotalPlusOne_Returns404(int number)
+    {
+        using var client = Client(await UserWithProfile());
+        var response = await client.PutAsJsonAsync($"/api/roadmap/steps/{number}/status", new { completed = true });
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateRequirement_SetsInProgressStatus()
+    {
+        var user = await UserWithProfile();
+        using var client = Client(user);
+        var putReqResponse = await client.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true });
+        Assert.Equal(HttpStatusCode.NoContent, putReqResponse.StatusCode);
+
+        var roadmapResponse = await client.GetAsync("/api/roadmap");
+        var roadmap = await Read<RoadmapResponse>(roadmapResponse);
+        Assert.Equal(RoadmapStepStatus.InProgress, roadmap.Steps[1].Status);
+        Assert.Equal(1, roadmap.Steps[1].PreparedCount);
+    }
+
+    [Fact]
+    public async Task UpdateRequirement_OnNotDoneStep_StepAndDocumentsAlsoReportInProgress()
+    {
+        using var client = Client(await UserWithProfile());
+        await client.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true });
+
+        var step = await Read<StepDetailResponse>(await client.GetAsync("/api/roadmap/steps/2"));
+        Assert.Equal(RoadmapStepStatus.InProgress, step.Status);
+        var docs = await Read<DocumentsResponse>(await client.GetAsync("/api/roadmap/documents"));
+        Assert.Equal(RoadmapStepStatus.InProgress, docs.Steps[1].Status);
+    }
+
+    [Fact]
+    public async Task UpdateStepStatus_CompletedStepWithPreparedRequirements_StaysCompleted()
+    {
+        var user = await UserWithProfile();
+        using var client = Client(user);
+        await client.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true });
+        var statusResponse = await client.PutAsJsonAsync("/api/roadmap/steps/2/status", new { completed = true });
+        Assert.Equal(HttpStatusCode.NoContent, statusResponse.StatusCode);
+
+        var roadmap = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        Assert.Equal(RoadmapStepStatus.Completed, roadmap.Steps[1].Status);
+        var step = await Read<StepDetailResponse>(await client.GetAsync("/api/roadmap/steps/2"));
+        Assert.Equal(RoadmapStepStatus.Completed, step.Status);
     }
 
     [Fact]
