@@ -7,7 +7,7 @@
 **Version:** v1.0 Draft\
 **Architecture Style:** Client-Server Web Application\
 **Technology Direction:** React + ASP.NET Core + Supabase PostgreSQL +
-Gemini Flash
+OpenAI API (gpt-6.1-terra)
 
 ------------------------------------------------------------------------
 
@@ -22,7 +22,7 @@ The system combines:
 -   React frontend for user interaction
 -   ASP.NET Core backend for business logic
 -   Supabase PostgreSQL for data storage
--   Gemini Flash for AI-assisted understanding and explanation
+-   OpenAI API (gpt-6.1-terra) for AI-assisted understanding and explanation
 -   Research-curated knowledge base for accurate registration
     information
 
@@ -57,7 +57,7 @@ The system follows the principle:
 
      |                    |                         |
 
-    Supabase DB       Gemini Flash             OAuth
+    Supabase DB       OpenAI API               OAuth
 
      |
 
@@ -103,13 +103,16 @@ sources
 
 ## Artificial Intelligence
 
-Technology: - Gemini Flash
+Technology: - OpenAI API (gpt-6.1-terra)
 
 Responsibilities: - Extract business information from natural language -
 Explain registration steps - Answer contextual questions
 
 AI does not: - Generate official requirements independently - Replace
 the roadmap engine
+
+Guardrails: rate limits, input cap, output token cap, timeout, strict
+output schema, database check of AI answers. See D21 in `docs/decisions.md`.
 
 ------------------------------------------------------------------------
 
@@ -325,7 +328,7 @@ Example:
 
 ------------------------------------------------------------------------
 
-## Step 2: Gemini Extraction
+## Step 2: AI Extraction (OpenAI)
 
 AI extracts:
 
@@ -357,7 +360,7 @@ Backend queries:
 
 ## Step 5: AI Explanation
 
-Gemini explains:
+The AI explains:
 
 -   Why a step exists
 -   What documents are needed
@@ -425,7 +428,7 @@ Proposed deployment:
 
     ↓
 
-    Gemini API
+    OpenAI API
 
 ------------------------------------------------------------------------
 

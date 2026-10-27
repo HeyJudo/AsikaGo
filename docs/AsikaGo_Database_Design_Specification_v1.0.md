@@ -403,7 +403,7 @@ Each step can have multiple requirements.
 
     ↓
 
-    Gemini Flash
+    OpenAI API  
 
     ↓
 

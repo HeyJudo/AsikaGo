@@ -111,6 +111,12 @@ Every backlog item contains:
                  Office Information                                
 
   US-015         View Map Location   5              Sprint 6       Could Have
+
+  US-016         Talk to the Step    5              Sprint 6       Could Have
+                 Companion                                         
+
+  US-017         Speak My Business   3              Sprint 6       Could Have
+                 Description                                       
   -------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------
