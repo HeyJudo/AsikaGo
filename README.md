@@ -26,10 +26,12 @@ schema changes are in [`docs/decisions.md`](docs/decisions.md).
 cd backend
 dotnet tool restore
 dotnet user-secrets set "ConnectionStrings:Default" "Host=<pooler-host>;Port=5432;Database=postgres;Username=postgres.wlvkwumxktigpyzedcnq;Password=<db-password>;SSL Mode=Require" --project src/AsikaGo.Api
+dotnet user-secrets set "OpenAI:ApiKey" "<key>" --project src/AsikaGo.Api
 ```
 
 Get `<pooler-host>` from Supabase → **Connect → Session pooler**. Use port
-**5432** (session pooler), not 6543. Never commit the password.
+**5432** (session pooler), not 6543. Never commit the password. Get the
+OpenAI key from Jude privately. Never commit it or paste it in the group chat.
 
 ### Frontend
 
