@@ -76,7 +76,7 @@ public sealed class OpenAIClient(HttpClient http, IConfiguration config, ILogger
         var text = await SendAsync(body, ct);
         try
         {
-            return JsonSerializer.Deserialize<Extraction>(text, JsonSerializerOptions.Web)!;
+            return JsonSerializer.Deserialize<Extraction>(text, JsonSerializerOptions.Web) ?? new Extraction(null, null);
         }
         catch (JsonException e)
         {
@@ -96,11 +96,11 @@ public sealed class OpenAIClient(HttpClient http, IConfiguration config, ILogger
 
             using var json = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(ct));
             var root = json.RootElement;
-            var usage = root.GetProperty("usage");
+            // A missing usage block logs 0 rather than failing an answer we already paid for.
+            root.TryGetProperty("usage", out var usage);
+            var details = usage.ValueKind == JsonValueKind.Object && usage.TryGetProperty("input_tokens_details", out var d) ? d : default;
             logger.LogInformation("OpenAI call: {InputTokens} input, {OutputTokens} output, {CachedTokens} cached tokens, {ElapsedMs} ms",
-                usage.GetProperty("input_tokens").GetInt32(),
-                usage.GetProperty("output_tokens").GetInt32(),
-                usage.TryGetProperty("input_tokens_details", out var details) ? details.GetProperty("cached_tokens").GetInt32() : 0,
+                Tokens(usage, "input_tokens"), Tokens(usage, "output_tokens"), Tokens(details, "cached_tokens"),
                 (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds);
 
             return root.GetProperty("output").EnumerateArray()
@@ -110,19 +110,18 @@ public sealed class OpenAIClient(HttpClient http, IConfiguration config, ILogger
                 .Select(c => c.GetProperty("text").GetString())
                 .FirstOrDefault() ?? "{}";
         }
-        catch (Exception e) when (e is HttpRequestException or JsonException or KeyNotFoundException or InvalidOperationException
+        catch (Exception e) when (e is OpenAIException or HttpRequestException or JsonException or KeyNotFoundException or InvalidOperationException
                                   || (e is TaskCanceledException && !ct.IsCancellationRequested))
         {
             // Never log the description or the key: only what failed and how long it took.
-            logger.LogWarning("OpenAI call failed after {ElapsedMs} ms: {Error}", (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds, e.GetType().Name);
-            throw new OpenAIException("OpenAI call failed.", e);
-        }
-        catch (OpenAIException e)
-        {
-            logger.LogWarning("OpenAI call failed after {ElapsedMs} ms: {Error}", (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds, e.Message);
-            throw;
+            logger.LogWarning("OpenAI call failed after {ElapsedMs} ms: {Error}",
+                (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds, e is OpenAIException ? e.Message : e.GetType().Name);
+            throw e as OpenAIException ?? new OpenAIException("OpenAI call failed.", e);
         }
     }
+
+    private static int Tokens(JsonElement parent, string name) =>
+        parent.ValueKind == JsonValueKind.Object && parent.TryGetProperty(name, out var value) ? value.GetInt32() : 0;
 
     // D21: the only retry is one on 503 server_is_overloaded with Retry-After <= 3 s. 429 and everything else fail at once.
     private async Task<HttpResponseMessage> PostWithOneRetryAsync(object body, CancellationToken ct)

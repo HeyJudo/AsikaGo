@@ -244,6 +244,18 @@ public class AssistantTests(AssistantFactory factory) : IClassFixture<AssistantF
     }
 
     [Fact]
+    public async Task Extract_NullOutputOrNoUsage_ReturnsNulls()
+    {
+        factory.OpenAI.Respond = () => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(
+            """{"output":[{"type":"message","content":[{"type":"output_text","text":"null"}]}]}""") };
+
+        var response = await Extract(Client());
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(JsonValueKind.Null, (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("businessType").ValueKind);
+    }
+
+    [Fact]
     public async Task Extract_MalformedOutput_Returns503()
     {
         factory.OpenAI.Respond = () => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"output\":[") };
