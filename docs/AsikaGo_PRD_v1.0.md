@@ -264,7 +264,7 @@ The system shall display required documents for registration steps.
 
 The system shall provide AI-assisted explanations using natural language
 interaction. Answers are built only from the user's roadmap data. Voice
-input (US-017) and a live voice companion (US-016) are Could Have.
+input (US-017) and a voice talk mode in the assistant (US-016) are Could Have.
 
 ------------------------------------------------------------------------
 
@@ -421,7 +421,7 @@ business categories.
 -   Map integration
 -   Renewal reminders
 -   Voice input for the business description
--   Live voice step companion
+-   Voice talk mode in the assistant
 
 ------------------------------------------------------------------------
 
