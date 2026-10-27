@@ -263,7 +263,8 @@ The system shall display required documents for registration steps.
 ## FR-008 AI Assistant
 
 The system shall provide AI-assisted explanations using natural language
-interaction.
+interaction. Answers are built only from the user's roadmap data. Voice
+input (US-017) and a voice talk mode in the assistant (US-016) are Could Have.
 
 ------------------------------------------------------------------------
 
@@ -284,7 +285,7 @@ The system may provide government office information and map assistance.
 
 ## Proposed Technology
 
-Gemini Flash (subject to technical validation).
+OpenAI API, `gpt-6.1-terra` (D21 in `docs/decisions.md`).
 
 ------------------------------------------------------------------------
 
@@ -419,6 +420,8 @@ business categories.
 -   PDF generation
 -   Map integration
 -   Renewal reminders
+-   Voice input for the business description
+-   Voice talk mode in the assistant
 
 ------------------------------------------------------------------------
 
@@ -453,7 +456,8 @@ Mitigation: Start with Pasig City only and selected categories.
 
 AI responses may be inaccurate if not controlled.
 
-Mitigation: Use AI with verified knowledge sources.
+Mitigation: Use AI with verified knowledge sources. Strict output schema,
+database check of every AI answer, user confirms every suggestion.
 
 ------------------------------------------------------------------------
 

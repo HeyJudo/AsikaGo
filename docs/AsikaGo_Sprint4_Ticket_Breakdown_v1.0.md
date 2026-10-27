@@ -33,7 +33,7 @@ Work not tied to one story uses `S4` as its parent. New discipline code: `AI`
 | US-008 View Required Documents | 5 | Planned (Must Have) |
 | US-009 Track Document Completion | 3 | Planned (Must Have) |
 | US-011 Track Registration Progress | 5 | Planned (Must Have) |
-| TE-003 AI Integration Setup | 5 | Pulled from Sprint 5. Proves Gemini works before US-012 and US-013 depend on it |
+| TE-003 AI Integration Setup | 5 | Pulled from Sprint 5. Proves the OpenAI integration works before US-012 and US-013 depend on it |
 | US-014B Government Office Info (research half) | 5 | Pulled from Sprint 6. Office research takes days of waiting on replies. The screen (US-014A) stays in Sprint 6 |
 | **Total** | **23** | Sprint 3 delivered 42. The gap is on purpose: Sprint 4 closes the last Must Haves |
 
@@ -58,7 +58,7 @@ Don't build these again:
 | Roadmap API integration tests with a fake signed-in user | `backend/tests/AsikaGo.Tests/RoadmapTests.cs` |
 
 **Not there yet:** any write endpoint for progress, a whole-roadmap document
-list, `features/progress/` (empty), `features/assistant/` (empty), any Gemini
+list, `features/progress/` (empty), `features/assistant/` (empty), any OpenAI
 code, and any office research.
 
 ---
@@ -459,9 +459,9 @@ whole-roadmap list.
 
 ## 9. TE-003 AI Integration Setup (5 pts, pulled from Sprint 5)
 
-**Story-level acceptance criteria:** Gemini Flash is connected. A business
-description returns structured extraction output. Output is limited to values
-the knowledge base knows.
+**Story-level acceptance criteria:** The OpenAI API (`gpt-6.1-terra`) is
+connected. A business description returns structured extraction output. Output
+is limited to values the knowledge base knows. Guardrails per D21 are in place.
 
 **Scope cut.** Backend only. No screen. Extraction only, because its output can
 be checked against fixed values. Q&A answers are US-013 (Sprint 5).
@@ -484,9 +484,9 @@ be checked against fixed values. Q&A answers are US-013 (Sprint 5).
 
 - [ ] `docs/qa/ai-extraction-cases.md` has 20 business descriptions written as real users would (English, Taglish, short, misspelled), each with the expected business type and category, or "unclear".
 - [ ] At least 4 cases are unclear on purpose (for example "online seller", no structure given).
-- [ ] The same file has a draft of the instruction text for Gemini in plain English: what to pick from, and to answer null when unsure.
+- [ ] The same file has a draft of the instruction text for the model in plain English: what to pick from, and to answer null when unsure.
 
-### TE-003-BE-01: Gemini client and `POST /api/assistant/extract`
+### TE-003-BE-01: OpenAI client and `POST /api/assistant/extract`
 
 | Field | Value |
 |---|---|
@@ -501,15 +501,23 @@ be checked against fixed values. Q&A answers are US-013 (Sprint 5).
 | Blocks | TE-003-AI-02, US-012 and US-013 (Sprint 5) |
 
 **Description.** Code in `Features/Assistant/`. The API key is read from
-configuration `Gemini:ApiKey` (user-secrets locally, Render environment variable
-when deployed). It is never committed. The model name is configuration too.
-The prompt text comes from Mich's draft in `docs/qa/ai-extraction-cases.md`.
+configuration `OpenAI:ApiKey` (user-secrets locally, Render environment variable
+when deployed). It is never committed. The model is `OpenAI:Model`
+(`gpt-6.1-terra`, D21). The prompt text comes from Mich's draft in
+`docs/qa/ai-extraction-cases.md`. The README setup section gets the
+`dotnet user-secrets set "OpenAI:ApiKey" ...` line. Fake mode and the Production
+missing-key check are US-012, not this ticket. Tests swap in the fake HTTP
+handler, so CI needs no key.
 
 **Acceptance criteria.**
 
-- [ ] `POST /api/assistant/extract` (signed-in users only) takes `{ "description": "..." }` and returns `{ "businessType": string | null, "categoryId": uuid | null }`.
-- [ ] Gemini is asked for structured JSON output limited to the 4 business types and the 3 seeded categories. Anything else comes back as null.
-- [ ] A Gemini error or timeout returns 503 with a ProblemDetails message, never a 500.
+- [ ] `POST /api/assistant/extract` (signed-in users, guests included) takes `{ "description": "..." }` and returns `{ "businessType": string | null, "categoryId": uuid | null }`.
+- [ ] The Responses API is called with a strict JSON schema: `businessType` limited to the 4 types, `category` limited to the 3 seeded category names, both nullable. The backend maps the name to `categoryId`. No match → null.
+- [ ] Descriptions over 1000 characters, or empty, return 400.
+- [ ] Per-user (20/min, 200/day) and per-IP (60/min) rate limits return 429 with a ProblemDetails message.
+- [ ] Every call sets `store: false`, `max_output_tokens: 200`, and a 15 s timeout.
+- [ ] An OpenAI error or timeout returns 503 with a ProblemDetails message, never a 500. Only `server_is_overloaded` with `Retry-After` of 3 s or less is retried, once.
+- [ ] One log line per call with input, output and cached tokens and elapsed ms. The description and the key are never logged.
 - [ ] Unit tests use a fake HTTP handler. No test calls the real API.
 - [ ] The endpoint shows in the OpenAPI doc so Mich can call it from Swagger for TE-003-AI-02.
 
@@ -535,6 +543,8 @@ on a local API with a real key. No code changes.
 - [ ] `docs/qa/ai-extraction-cases.md` has a result per case: correct, wrong, or null, with the actual output.
 - [ ] A short summary at the top: how many correct, and which kinds of description fail.
 - [ ] If fewer than 15 of 20 are correct, Mich and Jude agree on a prompt change and rerun once. Both results are kept.
+- [ ] Each result row also records response time (ms) and tokens used, read from the API's log line.
+- [ ] The summary at the top adds the average response time and the total cost of the run.
 
 ---
 
@@ -647,7 +657,7 @@ one barangay only.
 | US-008-BE-01 | Documents endpoint | US-008 (AB#34) | Jude | Must | 3 h | Oct 26 | AB#101 |
 | US-009-FE-01 | Document checkboxes | US-009B (AB#53) | Seth | Must | 4 h | Oct 26 | AB#99 |
 | TE-006-BE-02 | Progress API tests | US-011A (AB#36) | Krystelle | Must | 3 h | Oct 27 | AB#103 |
-| TE-003-BE-01 | Gemini extract endpoint | TE-003 (AB#63) | Jude | Must | 5 h | Oct 27 | AB#105 |
+| TE-003-BE-01 | OpenAI extract endpoint | TE-003 (AB#63) | Jude | Must | 5 h | Oct 27 | AB#105 |
 | US-011-FE-01 | Roadmap progress + mark done | US-011B (AB#54) | Seth | Must | 5 h | Oct 27 | AB#96 |
 | US-009-FE-02 | Guest save prompt | US-009B (AB#53) | Kesh | Should | 2 h | Oct 27 | AB#100 |
 | US-011-FE-02 | My Business progress | US-011B (AB#54) | Seth | Should | 3 h | Oct 28 | AB#97 |
@@ -720,7 +730,7 @@ screen) is next.
 | Risk | Impact | What we do |
 |---|---|---|
 | Contract (Oct 20) or designs (Oct 21) are late | Every frontend ticket waits | Seth starts on placeholders. Kesh shares rough screens in the group chat by Oct 20. |
-| Gemini free tier, key, or quota problems | TE-003 slips into Sprint 5 | Jude creates the key on Oct 19 and shares it privately with Mich for TE-003-AI-02. TE-003 does not block any Sprint 4 Must Have. |
+| OpenAI key, credits or spend limit problems | TE-003 slips into Sprint 5 | Jude shares one key privately with Mich, sets a $10 / month limit if the dashboard allows, and revokes the key if usage spikes. TE-003 does not block any Sprint 4 Must Have. |
 | D16 rebuild has an edge case that loses progress | The thing this sprint promises breaks | US-011-BE-03 tests plus the "change your business" task in S4-QA-01. |
 | Office replies are slow | US-014-RS-01 incomplete | Unverified rows are allowed. It's Should, not Must. |
 | Render is asleep during the review | The demo hangs | Open the app 2 minutes before the review. |

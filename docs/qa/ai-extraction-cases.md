@@ -9,7 +9,7 @@
 
 ## How to read this file
 
-Each case is a business description written the way a real user might type it. Gemini must return a business type and a category, using only the values the knowledge base knows.
+Each case is a business description written the way a real user might type it. The model must return a business type and a category, using only the values the knowledge base knows.
 
 - **Business types (4):** Sole Proprietorship, Partnership, Corporation, One Person Corporation
 - **Categories (3):** Retail, Food and Beverage, Services
@@ -43,7 +43,7 @@ Each case is a business description written the way a real user might type it. G
 | 19 | We sell food and clothes, and I don't know if we should be a partnership or a corporation | English, **unclear** (two categories, no structure chosen) | null | null |
 | 20 | I'm a sole proprietor, I haven't decided what to sell yet | English, **partly unclear** | Sole Proprietorship | null |
 
-## Draft instruction text for Gemini
+## Draft instruction text for the model
 
 > You help a business owner in Pasig City who is starting to register a business. Read their description and pick two things.
 >
@@ -59,31 +59,30 @@ Each case is a business description written the way a real user might type it. G
 > - Do not guess the business type from the kind of business. A bakery can be any of the four types.
 > - If the description fits more than one category, answer null for the category.
 > - Never answer with a value that is not on the lists above.
-> - Answer only with JSON in this shape and nothing else: `{ "businessType": string or null, "category": string or null }`
 
 **Note for TE-003-BE-01:** the prompt returns the category name. The backend maps the name to the seeded `categoryId` and returns null if no match.
 
 ## Results (fill in during TE-003-AI-02)
 
-| # | Actual type | Actual category | Result (correct / wrong / null) |
-| --- | --- | --- | --- |
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
-| 6 |  |  |  |
-| 7 |  |  |  |
-| 8 |  |  |  |
-| 9 |  |  |  |
-| 10 |  |  |  |
-| 11 |  |  |  |
-| 12 |  |  |  |
-| 13 |  |  |  |
-| 14 |  |  |  |
-| 15 |  |  |  |
-| 16 |  |  |  |
-| 17 |  |  |  |
-| 18 |  |  |  |
-| 19 |  |  |  |
-| 20 |  |  |  |
+| # | Actual type | Actual category | Result (correct / wrong / null) | Time (ms) | Tokens |
+| --- | --- | --- | --- | --- | --- |
+| 1 |  |  |  |  |  |
+| 2 |  |  |  |  |  |
+| 3 |  |  |  |  |  |
+| 4 |  |  |  |  |  |
+| 5 |  |  |  |  |  |
+| 6 |  |  |  |  |  |
+| 7 |  |  |  |  |  |
+| 8 |  |  |  |  |  |
+| 9 |  |  |  |  |  |
+| 10 |  |  |  |  |  |
+| 11 |  |  |  |  |  |
+| 12 |  |  |  |  |  |
+| 13 |  |  |  |  |  |
+| 14 |  |  |  |  |  |
+| 15 |  |  |  |  |  |
+| 16 |  |  |  |  |  |
+| 17 |  |  |  |  |  |
+| 18 |  |  |  |  |  |
+| 19 |  |  |  |  |  |
+| 20 |  |  |  |  |  |
