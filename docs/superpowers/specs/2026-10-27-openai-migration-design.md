@@ -23,7 +23,7 @@ below is set so a normal user never notices it.
 
 - TE-003-BE-01 ships on OpenAI instead of Gemini, with the guardrails in section 4.
 - US-012 and US-013 acceptance criteria name OpenAI and the user-experience rules in section 5.
-- Two new Could Have stories: US-016 (live voice step companion) and US-017 (voice input for the business description).
+- Two new Could Have stories: US-016 (talk mode in the assistant) and US-017 (voice input for the business description).
 - Total spend for the whole project stays well under $50 (budget in section 4.5).
 
 **Non-goals**
@@ -169,22 +169,28 @@ Replace the acceptance criteria with:
 - `max_output_tokens` is generous enough that normal answers are never cut off. An incomplete response is detected and shown with a "Try asking a shorter question" note, never silently cut.
 - Same rate limits, input cap, `store: false` and 503 handling as D21.
 
-### US-016 (new): Talk to the step companion (GPT-Live)
+### US-016 (new): Talk mode in the assistant (GPT-Live)
 
 | Field | Value |
 |---|---|
 | Priority | Could Have |
 | Sprint | 6 |
-| Depends on | US-013 (reuses its grounding) |
+| Depends on | US-013 (same chat screen, same grounding), US-017 (transcribe endpoint) |
 
-**Story.** As an aspiring micro-entrepreneur at a government office, I want
-to ask about my current step out loud and hear the answer, so that I can get
-help with my hands full of documents.
+**Story.** As an aspiring micro-entrepreneur preparing for a step, I want to
+talk with the assistant and hear it answer, so that it can coach me through
+the step like a companion.
+
+The text chat (US-013) stays the default, because typing works in noisy or
+public places and keeps personal details private. Voice is an option inside
+the same chat screen, not a separate feature.
 
 **Acceptance criteria.**
 
-- A "Talk to AsikaGo" button on the step screen starts a GPT-Live voice session.
-- The session gets instructions plus the user's step and requirements from the database. Answers come from those rows.
+- **Mic in the text chat:** a mic button records the question, the US-017 transcribe endpoint turns it into text, and the user can fix the transcript before sending. The answer comes back as text.
+- **Read aloud:** each text answer has a "read aloud" button that uses the browser's built-in speech (`speechSynthesis`). No OpenAI cost.
+- **Talk mode:** a toggle in the chat starts a GPT-Live voice conversation. The user can interrupt, ask follow-ups, and be walked through a step ("Walk me through the DTI registration").
+- The session gets instructions plus the user's business profile, roadmap steps and requirements from the database. Answers come from those rows. "What are my missing documents?" gets the same answer as in the text chat.
 - The user can say which documents they already have ("Dala ko na yung barangay clearance"). The AI calls a tool, and the frontend checks them off through the existing US-009 endpoint. Rules and auth stay in the backend.
 - The browser connects to OpenAI over WebRTC with a short-lived token from the backend. The real key never reaches the browser. This is the first direct browser-to-OpenAI connection and gets its own decisions entry when built.
 - Guardrails:
@@ -193,7 +199,7 @@ help with my hands full of documents.
   - Hard 3-minute session cap.
   - Auto-close after 15 s of silence.
   - Config flag, off by default.
-- **Before writing tickets:** a Taglish voice test (about 10 minutes, a few cents) confirms GPT-Live understands and speaks Filipino well. If it doesn't, the story is dropped.
+- **Before writing tickets:** a Taglish voice test (about 10 minutes, a few cents) confirms GPT-Live understands and speaks Filipino well. If it doesn't, talk mode is dropped and the mic and read-aloud parts stay.
 
 ### US-017 (new): Speak my business description (GPT Transcribe)
 
@@ -223,12 +229,12 @@ describe my business by speaking, so that onboarding is easier.
 |---|---|---|
 | `docs/decisions.md` | Database changes table | Add the D21 row (section 3) |
 | `docs/AsikaGo_PRD_v1.0.md` | §11 "Proposed Technology" | "Gemini Flash (subject to technical validation)" → "OpenAI API, `gpt-6.1-terra` (D21)" |
-| `docs/AsikaGo_PRD_v1.0.md` | FR-008 | Add: "Answers are built only from the user's roadmap data. Voice input (US-017) and a live voice companion (US-016) are Could Have." |
-| `docs/AsikaGo_PRD_v1.0.md` | MoSCoW "Could Have" | Add "Voice input for the business description" and "Live voice step companion" |
+| `docs/AsikaGo_PRD_v1.0.md` | FR-008 | Add: "Answers are built only from the user's roadmap data. Voice input (US-017) and a voice talk mode in the assistant (US-016) are Could Have." |
+| `docs/AsikaGo_PRD_v1.0.md` | MoSCoW "Could Have" | Add "Voice input for the business description" and "Voice talk mode in the assistant" |
 | `docs/AsikaGo_PRD_v1.0.md` | §16 "AI Reliability" | Mitigation adds: "Strict output schema, database check of every AI answer, user confirms every suggestion." |
 | `docs/AsikaGo_Technical_Architecture_v1.0.md` | Header "Technology Direction", §1 list, §2 diagram, §3 "Artificial Intelligence", §5 AI flow ("Step 2: Gemini Extraction", "Gemini explains"), deployment diagram ("Gemini API") | Gemini Flash / Gemini API → OpenAI API (`gpt-6.1-terra`). §3 adds a "Guardrails" line pointing to D21. |
 | `docs/AsikaGo_Database_Design_Specification_v1.0.md` | §6 AI Data Flow | "Gemini Flash" → "OpenAI API" |
-| `docs/AsikaGo_Product_Backlog_v1.1.md` | Product Stories Summary | Add rows: US-016 Talk to the Step Companion, 5 pts, Sprint 6, Could Have. US-017 Speak My Business Description, 3 pts, Sprint 6, Could Have. |
+| `docs/AsikaGo_Product_Backlog_v1.1.md` | Product Stories Summary | Add rows: US-016 Talk Mode in the Assistant, 5 pts, Sprint 6, Could Have. US-017 Speak My Business Description, 3 pts, Sprint 6, Could Have. |
 | `docs/AsikaGo_Sprint4_Ticket_Breakdown_v1.0.md` | Sprint scope row TE-003 | "Proves Gemini works" → "Proves the OpenAI integration works" |
 | `docs/AsikaGo_Sprint4_Ticket_Breakdown_v1.0.md` | "Not there yet" list | "any Gemini code" → "any OpenAI code" |
 | `docs/AsikaGo_Sprint4_Ticket_Breakdown_v1.0.md` | §9 TE-003 | Story criteria, TE-003-AI-01 third bullet, TE-003-BE-01 title, description and criteria, TE-003-AI-02 criteria, all per section 5 |
@@ -247,7 +253,7 @@ The PRD and Tech Architecture keep their file names (`_v1.0`), matching how D8 w
 | AB#63 | Description and acceptance criteria per section 5 |
 | AB#37, AB#55 | Acceptance criteria per section 5 (US-012) |
 | AB#38, AB#56 | Acceptance criteria per section 5 (US-013) |
-| New User Story | "US-016 - Talk to the Step Companion", Sprint 6, Could Have, section 5 text |
+| New User Story | "US-016 - Talk Mode in the Assistant", Sprint 6, Could Have, section 5 text |
 | New User Story | "US-017 - Speak My Business Description", Sprint 6, Could Have, section 5 text |
 
 US-016 and US-017 are created as single stories. The team splits them into
@@ -265,7 +271,7 @@ A/B at Sprint 6 planning, as with the other stories.
 - Rate limit numbers (20/min, 200/day, 60/min per IP), the 1000-character cap, the 15 s timeout, and the retry rule.
 - US-012's "location" criterion is dropped because of D8.
 - The "Not sure" choice sits on the existing type step, not a new screen.
-- US-016 at 5 pts and US-017 at 3 pts.
+- US-016 at 5 pts and US-017 at 3 pts. US-016 holds the mic and read-aloud buttons as well as talk mode, because they share the chat screen. The mic reuses the US-017 endpoint and read-aloud is a browser feature, so the points stay at 5.
 - US-016 is limited to Google users (no guests) because a voice session costs about 30x a text call.
 - The README gets one user-secrets line as part of TE-003-BE-01.
 - The "Not sure" helper's Yes answer suggests Sole Proprietorship and names OPC as the one-owner alternative.
