@@ -14,10 +14,11 @@ type Props = {
   roadmap: RoadmapResponse | null | undefined
   isPending: boolean
   isError: boolean
+  isFetching: boolean
   onRetry: () => void
 }
 
-export function MyBusinessRouteProgress({ roadmap, isPending, isError, onRetry }: Props) {
+export function MyBusinessRouteProgress({ roadmap, isPending, isError, isFetching, onRetry }: Props) {
   const hasSteps = !!roadmap?.steps.length
   const allDone = hasSteps && roadmap.nextStepNumber === null
   const nextStep = roadmap?.steps.find(step => Number(step.number) === Number(roadmap.nextStepNumber))
@@ -68,8 +69,8 @@ export function MyBusinessRouteProgress({ roadmap, isPending, isError, onRetry }
                 <p className="font-semibold">
                   {allDone ? `All ${roadmap.steps.length} steps done.` : `${roadmap.completedSteps} of ${roadmap.steps.length} steps done`}
                 </p>
-                <Link to={allDone ? '/roadmap' : `/roadmap/steps/${roadmap.nextStepNumber}`} className={linkClass}>
-                  <span className="min-w-0">{allDone ? 'See my roadmap' : `Next: Step ${roadmap.nextStepNumber}${nextStep ? ` · ${nextStep.name}` : ''}`}</span>
+                <Link to={nextStep ? `/roadmap/steps/${nextStep.number}` : '/roadmap'} className={linkClass}>
+                  <span className="min-w-0">{nextStep ? `Next: Step ${nextStep.number} · ${nextStep.name}` : 'See my roadmap'}</span>
                   <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
                 </Link>
               </>
@@ -89,10 +90,12 @@ export function MyBusinessRouteProgress({ roadmap, isPending, isError, onRetry }
             ) : null}
             {isError && (
               <div>
-                <p role="status" className="text-sm text-white/80">
+                <p role="alert" className="text-sm text-white/80">
                   {roadmap !== undefined ? "We couldn't refresh your progress." : "We couldn't load your progress."}
                 </p>
-                <button type="button" onClick={onRetry} className="min-h-11 font-semibold underline">Try again</button>
+                <button type="button" onClick={onRetry} disabled={isFetching} className="min-h-11 font-semibold underline">
+                  {isFetching ? 'Trying again…' : 'Try again'}
+                </button>
               </div>
             )}
           </div>

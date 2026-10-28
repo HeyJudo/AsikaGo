@@ -120,6 +120,7 @@ export function MyBusinessPage() {
               roadmap={roadmap.data}
               isPending={roadmap.isPending}
               isError={roadmap.isError}
+              isFetching={roadmap.isFetching}
               onRetry={() => void roadmap.refetch()}
             />
 
