@@ -1,0 +1,30 @@
+# Pasig Government Offices per Registration Step
+
+**Ticket:** US-014-RS-01 (AB#107), parent US-014B (AB#57)
+**Companion to:** `docs/research/registration-workflow.md` (RS-001-01)
+**Status key:** Verified / Unverified, as in RS-002.
+
+Online-only steps (DTI BNRS, SEC eSPARC) give the website instead of an address.
+Steps 6 and 9 happen at the same BPLD offices as Step 5. Local numbers are dialed through the City Hall trunkline, (02) 8643-1111 (see the CPDO row).
+
+## Offices
+
+| Step | Office | Access | Address / link | Hours | Phone | Email | Google Maps | Source | Date checked | Status |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1A | Department of Trade and Industry (DTI), Business Name Registration System | Online | https://bnrs.dti.gov.ph/registration/create | Online | 1-DTI (384); (632) 7751-0384; (632) 7791-3100; Mobile 0917-845-7104; 0917-863-0669 | bnrshelpdesk@dtiphmail.dti.gov.ph | N/A | https://bnrs.dti.gov.ph/ | 2026-10-21 | Verified |
+| 1B | Securities and Exchange Commission (SEC), eSPARC | Online | https://esparc.sec.gov.ph | Online | 1-4SEC (1-4732) | cprd_registration@sec.gov.ph | N/A | https://esparc.sec.gov.ph/application | 2026-10-21 | Verified |
+| 2 | Barangay hall | In person | The barangay where the business is located | Monday to Thursday, 7:00 AM to 6:00 PM (closed Fridays, weekends, and holidays) | N/A | N/A | Depends on business location | https://www.facebook.com/bsapasig/posts/heads-up-all-businesses-in-barangay-san-antonio-pasig-city-please-be-guided-acco/1387559936737967/ | 2026-10-21 | Unverified |
+| 3 | City Planning and Development Office (CPDO), Zoning Administration Division | Online | https://clima.pasigcity.gov.ph/clima/PublicConformance | Online | (02) 8643-1111 local 279 | cpdopasigcity@gmail.com | N/A | https://assets.pasigcity.gov.ph/storage/attachments/city_planning_and_development_office/633f923e3eb141665110590632bd4798e8981663816825CCh_CPDO.pdf | 2026-10-21 | Verified |
+| 4 | BFP Pasig City (Fire Safety Inspection Certificate) | Online | FSIS portal: https://fsis.e-bfp.com/ (BFP Pasig) | Monday to Friday, 8:00 AM to 5:00 PM (BFP Pasig City) | 0960 340 2260 | N/A | N/A | https://www.facebook.com/PasigPIO/posts/ipinapabatid-ng-bfp-ncr-pasig-city-sa-lahat-ng-business-owners-na-maaaring-gamit/1393781799508190/ | 2026-10-21 | Verified |
+| 5 | BPLD, Annex 1 | In person | 3rd Floor, Ayala Malls The 30th, Meralco Ave., Brgy. Ugong, Pasig City | Mon-Fri, 8:00 AM-6:00 PM | local 1158 / 1222 | bpld.annex1@pasigcity.gov.ph | https://maps.app.goo.gl/57Xn2rwdErBwhe13X8 | BPLD Citizen's Charter 2025 (updated 4 Mar 2025); https://pasigcity.gov.ph/services | 2026-10-21 | Verified |
+| 5 | BPLD, Annex 2 | In person | 3rd Floor, Robinsons Metro East, Dela Paz, Pasig City | Mon-Fri, 8:00 AM-6:00 PM | local 2241 | bpld.annex2@pasigcity.gov.ph | https://maps.app.goo.gl/aPTkKJQEE4xJ4FWE8 | BPLD Citizen's Charter 2025; https://pasigcity.gov.ph/services | 2026-10-21 | Verified |
+| 5 | BPLD, Bridgetowne | In person | Eulogio Amang Rodriguez Ave., Bridgetowne, Rosario, Pasig City (Temporary Pasig City Hall) | Mon-Thu, 7:00 AM-6:00 PM | local 1225 | bpld.bridgetowne@pasigcity.gov.ph | https://maps.app.goo.gl/QbDeGZrUv2jTp7859 | BPLD Citizen's Charter 2025; https://pasigcity.gov.ph/services | 2026-10-21 | Verified |
+| 5 | BPLD, Mutya ng Pasig Mega Market | In person | 3rd Floor, Mutya ng Pasig Mega Market | Mon-Thu, 7:00 AM-6:00 PM | local 1221 | bpld.mutya@pasigcity.gov.ph | https://maps.app.goo.gl/xJUi4c3uaC3KBZw3A | BPLD Citizen's Charter 2025; https://pasigcity.gov.ph/services | 2026-10-21 | Verified |
+| 6 | BPLD (same units as Step 5; the Tax Order of Payment is issued at the same window) | In person | See Step 5 | See Step 5 | See Step 5 | See Step 5 | Depends on the BPLD office from Step 5 | BPLD Citizen's Charter 2025; https://pasigcity.gov.ph/services | 2026-10-21 | Verified |
+| 7 | City Treasurer's Office, Business Tax and Miscellaneous Revenues Division (BTMRD) | In person | 1/F, Temporary Pasig City Hall, E. Rodriguez Ave., Bridgetowne, Rosario, Pasig City | Mon-Thu, 7:00 AM-6:00 PM | local 1292 | btmrd.cto@pasigcity.gov.ph | https://maps.app.goo.gl/QbDeGZrUv2jTp7859 | Pasig Directory; https://pasigcity.gov.ph/about-pasig-city/directory | 2026-10-21 | Verified |
+| 8 | Pasig BOSS | In person | Handled at the BPLD offices (Step 5) | Mon-Thu, 7:00 AM-6:00 PM | See Step 5 | See Step 5 | https://maps.app.goo.gl/QbDeGZrUv2jTp7859 | Pasig Directory; https://pasigcity.gov.ph/about-pasig-city/directory | 2026-10-21 | Verified |
+| 8 | City Health Department (Environmental Sanitation) | In person | Pasig City Sports Center, Old Pasig City Hall Compound | Mon-Thu, 7:00 AM-6:00 PM | local 1511 | cityhealth@pasigcity.gov.ph | https://maps.app.goo.gl/NqDwoyN5JZN9BUH28 | Pasig Directory; https://pasigcity.gov.ph/about-pasig-city/directory | 2026-10-21 | Verified |
+| 8 | City Environment and Natural Resources Office (CENRO) | In person | 1/F, Temporary Pasig City Hall, E. Rodriguez Ave., Bridgetowne, Rosario, Pasig City | Mon-Thu, 7:00 AM-6:00 PM | local 1471 | cenro@pasigcity.gov.ph | https://maps.app.goo.gl/QbDeGZrUv2jTp7859 | Pasig Directory; https://pasigcity.gov.ph/about-pasig-city/directory | 2026-10-21 | Verified |
+| 8 | BFP Pasig City | See Step 4 | See Step 4 | See Step 4 | See Step 4 | See Step 4 | See Step 4 | See Step 4 | 2026-10-21 | Verified |
+| 9 | Pasig BOSS (claim of Business Permit and sticker) | In person | Same BPLD offices as Step 5 | See Step 5 | See Step 5 | See Step 5 | Depends on the BPLD office from Step 5 | BPLD Citizen's Charter 2025, Section D | 2026-10-21 | Verified |
+| 10A / 10B | Bureau of Internal Revenue (BIR), Revenue District Office No. 43 | Online / In person | Online: ORUS, https://orus.bir.gov.ph/. In person: BIR RDO 043 Pasig City, 5/F Estancia West Wing Offices, Capitol Commons, Pasig | Online: 24/7. In person: Mon-Fri, 8:00 AM-5:00 PM | (02) 8898-4500 | rdo_43css@bir.gov.ph | https://maps.app.goo.gl/sqahQ4Q2tV55AtsY9 | BIR RDO 043 - Pasig City; https://www.facebook.com/birgovph.rdo043 | 2026-10-21 | Verified |
