@@ -1,24 +1,20 @@
 import { Link, Navigate } from 'react-router'
 import { motion, type Variants } from 'motion/react'
-import { AlertCircle, ArrowRight, Check, MapIcon, MapPin, PenLine, Store } from 'lucide-react'
+import { AlertCircle, ArrowRight, MapIcon, PenLine, Store } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { FullPageError, FullPageLoader } from '@/components/PageStates'
 import { GoogleButton } from '@/components/GoogleButton'
 import { useAuth } from '@/app/AuthProvider'
-import { useBusinessProfile } from '@/lib/queries'
+import { useBusinessProfile, useRoadmap } from '@/lib/queries'
+import { MyBusinessRouteProgress } from './MyBusinessRouteProgress'
 import { useLinkGoogle } from '@/features/auth/useLinkGoogle'
 
 const list: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } }
 const item: Variants = {
   hidden: { opacity: 0, y: 16 },
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
-}
-const stops: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.25, delayChildren: 0.5 } } }
-const stop: Variants = {
-  hidden: { opacity: 0, scale: 0.9 },
-  show: { opacity: 1, scale: 1, transition: { duration: 0.3, ease: 'easeOut' } },
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -58,6 +54,7 @@ function GuestBanner() {
 export function MyBusinessPage() {
   const { user } = useAuth()
   const { data, isPending, isError, refetch } = useBusinessProfile()
+  const roadmap = useRoadmap()
 
   if (isPending) return <FullPageLoader />
   if (isError) return <FullPageError onRetry={() => void refetch()} />
@@ -119,58 +116,12 @@ export function MyBusinessPage() {
           </motion.div>
 
           <motion.div variants={item} className="flex flex-col gap-6">
-            <section aria-labelledby="route-heading" className="bg-brand rounded-xl p-6 text-white">
-              <h2 id="route-heading" className="text-lg font-bold">
-                Your route progress:
-              </h2>
-              <motion.ol variants={stops} className="relative mt-5 flex flex-col gap-6">
-                <motion.span
-                  aria-hidden="true"
-                  initial={{ scaleY: 0 }}
-                  animate={{ scaleY: 1 }}
-                  transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
-                  className="absolute top-3 bottom-3 left-3 origin-top border-l-2 border-dashed border-white/50"
-                />
-                <motion.li variants={stop} className="relative flex gap-4">
-                  <span className="bg-gold text-navy z-10 flex size-6 shrink-0 items-center justify-center rounded-full">
-                    <Check className="size-4" aria-hidden="true" />
-                  </span>
-                  <div>
-                    <p className="font-semibold">Point A – Profile saved</p>
-                    <p className="text-sm text-white/80">You told us about your business.</p>
-                  </div>
-                </motion.li>
-                <motion.li variants={stop} className="relative">
-                  <Link
-                    to="/roadmap"
-                    className="group -m-2 flex min-h-[44px] items-center gap-4 rounded-xl p-2 transition-colors hover:bg-white/10"
-                  >
-                    <motion.span
-                      animate={{ scale: [1, 1.15, 1] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                      className="bg-gold text-navy z-10 flex size-6 shrink-0 items-center justify-center rounded-full"
-                    >
-                      <MapPin className="size-4" aria-hidden="true" />
-                    </motion.span>
-                    <div className="flex-1">
-                      <p className="flex flex-wrap items-center gap-2 font-semibold">
-                        Your roadmap
-                        <span className="bg-gold text-navy rounded-full px-2 py-0.5 text-xs font-bold">You're here</span>
-                      </p>
-                      <p className="text-sm text-white/80">Step-by-step permits for Pasig City.</p>
-                    </div>
-                    <ArrowRight className="size-5 shrink-0 text-white/70 transition-transform group-hover:translate-x-0.5 group-hover:text-white" aria-hidden="true" />
-                  </Link>
-                </motion.li>
-                <motion.li variants={stop} className="relative flex gap-4">
-                  <span aria-hidden="true" className="bg-brand z-10 size-6 shrink-0 rounded-full border-2 border-white" />
-                  <div>
-                    <p className="font-semibold">Biz – Registered</p>
-                    <p className="text-sm text-white/80">Your destination.</p>
-                  </div>
-                </motion.li>
-              </motion.ol>
-            </section>
+            <MyBusinessRouteProgress
+              roadmap={roadmap.data}
+              isPending={roadmap.isPending}
+              isError={roadmap.isError}
+              onRetry={() => void roadmap.refetch()}
+            />
 
             <Card className="hover:border-brand/50 transition-colors">
               <Link to="/roadmap" className="block min-h-[44px]">
