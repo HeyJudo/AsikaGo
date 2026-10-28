@@ -586,4 +586,112 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
         var response = await client.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true });
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
+
+    [Fact]
+    public async Task UpdateStepStatus_NoAuth_Returns401()
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Anonymous", "true");
+        var response = await client.PutAsJsonAsync("/api/roadmap/steps/1/status", new { completed = true });
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateRequirement_NoAuth_Returns401()
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-Anonymous", "true");
+        var response = await client.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true });
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateRequirement_Valid_PersistsOnGet()
+    {
+        using var client = Client(await UserWithProfile());
+        var putResponse = await client.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true });
+        Assert.Equal(HttpStatusCode.NoContent, putResponse.StatusCode);
+
+        var stepDetail = await Read<StepDetailResponse>(await client.GetAsync("/api/roadmap/steps/2"));
+        var req = stepDetail.Requirements.Single(r => r.Id == ValidIdReq);
+        Assert.True(req.IsPrepared);
+    }
+
+    [Fact]
+    public async Task UpdateRequirement_NotInRoadmap_Returns404()
+    {
+        using var client = Client(await UserWithProfile());
+        var response = await client.PutAsJsonAsync($"/api/roadmap/requirements/{Guid.NewGuid()}", new { isPrepared = true });
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public async Task UpdateRequirement_NoBusinessProfile_Returns404()
+    {
+        using var client = Client(Guid.NewGuid());
+        var response = await client.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true });
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public async Task UpdateRequirement_RequirementNotInUserCategory_Returns404()
+    {
+        // RetailReq belongs to Retail category, but user is Food and Beverage
+        using var client = Client(await UserWithProfile("Corporation"));
+        var response = await client.PutAsJsonAsync($"/api/roadmap/requirements/{RetailReq}", new { isPrepared = true });
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
+    }
+
+    [Fact]
+    public async Task UpdateRequirement_OtherUsersRoadmap_IsNotAffected()
+    {
+        var userA = await UserWithProfile();
+        var userB = await UserWithProfile();
+        using var clientA = Client(userA);
+        using var clientB = Client(userB);
+
+        await clientA.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true });
+
+        var stepA = await Read<StepDetailResponse>(await clientA.GetAsync("/api/roadmap/steps/2"));
+        var stepB = await Read<StepDetailResponse>(await clientB.GetAsync("/api/roadmap/steps/2"));
+
+        Assert.True(stepA.Requirements.Single(r => r.Id == ValidIdReq).IsPrepared);
+        Assert.False(stepB.Requirements.Single(r => r.Id == ValidIdReq).IsPrepared);
+    }
+
+    [Fact]
+    public async Task UpdateRequirement_IgnoresRowsForRemovedRequirements_AndRestoresWhenApplicable()
+    {
+        // Start as Retail corporation so RetailReq applies to Barangay step
+        var user = Guid.NewGuid();
+        using var client = Client(user);
+        await PutProfile(client, "Retail Shop", "Corporation", RetailId, "Started");
+
+        // Get roadmap to initialize saved roadmap
+        var initial = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        var retailReqId = RetailReq;
+
+        // Check RetailReq
+        var putRes = await client.PutAsJsonAsync($"/api/roadmap/requirements/{retailReqId}", new { isPrepared = true });
+        Assert.Equal(HttpStatusCode.NoContent, putRes.StatusCode);
+
+        // Verify preparedCount on step 2 (Barangay) is 1
+        var roadmapBefore = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        Assert.Equal(1, roadmapBefore.Steps.Single(s => s.Number == 2).PreparedCount);
+
+        // Switch category to Food and Beverage (RetailReq no longer applies, SanitaryReq applies instead)
+        await PutProfile(client, "Food Shop", "Corporation", FoodId, "Started");
+
+        // Verify preparedCount on step 2 ignores RetailReq row (D19) -> preparedCount becomes 0
+        var roadmapAfter = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        Assert.Equal(0, roadmapAfter.Steps.Single(s => s.Number == 2).PreparedCount);
+
+        // Switch back to Retail category -> preparedCount returns to 1 (row was ignored, not deleted)
+        await PutProfile(client, "Retail Shop", "Corporation", RetailId, "Started");
+        var roadmapRestored = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        Assert.Equal(1, roadmapRestored.Steps.Single(s => s.Number == 2).PreparedCount);
+    }
 }
