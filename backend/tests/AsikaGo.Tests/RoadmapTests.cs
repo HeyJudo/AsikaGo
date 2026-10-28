@@ -587,23 +587,7 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
-    [Fact]
-    public async Task UpdateStepStatus_NoAuth_Returns401()
-    {
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-Test-Anonymous", "true");
-        var response = await client.PutAsJsonAsync("/api/roadmap/steps/1/status", new { completed = true });
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task UpdateRequirement_NoAuth_Returns401()
-    {
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Add("X-Test-Anonymous", "true");
-        var response = await client.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true });
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
+    // 401 for both PUTs is covered with the real JWT pipeline in HealthAndAuthTests.
 
     [Fact]
     public async Task UpdateRequirement_Valid_PersistsOnGet()
@@ -615,6 +599,51 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
         var stepDetail = await Read<StepDetailResponse>(await client.GetAsync("/api/roadmap/steps/2"));
         var req = stepDetail.Requirements.Single(r => r.Id == ValidIdReq);
         Assert.True(req.IsPrepared);
+    }
+
+    [Fact]
+    public async Task UpdateRequirement_CheckThenUncheck_UpsertsOneRowAndSetsUpdatedAt()
+    {
+        var user = await UserWithProfile();
+        using var client = Client(user);
+        var before = DateTimeOffset.UtcNow;
+        await client.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true });
+        Assert.True(SavedRequirementProgress(user, ValidIdReq).Single().UpdatedAt >= before);
+
+        var beforeUncheck = DateTimeOffset.UtcNow;
+        var response = await client.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = false });
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        var row = SavedRequirementProgress(user, ValidIdReq).Single();
+        Assert.False(row.IsPrepared);
+        Assert.True(row.UpdatedAt >= beforeUncheck);
+        var roadmap = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        Assert.Equal(0, roadmap.Steps[1].PreparedCount);
+        Assert.Equal(RoadmapStepStatus.NotStarted, roadmap.Steps[1].Status);
+    }
+
+    [Fact]
+    public async Task UpdateRequirement_AllDocumentsChecked_StepIsInProgressNotCompleted()
+    {
+        using var client = Client(await UserWithProfile());
+        await client.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true });
+        await client.PutAsJsonAsync($"/api/roadmap/requirements/{SanitaryReq}", new { isPrepared = true });
+
+        // D17: papers ready does not finish the step.
+        var roadmap = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        Assert.Equal(2, roadmap.Steps[1].PreparedCount);
+        Assert.Equal(RoadmapStepStatus.InProgress, roadmap.Steps[1].Status);
+        Assert.Equal(0, roadmap.CompletedSteps);
+        Assert.Equal(1, roadmap.NextStepNumber);
+    }
+
+    private List<RequirementProgress> SavedRequirementProgress(Guid user, Guid requirementId)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        return db.RequirementProgress
+            .Where(p => p.RequirementId == requirementId && db.UserRoadmaps.Any(r => r.Id == p.RoadmapId && db.BusinessProfiles.Any(b => b.Id == r.BusinessId && b.UserId == user)))
+            .ToList();
     }
 
     [Fact]
@@ -639,7 +668,7 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
     public async Task UpdateRequirement_RequirementNotInUserCategory_Returns404()
     {
         // RetailReq belongs to Retail category, but user is Food and Beverage
-        using var client = Client(await UserWithProfile("Corporation"));
+        using var client = Client(await UserWithProfile());
         var response = await client.PutAsJsonAsync($"/api/roadmap/requirements/{RetailReq}", new { isPrepared = true });
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
@@ -653,7 +682,11 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
         using var clientA = Client(userA);
         using var clientB = Client(userB);
 
-        await clientA.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true });
+        var put = await clientA.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true });
+        Assert.Equal(HttpStatusCode.NoContent, put.StatusCode);
+        // B writes the same requirement after A: an upsert not scoped to B's roadmap would overwrite A's row.
+        await clientB.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true });
+        await clientB.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = false });
 
         var stepA = await Read<StepDetailResponse>(await clientA.GetAsync("/api/roadmap/steps/2"));
         var stepB = await Read<StepDetailResponse>(await clientB.GetAsync("/api/roadmap/steps/2"));
@@ -666,16 +699,10 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
     public async Task UpdateRequirement_IgnoresRowsForRemovedRequirements_AndRestoresWhenApplicable()
     {
         // Start as Retail corporation so RetailReq applies to Barangay step
-        var user = Guid.NewGuid();
-        using var client = Client(user);
+        using var client = Client(Guid.NewGuid());
         await PutProfile(client, "Retail Shop", "Corporation", RetailId, "Started");
 
-        // Get roadmap to initialize saved roadmap
-        var initial = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
-        var retailReqId = RetailReq;
-
-        // Check RetailReq
-        var putRes = await client.PutAsJsonAsync($"/api/roadmap/requirements/{retailReqId}", new { isPrepared = true });
+        var putRes = await client.PutAsJsonAsync($"/api/roadmap/requirements/{RetailReq}", new { isPrepared = true });
         Assert.Equal(HttpStatusCode.NoContent, putRes.StatusCode);
 
         // Verify preparedCount on step 2 (Barangay) is 1
@@ -688,6 +715,8 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
         // Verify preparedCount on step 2 ignores RetailReq row (D19) -> preparedCount becomes 0
         var roadmapAfter = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
         Assert.Equal(0, roadmapAfter.Steps.Single(s => s.Number == 2).PreparedCount);
+        var stepAfter = await Read<StepDetailResponse>(await client.GetAsync("/api/roadmap/steps/2"));
+        Assert.Equal(RoadmapStepStatus.NotStarted, stepAfter.Status);
 
         // Switch back to Retail category -> preparedCount returns to 1 (row was ignored, not deleted)
         await PutProfile(client, "Retail Shop", "Corporation", RetailId, "Started");
