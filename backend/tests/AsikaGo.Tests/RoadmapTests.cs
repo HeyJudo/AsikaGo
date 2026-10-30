@@ -410,6 +410,23 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task GetDocuments_TwoChecked_PreparedCountIsTwoAndTotalsMatchSteps()
+    {
+        using var client = Client(await UserWithProfile());
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PutAsJsonAsync($"/api/roadmap/requirements/{SanitaryReq}", new { isPrepared = true })).StatusCode);
+
+        var docs = await Read<DocumentsResponse>(await client.GetAsync("/api/roadmap/documents"));
+
+        Assert.Equal(2, docs.PreparedCount);
+        // Food + Corporation: SEC and Fire have no requirements, Barangay has Valid ID and Sanitary permit (Retail permit is excluded).
+        Assert.Equal(2, docs.TotalCount);
+        Assert.Equal(docs.Steps.Sum(s => s.Requirements.Count), docs.TotalCount);
+        Assert.Equal(docs.Steps.Sum(s => s.Requirements.Count(r => r.IsPrepared)), docs.PreparedCount);
+        Assert.Equal(2, docs.Steps[1].Requirements.Count(r => r.IsPrepared));
+    }
+
+    [Fact]
     public async Task UpdateStepStatus_MissingCompleted_ReturnsValidationProblem()
     {
         using var client = Client(await UserWithProfile());
