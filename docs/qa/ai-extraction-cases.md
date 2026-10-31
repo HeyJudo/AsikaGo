@@ -1,11 +1,15 @@
 # AI Extraction Test Set (TE-003-AI-01)
 
-## Results summary (fill in during TE-003-AI-02)
+## Results summary (TE-003-AI-02)
 
-- Correct: _ of 20
-- Wrong: _
-- Null: _
-- Kinds of description that fail: _
+- Correct: 19 of 20
+- Wrong: 1 (case 16)
+- Null: 0
+- Kinds of description that fail: A very short description that hints at how the business sells but gives no business type or category. "online seller" (case 16) came back as Retail where we expected null, because the model guessed the category from the word "seller". Every description with a clear structure and kind of business was correct, in English, Taglish, short, or misspelled. All three fully unclear cases (17-19) and the partly unclear case (20) correctly returned null for the unclear fields.
+- Average response time: 2,265 ms (1,894 ms without the first call, which took 9,300 ms)
+- Total tokens: 6,711 (6,288 input, 423 output, 0 cached)
+- Total cost of the run: _ (work out from the tokens above and the model's price, or read it from the OpenAI usage page)
+- Run: each of the 20 cases once through `POST /api/assistant/extract` on the local API. 19 of 20 is above the 15 of 20 bar, so no prompt change or rerun is needed.
 
 ## How to read this file
 
@@ -62,27 +66,27 @@ Each case is a business description written the way a real user might type it. T
 
 **Note for TE-003-BE-01:** the prompt returns the category name. The backend maps the name to the seeded `categoryId` and returns null if no match.
 
-## Results (fill in during TE-003-AI-02)
+## Results (TE-003-AI-02)
 
 | # | Actual type | Actual category | Result (correct / wrong / null) | Time (ms) | Tokens |
 | --- | --- | --- | --- | --- | --- |
-| 1 |  |  |  |  |  |
-| 2 |  |  |  |  |  |
-| 3 |  |  |  |  |  |
-| 4 |  |  |  |  |  |
-| 5 |  |  |  |  |  |
-| 6 |  |  |  |  |  |
-| 7 |  |  |  |  |  |
-| 8 |  |  |  |  |  |
-| 9 |  |  |  |  |  |
-| 10 |  |  |  |  |  |
-| 11 |  |  |  |  |  |
-| 12 |  |  |  |  |  |
-| 13 |  |  |  |  |  |
-| 14 |  |  |  |  |  |
-| 15 |  |  |  |  |  |
-| 16 |  |  |  |  |  |
-| 17 |  |  |  |  |  |
-| 18 |  |  |  |  |  |
-| 19 |  |  |  |  |  |
-| 20 |  |  |  |  |  |
+| 1 | Sole Proprietorship | Retail | correct | 9,300 | 346 (324 in + 22 out) |
+| 2 | Sole Proprietorship | Retail | correct | 2,150 | 351 (329 in + 22 out) |
+| 3 | Partnership | Retail | correct | 5,821 | 337 (317 in + 20 out) |
+| 4 | Corporation | Retail | correct | 1,339 | 339 (319 in + 20 out) |
+| 5 | One Person Corporation | Retail | correct | 1,798 | 333 (312 in + 21 out) |
+| 6 | Sole Proprietorship | Food and Beverage | correct | 2,117 | 346 (322 in + 24 out) |
+| 7 | Partnership | Food and Beverage | correct | 2,381 | 336 (314 in + 22 out) |
+| 8 | Corporation | Food and Beverage | correct | 1,792 | 335 (313 in + 22 out) |
+| 9 | One Person Corporation | Food and Beverage | correct | 1,251 | 332 (309 in + 23 out) |
+| 10 | Sole Proprietorship | Food and Beverage | correct | 1,951 | 342 (318 in + 24 out) |
+| 11 | Sole Proprietorship | Services | correct | 1,810 | 335 (313 in + 22 out) |
+| 12 | Partnership | Services | correct | 1,638 | 329 (309 in + 20 out) |
+| 13 | Corporation | Services | correct | 1,514 | 331 (311 in + 20 out) |
+| 14 | One Person Corporation | Services | correct | 1,285 | 334 (313 in + 21 out) |
+| 15 | Sole Proprietorship | Services | correct | 1,434 | 330 (308 in + 22 out) |
+| 16 | null | Retail | wrong | 1,752 | 322 (303 in + 19 out) |
+| 17 | null | null | correct | 1,299 | 326 (307 in + 19 out) |
+| 18 | null | null | correct | 1,070 | 333 (314 in + 19 out) |
+| 19 | null | null | correct | 2,270 | 339 (320 in + 19 out) |
+| 20 | Sole Proprietorship | null | correct | 1,319 | 335 (313 in + 22 out) |
