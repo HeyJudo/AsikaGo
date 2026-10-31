@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router'
-import { AlertCircle, ArrowRight, Check, ChevronRight, Flag, Info, PartyPopper } from 'lucide-react'
+import { AlertCircle, ArrowRight, Check, ChevronRight, ClipboardList, Flag, Info, PartyPopper } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { GoogleButton } from '@/components/GoogleButton'
@@ -186,6 +186,19 @@ export function RoadmapPage() {
               You're done. Every step is marked as done.
             </div>
           )}
+          <Link
+            to="/roadmap/documents"
+            className="text-brand inline-flex min-h-11 items-center gap-2 font-semibold hover:underline"
+          >
+            <ClipboardList className="size-4.5 shrink-0" aria-hidden="true" />
+            <span>
+              See all documents to bring{' '}
+              <span className="text-muted-foreground text-sm font-medium">
+                ({roadmap.steps.reduce((n, s) => n + Number(s.preparedCount), 0)} of{' '}
+                {roadmap.steps.reduce((n, s) => n + Number(s.requirementCount), 0)} ready)
+              </span>
+            </span>
+          </Link>
         </div>
 
         <div className="relative flex flex-col gap-3">

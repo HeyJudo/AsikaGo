@@ -113,3 +113,21 @@ test('loading and error use the shared page states', () => {
   assert.match(renderPage(undefined), /Finding your documents…/)
   assert.match(renderPage(new Error('offline')), /Something went wrong\./)
 })
+
+test('the roadmap links to All documents with the summed ready count', async () => {
+  const Roadmap = (await server.ssrLoadModule('/src/features/roadmap/RoadmapPage.tsx')).RoadmapPage
+  const Auth = (await server.ssrLoadModule('/src/app/AuthProvider.tsx')).AuthProvider
+  const client = new QueryClient()
+  client.setQueryData(['roadmap'], {
+    roadmapId: 'r-1', createdAt: '2026-10-28T00:00:00Z', businessType: 'Sole Proprietorship',
+    categoryName: 'Retail', cityName: 'Pasig', registrationStatus: 'Planning',
+    completedSteps: 0, progressPercent: 0, nextStepNumber: 1,
+    steps: [[1, 2], ['0', '1'], [2, '3']].map(([preparedCount, requirementCount], i) => ({
+      number: i + 1, stepId: `step-${i + 1}`, name: `Step name ${i + 1}`, agency: 'Agency', conditionNote: null,
+      requirementCount, preparedCount, status: 'NotStarted',
+    })),
+  })
+  const html = renderToStaticMarkup(createElement(QueryClientProvider, { client },
+    createElement(Auth, null, createElement(MemoryRouter, null, createElement(Roadmap)))))
+  assert.match(html, /href="\/roadmap\/documents"[^>]*>[\s\S]*See all documents to bring[\s\S]*\(3 of 6 ready\)/)
+})
