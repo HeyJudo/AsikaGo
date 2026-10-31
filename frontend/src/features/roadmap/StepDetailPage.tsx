@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router'
+import { useIsMutating } from '@tanstack/react-query'
 import {
   AlertCircle,
   ArrowLeft,
@@ -7,7 +8,6 @@ import {
   CircleCheck,
   ClipboardList,
   ExternalLink,
-  FileText,
   Info,
   ListChecks,
   LoaderCircle,
@@ -18,7 +18,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { FullPageError, FullPageLoader } from '@/components/PageStates'
 import { StepNotFound } from '@/features/roadmap/StepNotFound'
-import { type Requirement, useRoadmapStep, useUpdateStepStatus } from '@/lib/queries'
+import { type Requirement, useRoadmapStep, useUpdateRequirement, useUpdateStepStatus } from '@/lib/queries'
 
 function formatDate(iso: string): string {
   const dateStr = iso.includes('T') ? iso : `${iso}T00:00:00`
@@ -33,6 +33,65 @@ function isLineOfBusiness(req: Requirement): boolean {
   return req.name.startsWith('If your business')
 }
 
+function RequirementItem({ req, stepNumber }: { req: Requirement; stepNumber: number }) {
+  const { mutate, isError } = useUpdateRequirement(stepNumber)
+  const isPending = useIsMutating({
+    mutationKey: ['prepare-requirement', stepNumber],
+    predicate: (mutation) => (mutation.state.variables as { requirementId: string }).requirementId === req.id,
+  }) > 0
+  const errorId = `requirement-${req.id}-error`
+
+  return (
+    <li className="border-border min-w-0 border-t py-3 first:border-t-0 first:pt-0 last:pb-0">
+      <label className="hover:bg-brand/5 -ml-2.5 flex min-h-11 cursor-pointer gap-0.5 rounded-lg">
+        <span className="relative shrink-0 self-start">
+          <input
+            type="checkbox"
+            className="border-brand checked:bg-brand focus-visible:outline-brand m-2.5 size-6 appearance-none rounded-md border-2 bg-white focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait"
+            checked={req.isPrepared}
+            disabled={isPending}
+            aria-describedby={isError ? errorId : undefined}
+            onChange={(event) => mutate({ requirementId: req.id, isPrepared: event.target.checked })}
+          />
+          {req.isPrepared && <Check className="pointer-events-none absolute left-3 top-3 size-5 text-white" strokeWidth={3} aria-hidden="true" />}
+        </span>
+        <span className="min-w-0 flex-1 py-2.5">
+          <span className="text-navy block break-words font-semibold leading-snug">{req.name}</span>
+          {req.description && (
+            <span className="text-muted-foreground mt-0.5 block break-words text-sm leading-normal">
+              {req.description}
+            </span>
+          )}
+          {req.appliesTo && (
+            <span className="bg-brand/10 text-brand mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold">
+              <Tag className="size-3" aria-hidden="true" />
+              For {req.appliesTo} businesses
+            </span>
+          )}
+        </span>
+      </label>
+      {req.source && (
+        <a
+          href={req.source.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-brand hover:text-brand-dark -mb-3 ml-9 block min-h-[44px] break-words py-2 text-xs font-medium leading-tight underline underline-offset-2 md:text-sm"
+        >
+          Source: {req.source.name} (checked {formatDate(req.source.dateVerified)})
+          <ExternalLink className="ml-1 inline size-3.5 align-sub" />
+          <span className="sr-only"> (opens in a new tab)</span>
+        </a>
+      )}
+      {isError && (
+        <Alert id={errorId} variant="destructive" className="ml-9 mt-3 w-auto">
+          <AlertCircle className="size-4" />
+          <AlertDescription>We couldn't save this. Check your connection and try again.</AlertDescription>
+        </Alert>
+      )}
+    </li>
+  )
+}
+
 export function StepDetailPage() {
   const { number } = useParams<{ number: string }>()
   const stepNumber = Number(number)
@@ -41,7 +100,7 @@ export function StepDetailPage() {
     return <StepNotFound />
   }
 
-  return <StepDetailContent number={stepNumber} />
+  return <StepDetailContent key={stepNumber} number={stepNumber} />
 }
 
 function StepDetailContent({ number }: { number: number }) {
@@ -61,6 +120,7 @@ function StepDetailContent({ number }: { number: number }) {
   }
 
   const done = step.status === 'Completed'
+  const preparedCount = step.requirements.filter((req) => req.isPrepared).length
 
   const sortedRequirements = [...step.requirements].sort(
     (a, b) => (isLineOfBusiness(a) ? 1 : 0) - (isLineOfBusiness(b) ? 1 : 0),
@@ -91,7 +151,7 @@ function StepDetailContent({ number }: { number: number }) {
             {step.status === 'InProgress' && (
               <span className="bg-brand/10 text-brand inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold">
                 <span className="border-brand size-2 rounded-full border-2 border-r-transparent" aria-hidden="true" />
-                In progress · {step.requirements.filter((r) => r.isPrepared).length} of {step.requirements.length} ready
+                In progress · {preparedCount} of {step.requirements.length} ready
               </span>
             )}
           </div>
@@ -168,6 +228,9 @@ function StepDetailContent({ number }: { number: number }) {
           <h2 className="text-navy mb-3 flex items-center gap-2.5 text-xl font-bold">
             <ClipboardList className="text-brand size-5" />
             What to bring
+            <span className="text-brand ml-auto whitespace-nowrap text-sm font-medium">
+              {preparedCount} of {step.requirements.length} ready
+            </span>
           </h2>
           {sortedRequirements.length === 0 && (
             <p className="text-muted-foreground">Nothing to bring for this step.</p>
@@ -178,41 +241,8 @@ function StepDetailContent({ number }: { number: number }) {
             </p>
           )}
           <ul className="flex flex-col list-none">
-            {sortedRequirements.map((req, idx) => (
-              <li
-                key={req.id || idx}
-                className="border-border flex min-w-0 gap-3 border-t py-3 first:border-t-0 first:pt-0 last:pb-0"
-              >
-                <span className="bg-brand/10 text-brand grid size-8 shrink-0 place-items-center rounded-lg">
-                  <FileText className="size-4.5" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-navy font-semibold leading-snug break-words">{req.name}</p>
-                  {req.description && (
-                    <p className="text-muted-foreground mt-0.5 text-sm leading-normal break-words">
-                      {req.description}
-                    </p>
-                  )}
-                  {req.appliesTo && (
-                    <span className="bg-brand/10 text-brand mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold">
-                      <Tag className="size-3" />
-                      For {req.appliesTo} businesses
-                    </span>
-                  )}
-                  {req.source && (
-                    <a
-                      href={req.source.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-brand hover:text-brand-dark -mb-3 block min-h-[44px] py-2 text-xs font-medium leading-tight underline underline-offset-2 md:text-sm break-words"
-                    >
-                      Source: {req.source.name} (checked {formatDate(req.source.dateVerified)})
-                      <ExternalLink className="ml-1 inline size-3.5 align-sub" />
-                      <span className="sr-only"> (opens in a new tab)</span>
-                    </a>
-                  )}
-                </div>
-              </li>
+            {sortedRequirements.map((req) => (
+              <RequirementItem key={req.id} req={req} stepNumber={number} />
             ))}
           </ul>
         </section>
