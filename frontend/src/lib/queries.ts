@@ -169,6 +169,7 @@ export function useSetRequirementPrepared(requirementId: string) {
       docs ? setPrepared(docs, requirementId, isPrepared) : docs,
     )
   return useMutation({
+    mutationKey: ['set-requirement-prepared'],
     mutationFn: (isPrepared: boolean) =>
       apiFetch<void>(`/api/roadmap/requirements/${requirementId}`, {
         method: 'PUT',
@@ -180,6 +181,9 @@ export function useSetRequirementPrepared(requirementId: string) {
     },
     onError: (_err, isPrepared) => update(!isPrepared),
     onSettled: () => {
+      // Refetch only after the last tick in flight (this one still counts), or the box flickers back.
+      // ponytail: two PUTs for one document can still reach the server out of order. Serialize per id if that shows up.
+      if (queryClient.isMutating({ mutationKey: ['set-requirement-prepared'] }) > 1) return
       void queryClient.invalidateQueries({ queryKey: ['roadmap'] })
       void queryClient.invalidateQueries({ queryKey: ['roadmap-step'] })
       void queryClient.invalidateQueries({ queryKey: ['roadmap-documents'] })

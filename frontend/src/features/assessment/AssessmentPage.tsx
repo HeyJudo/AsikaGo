@@ -292,6 +292,7 @@ export function AssessmentPage() {
       // A changed profile can change the roadmap, so refetch it instead of showing the cached one
       queryClient.removeQueries({ queryKey: ['roadmap'] })
       queryClient.removeQueries({ queryKey: ['roadmap-step'] })
+      queryClient.removeQueries({ queryKey: ['roadmap-documents'] })
       void navigate('/roadmap')
     },
     onError: (err) => {

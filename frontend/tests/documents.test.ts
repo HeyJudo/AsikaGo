@@ -131,3 +131,35 @@ test('the roadmap links to All documents with the summed ready count', async () 
     createElement(Auth, null, createElement(MemoryRouter, null, createElement(Roadmap)))))
   assert.match(html, /href="\/roadmap\/documents"[^>]*>[\s\S]*See all documents to bring[\s\S]*\(3 of 6 ready\)/)
 })
+
+test('quick ticks refetch only after the last save, so the box does not flicker back', async () => {
+  const { useSetRequirementPrepared } = await server.ssrLoadModule('/src/lib/queries.ts')
+  const client = new QueryClient()
+  client.setQueryData(['roadmap-documents'], docs)
+  // Network is the outer boundary: hold each PUT until the test releases it.
+  const pending: Array<() => void> = []
+  const realFetch = globalThis.fetch
+  globalThis.fetch = (() => new Promise<Response>(r => pending.push(() => r(new Response(null, { status: 204 }))))) as typeof fetch
+  try {
+    let mutate!: (isPrepared: boolean) => void
+    function Probe() { mutate = useSetRequirementPrepared('b').mutate; return null }
+    renderToStaticMarkup(createElement(QueryClientProvider, { client }, createElement(Probe)))
+    const flush = () => new Promise(r => setTimeout(r, 20))
+
+    mutate(true)
+    mutate(false)
+    await flush()
+    assert.equal(pending.length, 2)
+
+    pending[0]()
+    await flush()
+    assert.equal(client.getQueryState(['roadmap-documents'])?.isInvalidated, false)
+
+    pending[1]()
+    await flush()
+    assert.equal(client.getQueryState(['roadmap-documents'])?.isInvalidated, true)
+    assert.equal(client.getQueryData<Documents>(['roadmap-documents'])?.steps[0].requirements[1].isPrepared, false)
+  } finally {
+    globalThis.fetch = realFetch
+  }
+})
