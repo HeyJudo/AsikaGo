@@ -1,10 +1,15 @@
 import { after, before, test } from 'node:test'
 import assert from 'node:assert/strict'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { MemoryRouter } from 'react-router'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createServer, type ViteDevServer } from 'vite'
 import type { Documents } from '../src/lib/queries.ts'
 
 let server: ViteDevServer
 let setPrepared: typeof import('../src/lib/queries.ts').setPrepared
+let Page: typeof import('../src/features/progress/DocumentsPage.tsx').DocumentsPage
 
 before(async () => {
   // supabase.ts throws at import without these; these tests never call Supabase
@@ -12,6 +17,7 @@ before(async () => {
   process.env.VITE_SUPABASE_ANON_KEY ??= 'test-anon-key'
   server = await createServer({ server: { middlewareMode: true, watch: null, ws: false } })
   setPrepared = (await server.ssrLoadModule('/src/lib/queries.ts')).setPrepared
+  Page = (await server.ssrLoadModule('/src/features/progress/DocumentsPage.tsx')).DocumentsPage
 })
 after(async () => { await server?.close() })
 
@@ -54,4 +60,56 @@ test('the cached response is not changed in place', () => {
   setPrepared(docs, 'b', true)
   assert.equal(docs.preparedCount, 2)
   assert.equal(docs.steps[0].requirements[1].isPrepared, false)
+})
+
+// undefined = nothing cached yet (loading), Error = the query failed
+function renderPage(data: Documents | null | undefined | Error) {
+  // Without retryOnMount: false, an errored query with no data mounts as pending (refetching).
+  const client = new QueryClient({ defaultOptions: { queries: { retryOnMount: false } } })
+  if (data instanceof Error) {
+    client.getQueryCache().build(client, { queryKey: ['roadmap-documents'] }).setState({ status: 'error', error: data })
+  } else if (data !== undefined) {
+    client.setQueryData(['roadmap-documents'], data)
+  }
+  return renderToStaticMarkup(createElement(QueryClientProvider, { client },
+    createElement(MemoryRouter, null, createElement(Page))))
+}
+
+test('documents are grouped by step with counts, checkboxes, and step links', () => {
+  const html = renderPage(docs)
+  assert.match(html, /All documents to bring/)
+  assert.match(html, /Tick each one when you have it ready\./)
+  assert.match(html, /role="progressbar" aria-label="Documents ready" aria-valuemin="0" aria-valuemax="4" aria-valuenow="2" aria-valuetext="2 of 4 documents ready"/)
+  assert.match(html, /2 of 4 ready/)
+  assert.match(html, /Step 1<\/span>[\s\S]*DTI Business Name Registration[\s\S]*Step 2<\/span>[\s\S]*Barangay Business Clearance/)
+  assert.equal((html.match(/>Done</g) ?? []).length, 1)
+  assert.equal((html.match(/type="checkbox"/g) ?? []).length, 4)
+  assert.equal((html.match(/checked=""/g) ?? []).length, 2)
+  assert.equal((html.match(/1 of 2 ready/g) ?? []).length, 2)
+  assert.match(html, /href="\/roadmap\/steps\/2"[^>]*>Open step 2/)
+  assert.match(html, /href="\/roadmap"/)
+})
+
+test('counts sent as strings render the same', () => {
+  const html = renderPage({ ...docs, totalCount: '4', preparedCount: '2', steps: docs.steps.map(s => ({ ...s, number: String(s.number) })) })
+  assert.match(html, /aria-valuetext="2 of 4 documents ready"/)
+  assert.match(html, /href="\/roadmap\/steps\/2"[^>]*>Open step 2/)
+})
+
+test('a roadmap with no documents shows the empty state', () => {
+  const html = renderPage({ totalCount: 0, preparedCount: 0, steps: [] })
+  assert.match(html, /Nothing to bring yet\./)
+  assert.match(html, /href="\/roadmap"[^>]*>Back to my roadmap/)
+  assert.doesNotMatch(html, /role="progressbar"/)
+})
+
+test('no business profile sends the user to the questions', () => {
+  const html = renderPage(null)
+  assert.match(html, /Answer a few questions first/)
+  assert.match(html, /href="\/assessment"/)
+})
+
+test('loading and error use the shared page states', () => {
+  assert.match(renderPage(undefined), /Finding your documents…/)
+  assert.match(renderPage(new Error('offline')), /Something went wrong\./)
 })

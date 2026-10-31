@@ -46,7 +46,7 @@ function NoStartIllustration() {
   )
 }
 
-function NoProfileState() {
+export function NoProfileState() {
   return (
     <Centered>
       <NoStartIllustration />
