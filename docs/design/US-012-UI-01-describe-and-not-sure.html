@@ -84,7 +84,7 @@
 
     /* Text box (native textarea styled like ui/input.tsx, h-12 rounded-xl bg-white text-base in the live name step) */
     .field-label { display: block; margin-top: 24px; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
-    textarea.box { display: block; width: 100%; min-height: 152px; max-height: 288px; resize: vertical; border: 1px solid var(--border); border-radius: 14px; background: #fff; padding: 12px 14px; font-size: 16px; line-height: 1.5; outline: none; }
+    textarea.box { display: block; width: 100%; min-height: 152px; resize: vertical; border: 1px solid var(--border); border-radius: 14px; background: #fff; padding: 12px 14px; font-size: 16px; line-height: 1.5; outline: none; }
     textarea.box::placeholder { color: var(--muted-foreground); }
     textarea.box:focus-visible { border-color: #a1a1a1; box-shadow: 0 0 0 3px rgba(161,161,161,.5); outline: none; }
     textarea.box[aria-invalid="true"] { border-color: var(--destructive); box-shadow: 0 0 0 3px rgba(231,0,11,.2); }
@@ -200,10 +200,10 @@
     // Draft helper text. Facts from docs/research/registration-workflow.md (rows 1A, 1B). Replace with AB#121's file.
     const HELPER = {
       yesTitle: 'Sole Proprietorship fits you',
-      yesReason: 'You own the business alone. You register your business name online with DTI (Department of Trade and Industry). Most one-owner businesses start this way.',
+      yesReason: 'You own the business alone. You register your business name online with DTI (Department of Trade and Industry).',
       opc: 'A One Person Corporation also has one owner. It registers with SEC (Securities and Exchange Commission) and keeps your own money and property separate from the business\'s debts.',
       partnership: 'Two or more people own the business and share its profits. You register it with SEC (Securities and Exchange Commission).',
-      corporation: 'The business is separate from its owners and has 2 to 15 founders. You also register it with SEC.',
+      corporation: 'The business is separate from its owners, who hold shares in it. You also register it with SEC.',
     }
 
     // ─── Icons (lucide) ─────────────────────────────────────────────────────
@@ -220,7 +220,6 @@
       check: '<path d="M20 6 9 17l-5-5"/>',
       circleCheck: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
       arrow: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
-      arrowUp: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
       mapPin: '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
       chevDown: '<path d="m6 9 6 6 6-6"/>',
       alert: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
@@ -309,7 +308,7 @@
     const SUGGEST = `<p class="hint">${icon('sparkles')}<span><b>Suggested from your description.</b> You can change it.</span></p>`
     const quiet = (helperLink) => `
       <p class="quiet">${icon('info')}<span>We couldn't tell from your description. Please choose below.</span></p>
-      ${helperLink ? `<a class="text-link" href="#type-unsure">${icon('help')}Not sure? Answer one question</a>` : ''}`
+      ${helperLink ? `<a class="text-link" href="#">${icon('help')}Not sure? Answer one question</a>` : ''}`
 
     // type: { selected, suggested, top (html under the subtitle), helper ('ask' | 'yes' | 'no' | null), error }
     function typeStep({ selected = null, suggested = null, top = '', helper = null, error = false } = {}) {
@@ -374,7 +373,7 @@
       ['Screen 1 · Describe step (/assessment?step=describe)', '1. Filled in', pair('Filled', () => describe({ text: DESCRIPTION, live: true })), `<ul>
         <li>New step <code>describe</code> in <code>STEPS</code>, right after <code>intro</code>. Only for users with no business profile. Editing a profile skips it (US-012-FE-01). The intro's "Let's go" goes here.</li>
         <li>No <code>RouteProgress</code> bar, like <code>intro</code>. Skip leads to the same 4 questions, so "Step 1 of 4" stays true.</li>
-        <li>Text box: native <code>&lt;textarea rows={5} maxLength={1000}&gt;</code> with the <code>Input</code> look: <code>rounded-xl border bg-white px-3.5 py-3 text-base min-h-38 max-h-72 resize-y</code>. There's no shadcn textarea, so don't add one. The visible label is the question. The help text and the counter are linked with <code>aria-describedby</code>.</li>
+        <li>Text box: native <code>&lt;textarea rows={5} maxLength={1000}&gt;</code> with the <code>Input</code> look: <code>rounded-xl border bg-white px-3.5 py-3 text-base min-h-38 resize-y</code>. There's no shadcn textarea, so don't add one. The visible label is the question. The help text and the counter are linked with <code>aria-describedby</code>.</li>
         <li>Counter: "{length} / 1000", <code>text-xs text-muted-foreground tabular-nums</code>, right-aligned. Not <code>aria-live</code> (it would talk on every key). <code>maxLength</code> stops typing at 1000.</li>
         <li>Privacy line on the left of the counter: lucide <code>Lock</code>, "We only use this to fill in the form. We don't save it." It's true: the text only goes to <code>/api/assistant/extract</code> and is never saved (US-012-FE-01).</li>
         <li>Buttons: "Skip, I'll choose myself" is <code>variant="secondary"</code> like the name step's "Skip for now". It goes to <code>name</code> with nothing filled. "Continue" is <code>BUTTON_PRIMARY</code>. <b>Review:</b> writing rule 3 says not to use "Continue". The ticket names it, so it's kept. Change it here if you prefer something like "Fill in my answers".</li>
@@ -385,13 +384,13 @@
       </ul>`],
       [null, '3. At the 1000-character limit', [mobile('At the limit', () => describe({ text: LONG }))], `<ul>
         <li>The counter turns <code>text-navy font-semibold</code> at 1000. No error: the box simply stops taking text.</li>
-        <li>The box grows up to <code>max-h-72</code> (288 px), then scrolls, so the buttons stay close on a 360 px phone. <code>resize-y</code> lets people drag it taller on desktop.</li>
+        <li>The box stays 5 rows tall and scrolls, so the buttons stay close on a 360 px phone. <code>resize-y</code> lets people drag it taller.</li>
       </ul>`],
       [null, '4. Loading (the extract call is running)', pair('Loading', () => describe({ text: DESCRIPTION, loading: true })), `<ul>
         <li>The box turns <code>readOnly</code> (not <code>disabled</code>, so screen readers can still read it). Continue is <code>disabled</code>.</li>
         <li>Under the box: "Binabasa ang description mo..." (ticket text) in a <code>role="status"</code> line, <code>rounded-xl border border-brand/20 bg-brand/5 text-brand font-semibold</code>, with a spinning lucide <code>Loader2</code>.</li>
         <li><b>Skip stays on.</b> The AI must never block onboarding. Skip aborts the request (<code>AbortController</code>) and goes to <code>name</code> with nothing filled.</li>
-        <li>After the call: go to <code>name</code> with the answers kept in <code>values</code>. A null field, a 429, a 503 or a network error all go on the same way, with that field empty (frame 7). There's no error screen.</li>
+        <li>After the call: go to <code>name</code> with the answers kept in <code>values</code>. A null field and every failed call (any non-OK status such as 400, 401, 429 or 503, a timeout, or a network error) go on the same way, with the field empty (frame 7). There's no error screen.</li>
       </ul>`],
 
       ['Screen 2 · Pre-filled type and category steps', '5. Type step with a suggestion', pair('Type suggested', () => typeStep({ selected: 'Sole Proprietorship', suggested: 'Sole Proprietorship', top: SUGGEST })), `<ul>
@@ -409,15 +408,15 @@
         mobile('Category is null', () => categoryStep({ top: quiet(false) })),
       ], `<ul>
         <li>One quiet line in place of the hint: lucide <code>Info</code>, "We couldn't tell from your description. Please choose below." in <code>text-sm text-muted-foreground</code>. Not an <code>Alert</code>: nothing went wrong for the user.</li>
-        <li>The same line shows for a null field, a 429, a 503 or a network error. If both fields are empty, it shows on both steps.</li>
+        <li>The same line shows for a null field and for every failed call. If both fields are empty, it shows on both steps.</li>
         <li>On the type step only, a link under it: "Not sure? Answer one question" (lucide <code>CircleHelp</code>, <code>min-h-11 text-brand font-semibold</code>). It selects the "Not sure" card, which opens the helper (frame 8) and moves focus to the question (US-012-FE-02).</li>
         <li>When the user skipped the describe step, neither line shows. The steps look as they do today.</li>
       </ul>`],
 
       ['Screen 3 · "Not sure" helper on the type step', '8. "Not sure" picked', pair('Question', () => typeStep({ selected: 'unsure', helper: 'ask' })), `<ul>
         <li>"Not sure" is a 5th <code>ChoiceCard</code> in the same <code>RadioGroup</code> (lucide <code>CircleHelp</code>, "Answer one question and we'll help you pick."). It spans both columns on desktop (<code>sm:col-span-2</code>) and has a <code>border-dashed</code> look until picked, so it reads as different from the 4 real types.</li>
-        <li>Its value (e.g. <code>"unsure"</code>) is never saved. It stays in local state, not in <code>values.businessType</code>.</li>
-        <li>Picking it opens the helper under the cards: <code>section</code> with <code>rounded-2xl border border-cream-deep bg-cream p-4 sm:px-6 sm:py-5</code>. Focus moves to the question.</li>
+        <li>It's never saved. Picking it sets a local <code>unsure</code> flag and clears <code>values.businessType</code> to <code>''</code>, so the existing <code>validateStep('businessType')</code> blocks Next with no new check (frame 11). Picking a real type, or Yes, sets the type and clears the flag. Leaving the step resets the flag, so coming back shows the saved type, or nothing.</li>
+        <li>Picking it opens the helper under the cards: <code>section</code> with <code>rounded-2xl border border-cream-deep bg-cream p-4 sm:px-6 sm:py-5</code>. Focus moves to the question, which gets <code>tabIndex={-1}</code> so it can take focus.</li>
         <li>Question: "Ikaw lang ba ang may-ari?" (<code>text-[17px] font-bold</code>) and "Are you the only owner?" under it in <code>text-sm text-muted-foreground</code>.</li>
         <li>Yes / No: a second small <code>RadioGroup</code>, two <code>h-12 rounded-xl border-2</code> buttons. Picked = <code>bg-brand text-white</code> with a <code>Check</code>.</li>
         <li>The panel stays open once opened, even after Yes moves the selection to Sole Proprietorship. It closes when the user leaves the step.</li>
@@ -425,7 +424,7 @@
       [null, '9. Answer: Yes', [mobile('Yes', () => typeStep({ selected: 'Sole Proprietorship', helper: 'yes' }))], `<ul>
         <li>Yes selects Sole Proprietorship in the list above (US-012-FE-02). The answer box (<code>rounded-xl bg-white p-4</code>, <code>role="status"</code>) says why: title with <code>CircleCheck</code>, the reason, then "We picked it for you above. You can still choose another type."</li>
         <li>Under a divider: "<b>Also for one owner:</b>" and the One Person Corporation line, so the user knows the other one-owner option.</li>
-        <li><b>Draft text.</b> The facts come from <code>docs/research/registration-workflow.md</code> rows 1A and 1B. Replace them with AB#121's <code>docs/qa/business-type-helper.md</code>. Keep both agencies spelled out the first time.</li>
+        <li><b>Draft text.</b> Agencies (DTI for Sole Proprietorship, SEC for the rest) come from <code>docs/research/registration-workflow.md</code> rows 1A and 1B. The OPC liability line follows AB#121's acceptance criteria and the live type descriptions. Nothing here is checked against a DTI or SEC page yet. Replace them with AB#121's <code>docs/qa/business-type-helper.md</code>. Keep both agencies spelled out the first time.</li>
       </ul>`],
       [null, '10. Answer: No', pair('No', () => typeStep({ selected: 'unsure', helper: 'no' })), `<ul>
         <li>No shows Partnership and Corporation side by side (<code>grid grid-cols-2 gap-3</code>, also at 360 px), each with its icon from the cards above and one or two plain sentences. Both are SEC types. At 360 px the icon sits above the name (<code>flex-col sm:flex-row</code>), so "Partnership" doesn't break mid-word.</li>
