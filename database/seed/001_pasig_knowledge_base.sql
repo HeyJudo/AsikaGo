@@ -27,7 +27,7 @@ Fill in your company details, capital, and officers.
 Download the forms, sign them, and upload them.
 Pay the fee online.
 Download your certificate.', NULL),
-  ('44444444-4444-4444-4444-000000000002', 'Barangay Business Clearance', 'Barangay hall of your business address', 'This shows your barangay has no objection to your business. Your city needs it before giving you a permit. Confirm the exact list at your barangay hall.', 'Prepare copies of your DTI or SEC papers, lease contract, and insurance.
+  ('44444444-4444-4444-4444-000000000002', 'Barangay Business Clearance', 'Barangay hall of your business address', 'This shows your barangay has no objection to your business. Your city needs it before giving you a permit.', 'Prepare copies of your DTI or SEC papers, lease contract, and insurance.
 Go to your barangay hall and submit them.
 Pay the fees at the cashier.
 Get your clearance and business plate.', NULL),
