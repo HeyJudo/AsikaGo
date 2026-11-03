@@ -119,17 +119,17 @@ export function DocumentsPage() {
           <p className="text-muted-foreground mt-2 text-base md:text-lg">Tick each one when you have it ready.</p>
         </div>
 
-        <section
-          className="rounded-xl border bg-white p-4 shadow-xs md:px-6 md:py-5"
-          role="progressbar"
-          aria-label="Documents ready"
-          aria-valuemin={0}
-          aria-valuemax={total}
-          aria-valuenow={prepared}
-          aria-valuetext={`${prepared} of ${total} documents ready`}
-        >
+        <section className="rounded-xl border bg-white p-4 shadow-xs md:px-6 md:py-5">
           <b className="text-navy mb-2.5 block font-bold">{prepared} of {total} ready</b>
-          <div className="bg-cream-deep h-3 overflow-hidden rounded-full">
+          <div
+            className="bg-cream-deep h-3 overflow-hidden rounded-full"
+            role="progressbar"
+            aria-label="Documents ready"
+            aria-valuemin={0}
+            aria-valuemax={total}
+            aria-valuenow={prepared}
+            aria-valuetext={`${prepared} of ${total} documents ready`}
+          >
             <div
               className="bg-gold h-full rounded-full transition-[width]"
               style={{ width: `${(prepared / total) * 100}%` }}

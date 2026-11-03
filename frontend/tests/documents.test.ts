@@ -80,6 +80,8 @@ test('documents are grouped by step with counts, checkboxes, and step links', ()
   assert.match(html, /All documents to bring/)
   assert.match(html, /Tick each one when you have it ready\./)
   assert.match(html, /role="progressbar" aria-label="Documents ready" aria-valuemin="0" aria-valuemax="4" aria-valuenow="2" aria-valuetext="2 of 4 documents ready"/)
+  // A progressbar's children are presentational, so it must hold only the fill or screen readers drop the note.
+  assert.match(html, /role="progressbar"[^>]*><div[^>]*><\/div><\/div>/)
   assert.match(html, /2 of 4 ready/)
   assert.match(html, /Step 1<\/span>[\s\S]*DTI Business Name Registration[\s\S]*Step 2<\/span>[\s\S]*Barangay Business Clearance/)
   assert.equal((html.match(/>Done</g) ?? []).length, 1)
