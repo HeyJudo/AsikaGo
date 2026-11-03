@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation, useNavigate } from 'react-router'
+import { Link, Outlet, ScrollRestoration, useLocation, useNavigate } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { motion } from 'motion/react'
 import { ArrowUpRight, ChevronDown, LogOut, MapIcon, Store, UserRound } from 'lucide-react'
@@ -96,12 +96,12 @@ function SiteHeader() {
           </DropdownMenu>
         ) : (
           <nav className="flex items-center gap-6">
-            <a href="/#how-it-works" className={NAV_LINK}>
+            <Link to="/#how-it-works" className={NAV_LINK}>
               How it Works
-            </a>
-            <a href="/#faq" className={NAV_LINK}>
+            </Link>
+            <Link to="/#faq" className={NAV_LINK}>
               FAQ
-            </a>
+            </Link>
             <Link
               to="/sign-in"
               className={NAV_LINK}
@@ -138,6 +138,7 @@ export function AppLayout() {
       >
         <Outlet />
       </motion.main>
+      <ScrollRestoration />
     </>
   )
 }
