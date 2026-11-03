@@ -127,6 +127,7 @@
     .empty h3 { font-size: 16px; font-weight: 700; line-height: 1.35; }
     .empty p { margin-top: 6px; font-size: 13.5px; color: var(--muted-foreground); line-height: 1.5; }
     .try { align-self: stretch; margin-top: 14px; text-align: left; }
+    .try-list { list-style: none; }
     .try > p { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--brand); margin-bottom: 8px; }
     .chip-q { width: 100%; min-height: 44px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--cream-deep); border-radius: 14px; background: #fff; padding: 6px 12px; margin-top: 6px; font-size: 14px; font-weight: 500; text-align: left; cursor: pointer; }
     .chip-q:hover { border-color: rgba(35,64,213,.5); }
@@ -163,9 +164,9 @@
     .composer .row { display: flex; align-items: flex-end; gap: 8px; }
     .composer textarea { flex: 1; min-width: 0; height: 48px; max-height: 120px; resize: none; border: 2px solid var(--cream-deep); border-radius: 16px; background: var(--cream); padding: 10px 12px; font-size: 16px; line-height: 1.5; outline: none; }
     .composer textarea:focus-visible { border-color: var(--navy); background: #fff; box-shadow: 0 0 0 4px rgba(241,177,50,.45); }
-    .composer textarea:disabled { opacity: .6; }
+    .composer textarea[aria-disabled="true"] { opacity: .6; }
     .send { width: 48px; height: 48px; flex-shrink: 0; border: 0; border-radius: 999px; background: var(--navy); color: #fff; display: grid; place-items: center; cursor: pointer; }
-    .send:disabled { opacity: .4; cursor: not-allowed; }
+    .send[aria-disabled="true"] { opacity: .4; cursor: not-allowed; }
     .send:focus-visible { outline-color: var(--navy); }
     .composer .meta { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 11.5px; color: var(--muted-foreground); }
     .composer .meta span:last-child { font-variant-numeric: tabular-nums; flex-shrink: 0; }
@@ -220,7 +221,7 @@
       { name: 'BPLD, Mutya ng Pasig Mega Market', access: 'InPerson', address: '3rd Floor, Mutya ng Pasig Mega Market', website: null, hours: 'Mon-Thu, 7:00 AM-6:00 PM', phone: '(02) 8643-1111 local 1221', email: 'bpld.mutya@pasigcity.gov.ph', mapsUrl: 'https://maps.app.goo.gl/xJUi4c3uaC3KBZw3A', isVerified: true },
     ]
     const OFFICES_STEP1 = [
-      { name: 'Department of Trade and Industry (DTI), Business Name Registration System', access: 'Online', address: null, website: 'https://bnrs.dti.gov.ph/registration/create', hours: null, phone: '1-DTI (384)', email: 'bnrshelpdesk@dtiphmail.dti.gov.ph', mapsUrl: null, isVerified: true },
+      { name: 'Department of Trade and Industry (DTI), Business Name Registration System', access: 'Online', address: null, website: 'https://bnrs.dti.gov.ph/registration/create', hours: null, phone: '1-384; (02) 7751-0384', email: 'bnrshelpdesk@dtiphmail.dti.gov.ph', mapsUrl: null, isVerified: true },
     ]
     const OFFICES_STEP2 = [
       { name: 'Barangay hall', access: 'InPerson', address: 'The barangay where the business is located', website: null, hours: 'Monday to Thursday, 7:00 AM to 6:00 PM (closed Fridays, weekends, and holidays)', phone: null, email: null, mapsUrl: null, isVerified: false },
@@ -251,7 +252,6 @@
       warn: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
       building: '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>',
       listChecks: '<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
-      store: '<path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/>',
       pen: '<path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>',
     }
     const icon = (name, cls = 'i') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`
@@ -303,24 +303,23 @@
         <p>Type in English, Tagalog, or Taglish.</p>
         <div class="try">
           <p id="try-label">Try asking</p>
-          <div role="list" aria-labelledby="try-label">
-            ${EXAMPLES[from].map((q) => `<button class="chip-q" type="button" role="listitem">${icon('msg')}<span>${q}</span>${icon('chev', 'i go')}</button>`).join('')}
-          </div>
+          <ul class="try-list" aria-labelledby="try-label">
+            ${EXAMPLES[from].map((q) => `<li><button class="chip-q" type="button">${icon('msg')}<span>${q}</span>${icon('chev', 'i go')}</button></li>`).join('')}
+          </ul>
         </div>
       </div>`
     const me = (text) => `<div class="msg me"><div class="bubble">${text}</div></div>`
     const bot = (html, after = '') => `<div class="msg bot"><span class="who">${icon('sparkles')}</span><div class="col"><div class="bubble">${html}</div>${after}</div></div>`
     const sys = (ic, title, body, retry) => `
-      <div class="sys" role="status"><span class="dot">${icon(ic)}</span><div><b>${title}</b><p>${body}</p>
+      <div class="sys"><span class="dot">${icon(ic)}</span><div><b>${title}</b><p>${body}</p>
         ${retry ? `<button class="btn-retry" type="button">${icon('rotate')}Try again</button>` : ''}</div></div>`
 
-    const ANSWER_PERMIT = '<p>Sa BPLD (Business Permits and Licensing Department) ka mag-a-apply. Step 5 yan sa roadmap mo.</p><p>May 4 na branch: Annex 1 sa Ayala Malls The 30th, Annex 2 sa Robinsons Metro East, Bridgetowne, at Mutya ng Pasig Mega Market. Bukas ang Annex 1 at 2 Mon-Fri, 8:00 AM-6:00 PM.</p>'
     const STREAMING = '<p>Sa BPLD (Business Permits and Licensing Department) ka mag-a-apply. Step 5 yan sa roadmap mo.</p><p>May 4 na branch: Annex 1 sa Ayala Malls The 30th, Annex 2 sa Robinsons<span class="caret" aria-hidden="true"></span></p>'
 
-    function sheet({ from = 'roadmap', step = null, guest = false, body = null, streaming = false, draft = '' } = {}) {
+    function sheet({ from = 'roadmap', step = null, guest = false, body = null, streaming = false, draft = '', announce = '' } = {}, modal = true) {
       return `
-        <div class="backdrop" aria-hidden="true"></div>
-        <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="chat-title" aria-describedby="chat-desc">
+        ${modal ? '<div class="backdrop" aria-hidden="true"></div>' : ''}
+        <section class="sheet" role="dialog" aria-modal="${modal}" aria-labelledby="chat-title" aria-describedby="chat-desc">
           <div class="grabber" aria-hidden="true"></div>
           <div class="sh-head">
             <span class="tile">${icon('sparkles')}</span>
@@ -329,12 +328,13 @@
           </div>
           ${guest ? `<div class="guest-strip"><span>Save your roadmap so you don't lose it.</span><a class="btn-google" href="#">${GOOGLE_G}Save with Google</a></div>` : ''}
           ${step ? `<p class="ctx">${icon('mapPin')}Asking about <b>Step ${step}</b></p>` : ''}
-          <div class="msgs" aria-live="polite" aria-busy="${streaming}">${body ?? emptyState(from)}</div>
+          <div class="msgs">${body ?? emptyState(from)}</div>
+          <p class="sr-only" role="status">${announce}</p>
           <form class="composer" onsubmit="return false">
             <div class="row">
               <label class="sr-only" for="ask">Your question</label>
-              <textarea id="ask" rows="1" maxlength="1000" placeholder="${streaming ? 'Wait for the answer to finish…' : 'Type your question…'}" aria-describedby="ask-count"${streaming ? ' disabled' : ''}>${draft}</textarea>
-              <button class="send" type="submit" aria-label="Send question"${streaming || !draft ? ' disabled' : ''}>${icon('arrowUp')}</button>
+              <textarea id="ask" rows="1" maxlength="1000" placeholder="${streaming ? 'Wait for the answer to finish…' : 'Type your question…'}" aria-describedby="ask-count"${streaming ? ' readonly aria-disabled="true"' : ''}>${draft}</textarea>
+              <button class="send" type="submit" aria-label="Send question"${streaming || !draft.trim() ? ' aria-disabled="true"' : ''}>${icon('arrowUp')}</button>
             </div>
             <div class="meta"><span>Check with the office if you're unsure.</span><span id="ask-count">${draft.length} / 1000</span></div>
           </form>
@@ -347,22 +347,25 @@
       return `
         ${header(guest)}
         <div class="page${desktopOpen ? ' shifted' : ''}"><div class="container">${PAGES[page](guest)}</div></div>
-        ${open ? (mobile ? sheet(open) : sheet(open).replace('<div class="backdrop" aria-hidden="true"></div>', '').replace('aria-modal="true"', 'aria-modal="false"')) : fab}`
+        ${open ? sheet(open, mobile) : fab}`
     }
 
     // ─── Office cards ───────────────────────────────────────────────────────
-    const digits = (phone) => phone.replace(/local/i, ',').replace(/[^\d+,]/g, '')
+    // One tel: link per number. "(02) 8643-1111 local 1158" dials the trunk line, waits, then the local: tel:0286431111,1158.
+    const telHref = (n) => { const [main, local] = n.split(/local/i); return 'tel:' + main.replace(/[^\d+]/g, '') + (local ? ',' + local.replace(/\D/g, '') : '') }
+    const newTab = (cls, href, label, lead = '') => `<a class="btn-map${cls}" href="${href}" target="_blank" rel="noopener noreferrer">${lead}${label}${icon('external')}<span class="sr-only"> (opens in a new tab)</span></a>`
     function officeCard(o) {
       const online = o.access === 'Online'
       const rows = [
-        !online && o.address && `<li>${icon('mapPin')}<span>${o.address}</span></li>`,
+        o.address && `<li>${icon('mapPin')}<span>${o.address}</span></li>`,
         o.hours && `<li>${icon('clock')}<span>${o.hours}</span></li>`,
-        o.phone && `<li><a href="tel:${digits(o.phone)}">${icon('phone')}${o.phone}</a></li>`,
+        ...(o.phone ? o.phone.split(';').map((n) => `<li><a href="${telHref(n.trim())}">${icon('phone')}${n.trim()}</a></li>`) : []),
         o.email && `<li><a href="mailto:${o.email}">${icon('mail')}<span>${o.email.replace('@', '@<wbr>')}</span></a></li>`,
       ].filter(Boolean).join('')
-      const action = online
-        ? (o.website ? `<a class="btn-map solid" href="${o.website}" target="_blank" rel="noopener noreferrer">Go to the website${icon('external')}<span class="sr-only"> (opens in a new tab)</span></a>` : '')
-        : (o.mapsUrl ? `<a class="btn-map" href="${o.mapsUrl}" target="_blank" rel="noopener noreferrer">${icon('mapPin')}Open in Google Maps${icon('external')}<span class="sr-only"> (opens in a new tab)</span></a>` : '')
+      const action = [
+        o.website && newTab(online ? ' solid' : '', o.website, 'Go to the website'),
+        o.mapsUrl && newTab('', o.mapsUrl, 'Open in Google Maps', icon('mapPin')),
+      ].filter(Boolean).join('')
       return `
         <li class="office">
           <div class="o-top">
@@ -425,7 +428,7 @@
         <li>Header: gold <code>size-10 rounded-xl</code> tile with <code>Sparkles</code>, title "Ask about your roadmap" (the dialog's <code>aria-labelledby</code>), line "Answers come only from your roadmap." (<code>aria-describedby</code>), and a 44 px close button (<code>X</code>, <code>aria-label="Close chat"</code>).</li>
         <li>Empty state: big gold tile, "Ask me about your steps, documents, and offices." and "Type in English, Tagalog, or Taglish." The header line already says answers come only from the roadmap. Then "Try asking" and 3 example questions as full-width buttons (<code>min-h-11 rounded-xl border bg-white</code>). Tapping one sends it right away.</li>
         <li>Examples from the roadmap and My Business: "Ano pa ang kulang ko?", "Which step needs a barangay clearance?", "Saan ako kukuha ng business permit?". All three can be answered from the user's rows (D22).</li>
-        <li>Composer: <code>&lt;textarea rows={1} maxLength={1000}&gt;</code>, placeholder "Type your question…" (the empty state already says which languages work), <code>h-12 max-h-30 rounded-2xl border-2 border-cream-deep bg-cream text-base</code> (16 px, so iOS doesn't zoom). On focus: navy border, white fill, gold ring, the same as the describe screen. Enter sends, Shift+Enter adds a line. Send is a 48 px navy circle with <code>ArrowUp</code>, disabled while the box is empty. Under it: "Check with the office if you're unsure." and the "0 / 1000" counter (linked with <code>aria-describedby</code>, not live).</li>
+        <li>Composer: <code>&lt;textarea rows={1} maxLength={1000}&gt;</code>, placeholder "Type your question…" (the empty state already says which languages work), <code>h-12 max-h-30 rounded-2xl border-2 border-cream-deep bg-cream text-base</code> (16 px, so iOS doesn't zoom). On focus: navy border, white fill, gold ring, the same as the describe screen. Enter sends, Shift+Enter adds a line. Send is a 48 px navy circle with <code>ArrowUp</code>, off while the <b>trimmed</b> box is empty, so a question of only spaces is never sent. Under it: "Check with the office if you're unsure." and the "0 / 1000" counter (linked with <code>aria-describedby</code>, not live).</li>
         <li>Keyboard: focus goes to the box on open. Esc closes on both sizes, and focus returns to the "Ask a question" button (US-013-FE-01). The mobile sheet traps focus (Radix). The desktop panel doesn't, since the page beside it stays usable.</li>
         <li>Closing or refreshing clears the conversation (D22). There's no "new chat" button, since closing is the same thing.</li>
       </ul>`],
@@ -433,11 +436,11 @@
         <li>On a step page, a chip under the header says "Asking about <b>Step 5</b>" (<code>rounded-full bg-brand/8 text-brand text-[12.5px]</code>), so the user knows "here" means this step. It matches the <code>stepNumber</code> the request sends.</li>
         <li>The examples are about this step: "Ano ang dadalhin ko dito?", "Which BPLD office is open on Friday?", "What is the phone number of BPLD Annex 1?". Step 5's rows answer all three.</li>
       </ul>`],
-      [null, '5. An answer streaming in', pairVp('Streaming', { page: 'roadmap', open: { from: 'roadmap', streaming: true, body: me('Saan ako kukuha ng business permit?') + bot(STREAMING, '<span class="typing" aria-hidden="true"><i></i><i></i><i></i>Answering…</span>') } }), `<ul>
+      [null, '5. An answer streaming in', pairVp('Streaming', { page: 'roadmap', open: { from: 'roadmap', streaming: true, announce: 'Answering…', body: me('Saan ako kukuha ng business permit?') + bot(STREAMING, '<span class="typing" aria-hidden="true"><i></i><i></i><i></i>Answering…</span>') } }), `<ul>
         <li>User bubble: right, <code>max-w-[85%] rounded-2xl rounded-br-md bg-navy text-white</code>. Assistant: left, a 28 px gold avatar with <code>Sparkles</code>, then <code>rounded-2xl rounded-bl-md border border-cream-deep bg-white</code>. Messages sit on <code>bg-cream</code>.</li>
         <li>Text is appended per <code>delta</code> event and ends with a blinking gold caret. Under the bubble, three hopping gold dots and "Answering…". Both stop under <code>motion-reduce</code>.</li>
-        <li>While streaming, the box is <code>disabled</code> with the placeholder "Wait for the answer to finish…", and Send is disabled (US-013-FE-01).</li>
-        <li>Screen readers: the message list is <code>aria-live="polite"</code> and <code>aria-busy="true"</code> while streaming, so the answer is read once it's complete instead of word by word.</li>
+        <li>While streaming, the box and Send are off (US-013-FE-01), but use <code>readOnly</code> + <code>aria-disabled="true"</code>, not <code>disabled</code>, so focus stays in the box. When <code>done</code> arrives the user can type the next question without hunting for the box. The placeholder reads "Wait for the answer to finish…".</li>
+        <li>Screen readers: the message list is <b>not</b> a live region, so the answer isn't read word by word. One hidden <code>&lt;p className="sr-only" role="status"&gt;</code> per sheet says "Answering…" when the stream starts, then the whole answer when <code>done</code> arrives. On <code>error</code>, 429 or 503 it says the card's title and line. The cards themselves have no <code>role</code>, so nothing is read twice.</li>
         <li>The list scrolls to the newest message as text arrives, unless the user has scrolled up to read.</li>
         <li>Answer text is rendered as plain text with line breaks (<code>whitespace-pre-line</code>), never as HTML, since it's model output.</li>
       </ul>`],
@@ -463,7 +466,7 @@
         <li>Both are friendly cards in the conversation, not red <code>Alert</code>s, and both say the roadmap still works (US-013-FE-01). The question stays in the list so the user sees what wasn't answered.</li>
         <li>429: <code>Clock</code>, "You've asked a lot of questions." and "Please wait a few minutes before asking again. Your roadmap and checklists still work." No retry button, since trying right away fails again. The box stays usable.</li>
         <li>503 (or a timeout before the first token): <code>CloudOff</code>, "The assistant is busy right now." and "Try again in a minute. Your roadmap and checklists still work." with "Try again", which resends the question.</li>
-        <li>400 can't happen from this screen (the box enforces 1 to 1000 characters, and the client sends at most 6 history messages, each cut to 2000). 401 goes through the app's normal sign-in redirect. 404 can't happen because the button is hidden without a profile. If one does, show the 503 card.</li>
+        <li>400 can't happen from this screen: Send needs a non-blank question of at most 1000 characters, and the client sends at most 6 history messages, each cut to 2000. 401 goes through the app's normal sign-in redirect. 404 has two causes: no profile (can't happen, since the button is hidden then) or a <code>stepNumber</code> no longer in the roadmap (an old tab after the user changed their answers). For 404 show a card with <code>RotateCw</code>: "Your roadmap changed." and "Refresh the page, then ask again."</li>
       </ul>`],
 
       ['Screen 3 · Office cards on step detail', '9. Several offices, in person (Step 5)', pair('Step 5', () => wherePage(5, 'Business Application Form and Documents', OFFICES_STEP5)), `<ul>
@@ -472,14 +475,14 @@
         <li>Card: <code>rounded-2xl border border-brand/15 bg-white p-3.5 shadow-sm</code>. A 44 px tile (<code>Building2</code> on brand for in person), the name, and an "In person" chip (<code>rounded-full bg-cream-deep text-xs font-bold</code>).</li>
         <li>Rows with <code>text-brand</code> icons: <code>MapPin</code> address, <code>Clock</code> hours, <code>Phone</code> as a <code>tel:</code> link, <code>Mail</code> as a <code>mailto:</code> link. Link rows are <code>min-h-11</code>, so they're easy to tap. Addresses wrap (<code>break-words</code>). Emails break only after the "@" (<code>@&lt;wbr&gt;</code>), so the domain stays on one line.</li>
         <li>"Open in Google Maps": <code>min-h-11 rounded-full border border-brand text-brand</code>, <code>target="_blank" rel="noopener noreferrer"</code>, with sr-only "(opens in a new tab)" (US-014-FE-01).</li>
-        <li><code>tel:</code> keeps the digits, and "local" becomes a pause (<code>tel:0286431111,1158</code>), so a phone dials the trunk line, then the local number. Krystelle stores the phone in that dialable form (US-014-BE-01).</li>
+        <li>Phone: the API sends the display form (<code>"(02) 8643-1111 local 1158"</code>, Section 4). Several numbers are separated by <code>"; "</code> and each gets its own row and <code>tel:</code> link. The link keeps the digits and turns "local" into a pause (<code>tel:0286431111,1158</code>), so a phone dials the trunk line, then the local number. For US-014-BE-01: seed hotlines by their digits (DTI's "1-DTI (384)" as "1-384"), and a row with two locals (Annex 1's "local 1158 / 1222") as two numbers.</li>
       </ul>`],
       [null, '10. Online office (Step 1) and an unverified office (Step 2)', [
         mobile('Online · Step 1', () => wherePage(1, 'DTI Business Name Registration', OFFICES_STEP1)),
         mobile('Unverified · Step 2', () => wherePage(2, 'Barangay Business Clearance', OFFICES_STEP2)),
       ], `<ul>
-        <li><b>Online</b>: gold tile with <code>Globe</code> and an "Online" chip. No address and no map. The main action is "Go to the website" (<code>bg-brand text-white</code>, new tab), in place of the address (US-014-FE-01). Phone and email still show.</li>
-        <li>For online-only offices the research says "Online" in the hours column. Seed <code>hours</code> as null for those (US-014-BE-01), so the card hides it with no special case.</li>
+        <li><b>Online</b>: gold tile with <code>Globe</code> and an "Online" chip. Online offices have no address or map in the data, so the main action is "Go to the website" (<code>bg-brand text-white</code>, new tab), in place of the address (US-014-FE-01). DTI has two hotlines, so two phone rows. Email still shows.</li>
+        <li>Every field that's present shows, whatever <code>access</code> says. <code>access</code> only picks the tile, the chip, and whether "Go to the website" is the filled button. For US-014-BE-01: where the research's hours cell is just "Online" (DTI, SEC, CPDO), seed <code>hours</code> as null. BFP keeps its "Mon-Fri, 8:00 AM-5:00 PM". Seed BIR's mixed row (10A / 10B) as two offices: Online (ORUS, "24/7") and In person (RDO 043 with its address, hours and map).</li>
         <li><b>Unverified</b> (<code>isVerified: false</code>): a gold note under the name, <code>TriangleAlert</code> and "Confirm before you go." (D23, <code>role="note"</code>).</li>
         <li>Missing fields are hidden, never "N/A" (US-014-FE-01). The barangay hall has no phone, email or map link, so only the address and hours show.</li>
       </ul>`],
