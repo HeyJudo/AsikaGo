@@ -405,8 +405,13 @@
     }
 
     // ─── Frames ─────────────────────────────────────────────────────────────
+    // Every frame sits in one page, so prefix its ids, radio names and id references with the frame number.
+    let frameNo = 0
+    const scope = (html, p = `f${++frameNo}-`) => html
+      .replace(/\b(id|for|name)="([^"]+)"/g, (_, a, v) => `${a}="${p}${v}"`)
+      .replace(/\b(aria-describedby|aria-labelledby)="([^"]+)"/g, (_, a, v) => `${a}="${v.split(' ').map((t) => p + t).join(' ')}"`)
     const frame = (label, size, body) => `
-      <div><p class="frame-label">${label}</p><div class="frame-${size} is-${size}">${body}</div></div>`
+      <div><p class="frame-label">${label}</p><div class="frame-${size} is-${size}">${scope(body)}</div></div>`
     const pair = (name, render) => [[`${name} · Mobile 360`, 'mobile', render], [`${name} · Desktop 1280`, 'desktop', render]]
     const mobile = (name, render) => [`${name} · Mobile 360`, 'mobile', render]
 
