@@ -1,6 +1,6 @@
 import { useId } from 'react'
 import { Link } from 'react-router'
-import { AlertCircle, ArrowLeft, ArrowRight, Check, Tag } from 'lucide-react'
+import { AlertCircle, ArrowLeft, ArrowRight, Check, Tag, TriangleAlert } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Centered, FullPageError, FullPageLoader } from '@/components/PageStates'
@@ -135,7 +135,10 @@ export function DocumentsPage() {
               style={{ width: `${(prepared / total) * 100}%` }}
             />
           </div>
-          <p className="text-muted-foreground mt-2 text-sm">Some items may not apply to you.</p>
+          <p className="text-navy mt-2.5 flex items-center gap-1.5 text-sm font-semibold">
+            <TriangleAlert className="size-4 shrink-0 text-amber-600" aria-hidden="true" />
+            Some items may not apply to you.
+          </p>
         </section>
 
         {docs.steps.map((step) => {
@@ -148,7 +151,7 @@ export function DocumentsPage() {
                   <span className="bg-gold text-navy inline-block rounded-full px-2.5 py-0.5 text-xs font-bold">
                     Step {num}
                   </span>
-                  <h2 className="text-navy my-1.5 text-lg font-bold leading-snug break-words">{step.name}</h2>
+                  <h2 className="text-navy mt-3 mb-1.5 text-lg font-bold leading-snug break-words">{step.name}</h2>
                   {step.status === 'Completed' && (
                     <span className="bg-gold text-navy inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold">
                       <Check className="size-3" strokeWidth={3} aria-hidden="true" />
@@ -157,7 +160,7 @@ export function DocumentsPage() {
                   )}
                   {step.status === 'InProgress' && (
                     <span className="bg-brand/10 text-brand inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold">
-                      <span className="border-brand size-2 rounded-full border-2 border-r-transparent" aria-hidden="true" />
+                      <span className="border-brand/25 border-t-brand border-r-brand size-3 rotate-45 rounded-full border-2" aria-hidden="true" />
                       In progress
                     </span>
                   )}
@@ -173,7 +176,7 @@ export function DocumentsPage() {
               </ul>
               <Link
                 to={`/roadmap/steps/${num}`}
-                className="text-brand mt-1 inline-flex min-h-11 items-center gap-1.5 font-semibold hover:underline"
+                className="bg-brand hover:bg-brand-dark focus-visible:ring-brand mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-full px-5 font-semibold text-white shadow-sm transition-[transform,background-color,box-shadow] duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none active:translate-y-0 active:scale-95 motion-reduce:transition-none"
               >
                 Open step {num}
                 <ArrowRight className="size-4" aria-hidden="true" />
