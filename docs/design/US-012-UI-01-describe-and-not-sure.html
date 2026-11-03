@@ -83,25 +83,46 @@
     .is-desktop .rp-label { display: block; }
 
     /* Text box (native textarea styled like ui/input.tsx, h-12 rounded-xl bg-white text-base in the live name step) */
-    .field-label { display: block; margin-top: 24px; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
-    textarea.box { display: block; width: 100%; min-height: 152px; resize: vertical; border: 1px solid var(--border); border-radius: 14px; background: #fff; padding: 12px 14px; font-size: 16px; line-height: 1.5; outline: none; }
+    /* New: describe header (gold tile + Optional badge) and "a good description says" chips */
+    .lead { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .lead-tile { width: 48px; height: 48px; border-radius: 16px; background: var(--gold); color: var(--navy); display: grid; place-items: center; box-shadow: 0 6px 16px rgba(241,177,50,.4); }
+    .lead-tile svg.i { width: 24px; height: 24px; }
+    .badge { border-radius: 999px; background: var(--cream-deep); font-size: 12px; font-weight: 600; padding: 4px 12px; }
+    .tips-label { margin-top: 20px; font-size: 13px; font-weight: 600; color: var(--muted-foreground); }
+    .tips { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .tips span { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; background: var(--cream); border: 1px solid var(--cream-deep); padding: 5px 10px; font-size: 12px; font-weight: 600; }
+    .tips svg.i { width: 14px; height: 14px; color: var(--brand); }
+
+    /* Text box (native textarea; Input look, with a cream fill and a navy + gold focus) */
+    .field-label { display: block; margin-top: 20px; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
+    textarea.box { display: block; width: 100%; min-height: 152px; resize: vertical; border: 2px solid var(--cream-deep); border-radius: 16px; background: var(--cream); padding: 12px 14px; font-size: 16px; line-height: 1.5; outline: none; transition: border-color .15s, box-shadow .15s, background-color .15s; }
     textarea.box::placeholder { color: var(--muted-foreground); }
-    textarea.box:focus-visible { border-color: #a1a1a1; box-shadow: 0 0 0 3px rgba(161,161,161,.5); outline: none; }
-    textarea.box[aria-invalid="true"] { border-color: var(--destructive); box-shadow: 0 0 0 3px rgba(231,0,11,.2); }
-    textarea.box[readonly] { background: rgba(229,229,229,.5); color: var(--muted-foreground); }
-    .box-meta { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; font-size: 12px; color: var(--muted-foreground); line-height: 1.5; }
-    .box-meta .private { display: flex; gap: 6px; align-items: flex-start; }
-    .box-meta .private svg.i { width: 14px; height: 14px; margin-top: 2px; }
-    .box-meta .count { flex-shrink: 0; font-variant-numeric: tabular-nums; }
-    .box-meta .count.full { color: var(--navy); font-weight: 600; }
+    textarea.box:focus-visible { border-color: var(--navy); background: #fff; box-shadow: 0 0 0 4px rgba(241,177,50,.45); outline: none; }
+    textarea.box[aria-invalid="true"] { border-color: var(--destructive); background: #fff; box-shadow: 0 0 0 4px rgba(231,0,11,.12); }
+    textarea.box[readonly] { color: var(--muted-foreground); opacity: .75; }
+    .meter { margin-top: 8px; height: 4px; border-radius: 999px; background: var(--cream-deep); overflow: hidden; }
+    .meter span { display: block; height: 100%; border-radius: 999px; background: var(--gold); }
+    .box-meta { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-top: 8px; font-size: 12px; color: var(--muted-foreground); line-height: 1.5; }
+    .box-meta .private { display: flex; gap: 6px; align-items: flex-start; border-radius: 10px; background: rgba(35,64,213,.06); color: var(--navy); padding: 4px 10px; }
+    .box-meta .private svg.i { width: 14px; height: 14px; margin-top: 2px; color: var(--brand); }
+    .box-meta .count { flex-shrink: 0; padding-top: 4px; font-variant-numeric: tabular-nums; }
+    .box-meta .count.full { color: var(--navy); font-weight: 700; }
 
-    .field-error { margin-top: 12px; display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--destructive); }
-    .field-error svg.i { width: 14px; height: 14px; }
+    /* Field error: soft red box with an icon dot (proposed for the shared FieldError) */
+    .field-error { margin-top: 12px; display: flex; align-items: center; gap: 10px; border-radius: 12px; background: rgba(231,0,11,.06); border: 1px solid rgba(231,0,11,.25); padding: 8px 12px; font-size: 14px; font-weight: 500; color: #b40009; line-height: 1.45; }
+    .field-error .dot { width: 24px; height: 24px; flex-shrink: 0; border-radius: 999px; background: var(--destructive); color: #fff; display: grid; place-items: center; }
+    .field-error .dot svg.i { width: 14px; height: 14px; stroke-width: 2.5; }
 
-    /* Loading line under the box */
-    .reading { margin-top: 16px; display: flex; align-items: center; gap: 10px; border-radius: 14px; background: rgba(35,64,213,.05); border: 1px solid rgba(35,64,213,.2); padding: 12px 14px; font-size: 14px; font-weight: 600; color: var(--brand); }
-    .reading svg.i { width: 18px; height: 18px; animation: spin 1s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    /* Loading card under the box */
+    .reading { position: relative; overflow: hidden; margin-top: 16px; display: flex; align-items: center; gap: 12px; border-radius: 16px; background: var(--cream); border: 1px solid var(--cream-deep); padding: 12px 14px 15px; }
+    .reading .rt { width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; background: var(--gold); color: var(--navy); display: grid; place-items: center; animation: pulse 1.6s ease-in-out infinite; }
+    .reading .rt svg.i { width: 20px; height: 20px; }
+    .reading b { display: block; font-size: 14px; font-weight: 700; }
+    .reading small { display: block; font-size: 13px; color: var(--muted-foreground); }
+    .reading::after { content: ''; position: absolute; left: 0; bottom: 0; height: 3px; width: 40%; border-radius: 999px; background: var(--gold); animation: sweep 1.4s ease-in-out infinite; }
+    @keyframes pulse { 50% { transform: scale(1.08); } }
+    @keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(260%); } }
+    @media (prefers-reduced-motion: reduce) { .reading .rt, .reading::after { animation: none; } }
 
     /* Actions (Actions + BUTTON_PRIMARY in AssessmentPage.tsx) */
     .actions { margin-top: 32px; display: flex; flex-direction: column-reverse; gap: 12px; }
@@ -110,6 +131,7 @@
     .btn { height: 48px; flex: none; border-radius: 14px; border: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; cursor: pointer; padding: 0 16px; }
     .btn svg.i { width: 16px; height: 16px; }
     .btn-primary { background: var(--navy); color: #fff; font-weight: 700; }
+    .btn-primary:focus-visible { outline-color: var(--navy); }
     .btn-secondary { background: var(--secondary); color: #262626; font-weight: 500; }
     .btn[disabled] { opacity: .5; cursor: not-allowed; }
 
@@ -131,12 +153,16 @@
     .choice.unsure.on { border-style: solid; }
 
     /* New: "Suggested" tag and hint line */
-    .tag { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; border-radius: 999px; background: rgba(241,177,50,.25); color: var(--navy); font-size: 12px; font-weight: 700; padding: 2px 10px; }
+    .tag { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; border-radius: 999px; background: var(--gold); color: var(--navy); font-size: 12px; font-weight: 700; padding: 2px 10px; }
     .tag svg.i { width: 12px; height: 12px; }
-    .hint { margin-top: 16px; display: flex; align-items: flex-start; gap: 8px; border-radius: 14px; background: rgba(241,177,50,.15); padding: 10px 12px; font-size: 14px; line-height: 1.5; }
-    .hint svg.i { width: 18px; height: 18px; margin-top: 2px; color: var(--brand); }
-    .quiet { margin-top: 16px; display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 1.5; color: var(--muted-foreground); }
-    .quiet svg.i { width: 16px; height: 16px; margin-top: 3px; }
+    .hint { margin-top: 16px; display: flex; align-items: center; gap: 10px; border-radius: 14px; background: rgba(241,177,50,.2); border: 2px solid var(--gold); padding: 10px 12px; font-size: 14px; line-height: 1.45; }
+    .hint .ht { width: 32px; height: 32px; flex-shrink: 0; border-radius: 10px; background: var(--gold); color: var(--navy); display: grid; place-items: center; }
+    .hint .ht svg.i { width: 18px; height: 18px; }
+    .quiet { margin-top: 16px; border-radius: 14px; background: var(--cream); border: 1px solid var(--cream-deep); padding: 10px 12px; font-size: 14px; line-height: 1.5; }
+    .quiet p { display: flex; align-items: center; gap: 10px; }
+    .quiet .qt { width: 32px; height: 32px; flex-shrink: 0; border-radius: 999px; background: #fff; color: var(--brand); display: grid; place-items: center; }
+    .quiet .qt svg.i { width: 18px; height: 18px; }
+    .quiet .text-link { margin-left: 42px; }
     .text-link { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; color: var(--brand); font-size: 14px; font-weight: 600; border-radius: 999px; }
     .text-link:hover { text-decoration: underline; text-underline-offset: 3px; }
     .text-link svg.i { width: 16px; height: 16px; }
@@ -144,14 +170,18 @@
     /* New: "Not sure" helper panel */
     .helper { margin-top: 16px; border-radius: 18px; background: var(--cream); border: 1px solid var(--cream-deep); padding: 16px; }
     .is-desktop .helper { padding: 20px 24px; }
+    .helper-head { display: flex; align-items: center; gap: 12px; }
+    .helper-head .qt { width: 44px; height: 44px; flex-shrink: 0; border-radius: 14px; background: var(--gold); color: var(--navy); display: grid; place-items: center; }
+    .helper-head .qt svg.i { width: 22px; height: 22px; }
     .helper-q { font-size: 17px; font-weight: 700; line-height: 1.4; }
+    .nowrap { white-space: nowrap; }
     .helper-q small { display: block; font-size: 14px; font-weight: 400; color: var(--muted-foreground); }
     .yn { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .is-desktop .yn { max-width: 360px; }
     .yn button { height: 48px; border-radius: 14px; border: 2px solid var(--border); background: #fff; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
     .yn button[aria-checked="true"] { border-color: var(--brand); background: var(--brand); color: #fff; }
-    .yn button svg.i { width: 16px; height: 16px; stroke-width: 3; }
-    .answer { margin-top: 16px; border-radius: 14px; background: #fff; padding: 14px 16px; font-size: 14px; line-height: 1.55; }
+    .yn button svg.i { width: 18px; height: 18px; }
+    .answer { margin-top: 16px; border-radius: 14px; background: #fff; border-left: 4px solid var(--gold); padding: 14px 16px; font-size: 14px; line-height: 1.55; }
     .answer h3 { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; margin-bottom: 4px; }
     .answer h3 svg.i { width: 18px; height: 18px; color: var(--brand); }
     .answer p + p { margin-top: 8px; }
@@ -173,6 +203,9 @@
     Frames copy the live <code>AssessmentPage.tsx</code>, <code>ChoiceCard.tsx</code> and <code>RouteProgress.tsx</code>. Only the new parts are new.
     The text box in frame 1 is live, so you can type to check the counter.
     Helper text is a <b>draft</b> until US-012-AI-01 (AB#121) adds <code>docs/qa/business-type-helper.md</code>. Use that file's text when it lands.
+    <br /><b>Changes from the ticket text (update US-012-FE-01's acceptance criteria to match):</b>
+    the main button says "Fill in my answers", not "Continue" (writing rule 3: the button says what happens).
+    The loading text is "Reading what you wrote…" and "This takes a few seconds.", not "Binabasa ang description mo...", so people who read only English understand it too.
   </p>
   <div id="states"></div>
 
@@ -277,7 +310,7 @@
         </label>`
     }
 
-    const fieldError = (msg) => `<p class="field-error" role="alert">${icon('alert')}${msg}</p>`
+    const fieldError = (msg) => `<p class="field-error" role="alert"><span class="dot">${icon('alert')}</span>${msg}</p>`
     const actions = (...buttons) => `<div class="actions">${buttons.join('')}</div>`
     const nextBtn = `<button class="btn btn-primary" type="submit">Next ${icon('arrow')}</button>`
 
@@ -285,30 +318,39 @@
     function describe({ text = '', error = false, loading = false, live = false } = {}) {
       const n = text.length
       return page(`
+        <div class="lead"><span class="lead-tile">${icon('sparkles')}</span><span class="badge">Optional · saves you time</span></div>
         <h1>Tell us about your business.</h1>
-        <p class="help" id="describe-help">Write it in your own words, in English or Taglish. We'll use it to fill in your business type and category. You can change them after.</p>
+        <p class="help" id="describe-help">Write it in your own words, in English, Tagalog, or Taglish. We'll use it to fill in your business type and category. You can change them after.</p>
+        <p class="tips-label" id="describe-tips">A good description says:</p>
+        <div class="tips" aria-labelledby="describe-tips" role="list">
+          <span role="listitem">${icon('bag')}What you sell or do</span>
+          <span role="listitem">${icon('users')}Who owns it</span>
+        </div>
         <label class="field-label" for="describe">What does your business do, and who owns it?</label>
         <textarea class="box" id="describe" rows="5" maxlength="1000"
           placeholder="e.g. Nagtitinda ako ng lutong ulam sa harap ng bahay namin. Ako lang ang may-ari."
           aria-describedby="describe-help describe-count${error ? ' describe-error' : ''}"
           ${error ? 'aria-invalid="true"' : ''} ${loading ? 'readonly' : ''} ${live ? 'data-live' : ''}>${text}</textarea>
+        <div class="meter" aria-hidden="true"><span style="width: ${n / 10}%"></span></div>
         <div class="box-meta">
           <span class="private">${icon('lock')}We only use this to fill in the form. We don't save it.</span>
           <span class="count${n >= 1000 ? ' full' : ''}" id="describe-count">${n} / 1000</span>
         </div>
         ${error ? `<div id="describe-error">${fieldError('Write a few words about your business, or skip this.')}</div>` : ''}
-        ${loading ? `<p class="reading" role="status">${icon('loader')}Binabasa ang description mo...</p>` : ''}
+        ${loading ? `<div class="reading" role="status"><span class="rt">${icon('sparkles')}</span><span><b>Reading what you wrote…</b><small>This takes a few seconds.</small></span></div>` : ''}
         ${actions(
           `<button class="btn btn-secondary" type="button">Skip, I'll choose myself</button>`,
-          `<button class="btn btn-primary" type="submit"${loading ? ' disabled' : ''}>Continue ${icon('arrow')}</button>`,
+          `<button class="btn btn-primary" type="submit"${loading ? ' disabled' : ''}>Fill in my answers ${icon('arrow')}</button>`,
         )}`)
     }
 
     // ─── Screen 2: type and category steps ──────────────────────────────────
-    const SUGGEST = `<p class="hint">${icon('sparkles')}<span><b>Suggested from your description.</b> You can change it.</span></p>`
+    const SUGGEST = `<p class="hint"><span class="ht">${icon('sparkles')}</span><span><b>Suggested from your description.</b> You can change it.</span></p>`
     const quiet = (helperLink) => `
-      <p class="quiet">${icon('info')}<span>We couldn't tell from your description. Please choose below.</span></p>
-      ${helperLink ? `<a class="text-link" href="#">${icon('help')}Not sure? Answer one question</a>` : ''}`
+      <div class="quiet">
+        <p><span class="qt">${icon('info')}</span><span>We couldn't tell from your description. Please choose below.</span></p>
+        ${helperLink ? `<a class="text-link" href="#">${icon('help')}Not sure? Answer one question</a>` : ''}
+      </div>`
 
     // type: { selected, suggested, top (html under the subtitle), helper ('ask' | 'yes' | 'no' | null), error }
     function typeStep({ selected = null, suggested = null, top = '', helper = null, error = false } = {}) {
@@ -338,7 +380,7 @@
 
     // ─── Screen 3: "Not sure" helper ────────────────────────────────────────
     function helperPanel(answer) {
-      const yn = (label, value) => `<button type="button" role="radio" aria-checked="${answer === value}">${answer === value ? icon('check') : ''}${label}</button>`
+      const yn = (label, value, ic) => `<button type="button" role="radio" aria-checked="${answer === value}">${icon(ic)}${label}</button>`
       const yes = `
         <div class="answer" role="status">
           <h3>${icon('circleCheck')}${HELPER.yesTitle}</h3>
@@ -356,8 +398,8 @@
         </div>`
       return `
         <section class="helper" aria-labelledby="helper-q">
-          <p class="helper-q" id="helper-q">Ikaw lang ba ang may-ari?<small>Are you the only owner?</small></p>
-          <div class="yn" role="radiogroup" aria-labelledby="helper-q">${yn('Yes', 'yes')}${yn('No', 'no')}</div>
+          <div class="helper-head"><span class="qt">${icon('help')}</span><p class="helper-q" id="helper-q" tabindex="-1">Ikaw lang ba ang <span class="nowrap">may-ari?</span><small>Are you the only owner?</small></p></div>
+          <div class="yn" role="radiogroup" aria-labelledby="helper-q">${yn('Yes', 'yes', 'user')}${yn('No', 'no', 'users')}</div>
           ${answer === 'yes' ? yes : answer === 'no' ? no : ''}
         </section>`
     }
@@ -373,30 +415,36 @@
       ['Screen 1 · Describe step (/assessment?step=describe)', '1. Filled in', pair('Filled', () => describe({ text: DESCRIPTION, live: true })), `<ul>
         <li>New step <code>describe</code> in <code>STEPS</code>, right after <code>intro</code>. Only for users with no business profile. Editing a profile skips it (US-012-FE-01). The intro's "Let's go" goes here.</li>
         <li>No <code>RouteProgress</code> bar, like <code>intro</code>. Skip leads to the same 4 questions, so "Step 1 of 4" stays true.</li>
-        <li>Text box: native <code>&lt;textarea rows={5} maxLength={1000}&gt;</code> with the <code>Input</code> look: <code>rounded-xl border bg-white px-3.5 py-3 text-base min-h-38 resize-y</code>. There's no shadcn textarea, so don't add one. The visible label is the question. The help text and the counter are linked with <code>aria-describedby</code>.</li>
+        <li>Top row: a <code>size-12 rounded-2xl bg-gold text-navy</code> tile with lucide <code>Sparkles</code> and a soft gold shadow (<code>shadow-lg shadow-gold/40</code>), then a badge "Optional · saves you time" (<code>rounded-full bg-cream-deep text-xs font-semibold px-3 py-1</code>). It tells people this screen is a shortcut, not a must.</li>
+        <li>Help text says "in English, Tagalog, or Taglish", which matches the Tagalog example.</li>
+        <li>"A good description says:" with 2 chips (<code>rounded-full border border-cream-deep bg-cream px-3 py-1.5 text-[13px] font-semibold</code>, icon in <code>text-brand</code>): <code>ShoppingBag</code> "What you sell or do" and <code>Users</code> "Who owns it". These are the two things the AI reads (category and type). The chips are static, not buttons.</li>
+        <li>Text box: native <code>&lt;textarea rows={5} maxLength={1000}&gt;</code>. <code>rounded-2xl border-2 border-cream-deep bg-cream px-3.5 py-3 text-base min-h-38 resize-y transition-colors</code>. On focus: <code>focus-visible:border-navy focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-gold/45</code>. The navy border carries the 3:1 focus contrast, and the gold ring is the flair. There's no shadcn textarea, so don't add one. The visible label is the question. The help text and the counter are linked with <code>aria-describedby</code>.</li>
+        <li>Under the box, a 4 px gold meter (<code>h-1 rounded-full bg-cream-deep</code>, fill <code>bg-gold</code> at length / 1000), <code>aria-hidden</code>. The counter text says the same thing for screen readers.</li>
         <li>Counter: "{length} / 1000", <code>text-xs text-muted-foreground tabular-nums</code>, right-aligned. Not <code>aria-live</code> (it would talk on every key). <code>maxLength</code> stops typing at 1000.</li>
-        <li>Privacy line on the left of the counter: lucide <code>Lock</code>, "We only use this to fill in the form. We don't save it." It's true: the text only goes to <code>/api/assistant/extract</code> and is never saved (US-012-FE-01).</li>
-        <li>Buttons: "Skip, I'll choose myself" is <code>variant="secondary"</code> like the name step's "Skip for now". It goes to <code>name</code> with nothing filled. "Continue" is <code>BUTTON_PRIMARY</code>. <b>Review:</b> writing rule 3 says not to use "Continue". The ticket names it, so it's kept. Change it here if you prefer something like "Fill in my answers".</li>
+        <li>Privacy line on the left of the counter, in a soft blue pill (<code>rounded-lg bg-brand/6 px-2.5 py-1 text-navy</code>, <code>Lock</code> in <code>text-brand</code>): "We only use this to fill in the form. We don't save it." It's true: the text only goes to <code>/api/assistant/extract</code> and is never saved (US-012-FE-01).</li>
+        <li>Buttons: "Skip, I'll choose myself" is <code>variant="secondary"</code> like the name step's "Skip for now". It goes to <code>name</code> with nothing filled. "Fill in my answers" is <code>BUTTON_PRIMARY</code> (navy). Its focus ring is navy too (<code>focus-visible:ring-navy/40</code>), not the bright brand blue.</li>
       </ul>`],
-      [null, '2. Continue with an empty box', [mobile('Empty', () => describe({ error: true }))], `<ul>
-        <li>Continue with only spaces shows the existing <code>FieldError</code>: "Write a few words about your business, or skip this." The box gets <code>aria-invalid</code> and focus. No call is made.</li>
+      [null, '2. "Fill in my answers" with an empty box', [mobile('Empty', () => describe({ error: true }))], `<ul>
+        <li>"Fill in my answers" with only spaces shows <code>FieldError</code>: "Write a few words about your business, or skip this." The box gets <code>aria-invalid</code>, a red border and a soft red ring, and focus. No call is made.</li>
+        <li><b>New FieldError look (proposed for every step):</b> <code>rounded-xl border border-destructive/25 bg-destructive/6 px-3 py-2 text-sm font-medium</code>, with the icon in a <code>size-6 rounded-full bg-destructive text-white</code> dot. Frame 11 uses it too. If you'd rather not change the other steps now, keep it to the new screens and open a follow-up.</li>
         <li>The button is never disabled for an empty box. That matches the other steps, which show an error instead.</li>
       </ul>`],
       [null, '3. At the 1000-character limit', [mobile('At the limit', () => describe({ text: LONG }))], `<ul>
-        <li>The counter turns <code>text-navy font-semibold</code> at 1000. No error: the box simply stops taking text.</li>
+        <li>The counter turns <code>text-navy font-bold</code> and the gold meter is full at 1000. No error: the box simply stops taking text.</li>
         <li>The box stays 5 rows tall and scrolls, so the buttons stay close on a 360 px phone. <code>resize-y</code> lets people drag it taller.</li>
       </ul>`],
       [null, '4. Loading (the extract call is running)', pair('Loading', () => describe({ text: DESCRIPTION, loading: true })), `<ul>
-        <li>The box turns <code>readOnly</code> (not <code>disabled</code>, so screen readers can still read it). Continue is <code>disabled</code>.</li>
-        <li>Under the box: "Binabasa ang description mo..." (ticket text) in a <code>role="status"</code> line, <code>rounded-xl border border-brand/20 bg-brand/5 text-brand font-semibold</code>, with a spinning lucide <code>Loader2</code>.</li>
+        <li>The box turns <code>readOnly</code> (not <code>disabled</code>, so screen readers can still read it) and fades to <code>opacity-75</code>. "Fill in my answers" is <code>disabled</code>.</li>
+        <li>Under the box, a <code>role="status"</code> card: "<b>Reading what you wrote…</b>" and "This takes a few seconds." under it in <code>text-[13px] text-muted-foreground</code>. <b>Replaces the ticket's "Binabasa ang description mo..."</b> so English-only readers understand it. Update US-012-FE-01's acceptance criteria.</li>
+        <li>Card: <code>rounded-2xl border border-cream-deep bg-cream</code>. On the left, a <code>size-10 rounded-xl bg-gold</code> tile with <code>Sparkles</code> that pulses (scale 1 to 1.08, 1.6 s). Along the bottom edge, a 3 px gold bar sweeps left to right (1.4 s, indeterminate). Both stop under <code>motion-reduce</code>.</li>
         <li><b>Skip stays on.</b> The AI must never block onboarding. Skip aborts the request (<code>AbortController</code>) and goes to <code>name</code> with nothing filled.</li>
         <li>After the call: go to <code>name</code> with the answers kept in <code>values</code>. A null field and every failed call (any non-OK status such as 400, 401, 429 or 503, a timeout, or a network error) go on the same way, with the field empty (frame 7). There's no error screen.</li>
       </ul>`],
 
       ['Screen 2 · Pre-filled type and category steps', '5. Type step with a suggestion', pair('Type suggested', () => typeStep({ selected: 'Sole Proprietorship', suggested: 'Sole Proprietorship', top: SUGGEST })), `<ul>
         <li>The returned <code>businessType</code> is pre-selected in <code>values</code>. Nothing is saved until the review step's "Save and continue".</li>
-        <li>Hint under the subtitle: lucide <code>Sparkles</code>, "<b>Suggested from your description.</b> You can change it." <code>rounded-xl bg-gold/15 px-3 py-2.5 text-sm</code>, the same gold tint as the roadmap hint.</li>
-        <li>The suggested card gets a "Suggested" tag under its description (<code>rounded-full bg-gold/25 text-xs font-bold</code>, small <code>Sparkles</code>). New optional <code>tag</code> prop on <code>ChoiceCard</code>, no new component.</li>
+        <li>Hint under the subtitle, in brand gold: <code>rounded-xl border-2 border-gold bg-gold/20 px-3 py-2.5 text-sm</code>, with a <code>size-8 rounded-[10px] bg-gold text-navy</code> tile holding <code>Sparkles</code>. Text: "<b>Suggested from your description.</b> You can change it."</li>
+        <li>The suggested card gets a solid gold "Suggested" tag under its description (<code>rounded-full bg-gold text-navy text-xs font-bold</code>, small <code>Sparkles</code>), like the "Done" chip on the roadmap. New optional <code>tag</code> prop on <code>ChoiceCard</code>, no new component.</li>
         <li>If the user picks another type, the selection check moves and the tag stays on the suggested card, so they can still see what the AI said. The hint stays.</li>
         <li>The "Not sure" card (Screen 3) is always there, also when a type was suggested.</li>
       </ul>`],
@@ -407,9 +455,9 @@
         mobile('Type is null', () => typeStep({ top: quiet(true) })),
         mobile('Category is null', () => categoryStep({ top: quiet(false) })),
       ], `<ul>
-        <li>One quiet line in place of the hint: lucide <code>Info</code>, "We couldn't tell from your description. Please choose below." in <code>text-sm text-muted-foreground</code>. Not an <code>Alert</code>: nothing went wrong for the user.</li>
+        <li>A quiet box in place of the hint: <code>rounded-xl border border-cream-deep bg-cream px-3 py-2.5 text-sm</code>, with <code>Info</code> in a <code>size-8 rounded-full bg-white text-brand</code> dot. Text: "We couldn't tell from your description. Please choose below." Not an <code>Alert</code> and not red: nothing went wrong for the user.</li>
         <li>The same line shows for a null field and for every failed call. If both fields are empty, it shows on both steps.</li>
-        <li>On the type step only, a link under it: "Not sure? Answer one question" (lucide <code>CircleHelp</code>, <code>min-h-11 text-brand font-semibold</code>). It selects the "Not sure" card, which opens the helper (frame 8) and moves focus to the question (US-012-FE-02).</li>
+        <li>On the type step only, a link inside the box, under the text: "Not sure? Answer one question" (lucide <code>CircleHelp</code>, <code>min-h-11 text-brand font-semibold</code>). It selects the "Not sure" card, which opens the helper (frame 8) and moves focus to the question (US-012-FE-02).</li>
         <li>When the user skipped the describe step, neither line shows. The steps look as they do today.</li>
       </ul>`],
 
@@ -417,12 +465,12 @@
         <li>"Not sure" is a 5th <code>ChoiceCard</code> in the same <code>RadioGroup</code> (lucide <code>CircleHelp</code>, "Answer one question and we'll help you pick."). It spans both columns on desktop (<code>sm:col-span-2</code>) and has a <code>border-dashed</code> look until picked, so it reads as different from the 4 real types.</li>
         <li>It's never saved. Picking it sets a local <code>unsure</code> flag and clears <code>values.businessType</code> to <code>''</code>, so the existing <code>validateStep('businessType')</code> blocks Next with no new check (frame 11). Picking a real type, or Yes, sets the type and clears the flag. Leaving the step resets the flag, so coming back shows the saved type, or nothing.</li>
         <li>Picking it opens the helper under the cards: <code>section</code> with <code>rounded-2xl border border-cream-deep bg-cream p-4 sm:px-6 sm:py-5</code>. Focus moves to the question, which gets <code>tabIndex={-1}</code> so it can take focus.</li>
-        <li>Question: "Ikaw lang ba ang may-ari?" (<code>text-[17px] font-bold</code>) and "Are you the only owner?" under it in <code>text-sm text-muted-foreground</code>.</li>
-        <li>Yes / No: a second small <code>RadioGroup</code>, two <code>h-12 rounded-xl border-2</code> buttons. Picked = <code>bg-brand text-white</code> with a <code>Check</code>.</li>
+        <li>Question row: a <code>size-11 rounded-xl bg-gold text-navy</code> tile with <code>CircleHelp</code>, then "Ikaw lang ba ang may-ari?" (<code>text-[17px] font-bold</code>, with "may-ari?" in a <code>whitespace-nowrap</code> span so it never breaks at the hyphen) and "Are you the only owner?" under it in <code>text-sm text-muted-foreground</code>.</li>
+        <li>Yes / No: a second small <code>RadioGroup</code>, two <code>h-12 rounded-xl border-2</code> buttons with icons: <code>User</code> for Yes, <code>Users</code> for No. Picked = <code>bg-brand text-white</code>.</li>
         <li>The panel stays open once opened, even after Yes moves the selection to Sole Proprietorship. It closes when the user leaves the step.</li>
       </ul>`],
       [null, '9. Answer: Yes', [mobile('Yes', () => typeStep({ selected: 'Sole Proprietorship', helper: 'yes' }))], `<ul>
-        <li>Yes selects Sole Proprietorship in the list above (US-012-FE-02). The answer box (<code>rounded-xl bg-white p-4</code>, <code>role="status"</code>) says why: title with <code>CircleCheck</code>, the reason, then "We picked it for you above. You can still choose another type."</li>
+        <li>Yes selects Sole Proprietorship in the list above (US-012-FE-02). The answer box (<code>rounded-xl border-l-4 border-gold bg-white p-4</code>, <code>role="status"</code>) says why: title with <code>CircleCheck</code>, the reason, then "We picked it for you above. You can still choose another type."</li>
         <li>Under a divider: "<b>Also for one owner:</b>" and the One Person Corporation line, so the user knows the other one-owner option.</li>
         <li><b>Draft text.</b> Agencies (DTI for Sole Proprietorship, SEC for the rest) come from <code>docs/research/registration-workflow.md</code> rows 1A and 1B. The OPC liability line follows AB#121's acceptance criteria and the live type descriptions. Nothing here is checked against a DTI or SEC page yet. Replace them with AB#121's <code>docs/qa/business-type-helper.md</code>. Keep both agencies spelled out the first time.</li>
       </ul>`],
@@ -447,6 +495,7 @@
 
     // Live counter in frame 1, so the reviewer can type.
     document.querySelectorAll('textarea[data-live]').forEach((box) => box.addEventListener('input', () => {
+      box.parentElement.querySelector('.meter span').style.width = `${box.value.length / 10}%`
       const count = box.parentElement.querySelector('.count')
       count.textContent = `${box.value.length} / 1000`
       count.classList.toggle('full', box.value.length >= 1000)
