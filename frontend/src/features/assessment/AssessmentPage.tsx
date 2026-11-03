@@ -513,7 +513,7 @@ export function AssessmentPage() {
           <StepFrame key={step} title="Where are you in the process?" dir={travel.dir} focusField={focusField}>
             <form onSubmit={submitStep('registrationStatus')} noValidate>
               <p className="text-sm text-muted-foreground">
-                This helps us skip steps you've already done and show you what's next.
+                Already done some steps? You can mark them as done on your roadmap.
               </p>
               {choiceGroup(
                 'registrationStatus',
