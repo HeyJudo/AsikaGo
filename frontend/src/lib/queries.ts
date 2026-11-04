@@ -10,6 +10,7 @@ export type RoadmapResponse = components['schemas']['RoadmapResponse']
 export type StepDetail = components['schemas']['StepDetailResponse']
 export type Requirement = components['schemas']['RequirementResponse']
 type RequirementUpdate = { requirementId: string; isPrepared: boolean }
+export type Documents = components['schemas']['DocumentsResponse']
 
 // GET /api/me also creates the profiles row that business_profiles references.
 export function useMe() {
@@ -127,6 +128,64 @@ export function useUpdateStepStatus(stepNumber: number) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['roadmap'] })
       void queryClient.invalidateQueries({ queryKey: ['roadmap-step', stepNumber] })
+      void queryClient.invalidateQueries({ queryKey: ['roadmap-documents'] })
+    },
+  })
+}
+
+export function useDocuments() {
+  return useQuery<Documents | null>({
+    queryKey: ['roadmap-documents'],
+    queryFn: async () => {
+      try {
+        return await apiFetch<Documents>('/api/roadmap/documents')
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) return null
+        throw err
+      }
+    },
+    retry: (failCount, err) => {
+      if (err instanceof ApiError && err.status === 404) return false
+      return failCount < 3
+    },
+  })
+}
+
+// isPrepared is per requirement, so a document asked for in two steps changes in both.
+// Undoing by id (not a snapshot) keeps other rows' ticks made while this save was in flight.
+export function setPrepared(docs: Documents, requirementId: string, isPrepared: boolean): Documents {
+  const steps = docs.steps.map((s) => ({
+    ...s,
+    requirements: s.requirements.map((r) => (r.id === requirementId ? { ...r, isPrepared } : r)),
+  }))
+  const preparedCount = steps.reduce((n, s) => n + s.requirements.filter((r) => r.isPrepared).length, 0)
+  return { ...docs, steps, preparedCount }
+}
+
+export function useSetRequirementPrepared(requirementId: string) {
+  const queryClient = useQueryClient()
+  const update = (isPrepared: boolean) =>
+    queryClient.setQueryData<Documents | null>(['roadmap-documents'], (docs) =>
+      docs ? setPrepared(docs, requirementId, isPrepared) : docs,
+    )
+  return useMutation({
+    mutationKey: ['set-requirement-prepared'],
+    mutationFn: (isPrepared: boolean) =>
+      apiFetch<void>(`/api/roadmap/requirements/${requirementId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ isPrepared }),
+      }),
+    onMutate: async (isPrepared) => {
+      await queryClient.cancelQueries({ queryKey: ['roadmap-documents'] })
+      update(isPrepared)
+    },
+    onError: (_err, isPrepared) => update(!isPrepared),
+    onSettled: () => {
+      // Refetch only after the last tick in flight (this one still counts), or the box flickers back.
+      // ponytail: two PUTs for one document can still reach the server out of order. Serialize per id if that shows up.
+      if (queryClient.isMutating({ mutationKey: ['set-requirement-prepared'] }) > 1) return
+      void queryClient.invalidateQueries({ queryKey: ['roadmap'] })
+      void queryClient.invalidateQueries({ queryKey: ['roadmap-step'] })
       void queryClient.invalidateQueries({ queryKey: ['roadmap-documents'] })
     },
   })

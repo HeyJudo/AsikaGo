@@ -6,6 +6,7 @@ import { AssessmentPage } from '@/features/assessment/AssessmentPage'
 import { MyBusinessPage } from '@/features/assessment/MyBusinessPage'
 import { RoadmapPage } from '@/features/roadmap/RoadmapPage'
 import { StepDetailPage } from '@/features/roadmap/StepDetailPage'
+import { DocumentsPage } from '@/features/progress/DocumentsPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { FullPageError, NotFoundPage } from '@/components/PageStates'
 
@@ -37,6 +38,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <RoadmapPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'roadmap/documents',
+        element: (
+          <ProtectedRoute>
+            <DocumentsPage />
           </ProtectedRoute>
         ),
       },
