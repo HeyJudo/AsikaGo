@@ -508,6 +508,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/assistant/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AskRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/event-stream": components["schemas"]["AssistantDeltaPayload"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["HttpValidationProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Too Many Requests */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Service Unavailable */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -515,10 +599,19 @@ export interface components {
         AnonymousTypeOfstring: {
             status: null | string;
         };
+        AskRequest: {
+            question: null | string;
+            /** Format: int32 */
+            stepNumber: null | number | string;
+            history: null | components["schemas"]["ChatMessageDto"][];
+        };
         AssessmentOptionsResponse: {
             categories: components["schemas"]["CategoryOption"][];
             businessTypes: string[];
             registrationStatuses: string[];
+        };
+        AssistantDeltaPayload: {
+            text: string;
         };
         BusinessProfileResponse: {
             /** Format: uuid */
@@ -540,6 +633,10 @@ export interface components {
             id: string;
             name: string;
             description: null | string;
+        };
+        ChatMessageDto: {
+            role: null | string;
+            text: null | string;
         };
         DocumentsResponse: {
             /** Format: int32 */
