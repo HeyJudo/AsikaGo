@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AsikaGo – Chat Sheet and Office Card (US-013-UI-01 Design)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* Tokens copied from frontend/src/index.css (:root) so the build matches the live app. */
+    :root {
+      --brand: #2340d5;
+      --brand-dark: #1a31a8;
+      --gold: #f1b132;
+      --navy: #14215b;
+      --cream: #faf7f0;
+      --cream-deep: #f1ece0;
+      --muted-foreground: #5b6478;
+      --border: #e5e5e5;
+      --destructive: #e7000b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; color: var(--navy); background: #e9ecf2; padding: 32px; }
+    a { color: inherit; text-decoration: none; }
+    button, textarea { font: inherit; color: inherit; }
+    svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    :focus-visible { outline: 3px solid rgba(35,64,213,.45); outline-offset: 2px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+
+    /* ─── Doc chrome (not part of the design) ─── */
+    .doc-title { font-size: 28px; font-weight: 800; }
+    .doc-sub { color: var(--muted-foreground); margin: 4px 0 32px; max-width: 900px; line-height: 1.6; }
+    .doc-screen { font-size: 24px; font-weight: 800; margin: 24px 0 20px; padding-top: 24px; border-top: 2px solid #c9cfdb; }
+    .state { margin-bottom: 56px; }
+    .state > h2 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+    .frames { display: flex; gap: 32px; align-items: flex-start; }
+    .frame-label { font-size: 12px; font-weight: 600; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+    .frame-mobile, .frame-desktop { position: relative; background: var(--cream); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(20,33,91,.15); }
+    .frame-mobile { width: 360px; }
+    .frame-desktop { width: 1280px; }
+    .vp.frame-mobile { height: 720px; }
+    .vp.frame-desktop { height: 800px; }
+    .notes { background: #fff; border-left: 4px solid var(--brand); border-radius: 8px; padding: 12px 16px; margin-top: 16px; max-width: 1672px; font-size: 13px; line-height: 1.6; }
+    .notes li { margin-left: 18px; }
+    .notes code { background: #f1f5f9; padding: 0 4px; border-radius: 4px; font-size: 12px; }
+
+    /* ─── App header (AppLayout.tsx SiteHeader, signed in) ─── */
+    .app-header { position: relative; z-index: 2; background: var(--brand); height: 64px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.1); }
+    .is-desktop .app-header { height: 80px; padding: 0 32px; }
+    .app-header img { height: 32px; }
+    .is-desktop .app-header img { height: 48px; }
+    .menu-trigger { min-height: 44px; display: flex; align-items: center; gap: 8px; border-radius: 999px; padding: 2px; color: #fff; font-size: 14px; font-weight: 600; }
+    .is-desktop .menu-trigger { padding-right: 12px; }
+    .avatar { width: 40px; height: 40px; border-radius: 999px; background: var(--gold); color: var(--navy); display: grid; place-items: center; }
+    .menu-trigger .name { display: none; }
+    .is-desktop .menu-trigger .name { display: block; }
+    .menu-trigger svg.chev-d { width: 16px; height: 16px; margin-right: 4px; }
+
+    /* ─── Page stubs (RoadmapPage, StepDetailPage, MyBusinessPage) ─── */
+    .page { padding: 32px 24px 96px; }
+    .is-desktop .page { padding: 48px 32px 96px; }
+    .container { max-width: 768px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+    .is-desktop .shifted .container { margin: 0 auto 0 calc((1280px - 400px - 768px) / 2); }
+    h1 { font-size: 30px; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+    .is-desktop h1 { font-size: 36px; }
+    .subtitle { color: var(--muted-foreground); margin-top: 8px; line-height: 1.5; }
+    .guest { border: 1px solid rgba(35,64,213,.3); background: rgba(35,64,213,.05); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+    .is-desktop .guest { flex-direction: row; align-items: center; justify-content: space-between; padding: 20px; }
+    .guest p { font-weight: 600; line-height: 1.45; }
+    .btn-google { min-height: 44px; width: 100%; border-radius: 999px; border: 1px solid #8e918f; background: #131314; color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 0 24px; font-size: 14px; font-weight: 500; }
+    .is-desktop .guest .btn-google { width: 288px; flex-shrink: 0; }
+    .btn-google svg { width: 20px; height: 20px; }
+    .viz { border-radius: 20px; background: var(--brand); color: #fff; padding: 16px 20px; height: 150px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(35,64,213,.25); }
+    .viz::before { content: ''; position: absolute; inset: 0; background: radial-gradient(rgba(255,255,255,.08) 1.5px, transparent 1.5px); background-size: 22px 22px; }
+    .viz p { position: relative; font-weight: 700; }
+    .viz span { position: relative; display: block; font-size: 13px; color: rgba(255,255,255,.8); }
+    .stub-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    .stub-card h2 { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .stub-card h2 svg.i { color: var(--brand); }
+    .stub-card p { line-height: 1.6; }
+    .stub-line { height: 12px; border-radius: 999px; background: var(--cream-deep); margin-top: 10px; }
+    .eyebrow { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: .05em; }
+    .back { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; color: var(--brand); font-size: 14px; font-weight: 600; }
+    .back svg.i { width: 18px; height: 18px; }
+    .btn-outline { min-height: 44px; border-radius: 999px; border: 1px solid var(--border); background: #fff; display: inline-flex; align-items: center; gap: 8px; padding: 0 24px; font-weight: 600; font-size: 14px; }
+    .btn-outline svg.i { width: 16px; height: 16px; }
+    .mb-head { display: flex; flex-direction: column; gap: 12px; }
+    .kicker { color: var(--brand); font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+
+    /* ─── New: chat button (fixed, bottom right) ─── */
+    .ask-fab { position: absolute; right: 16px; bottom: 16px; z-index: 3; height: 52px; display: inline-flex; align-items: center; gap: 10px; border: 0; border-radius: 999px; background: var(--gold); color: var(--navy); padding: 0 20px 0 8px; font-size: 15px; font-weight: 700; box-shadow: 0 10px 24px rgba(20,33,91,.25), 0 0 0 4px rgba(255,255,255,.7); cursor: pointer; }
+    .is-desktop .ask-fab { right: 24px; bottom: 24px; }
+    .ask-fab .ic { width: 36px; height: 36px; border-radius: 999px; background: var(--navy); color: var(--gold); display: grid; place-items: center; }
+    .ask-fab .ic svg.i { width: 20px; height: 20px; }
+    .ask-fab:focus-visible { outline-color: var(--navy); }
+
+    /* ─── New: chat sheet ─── */
+    .backdrop { position: absolute; inset: 0; z-index: 4; background: rgba(20,33,91,.45); }
+    .sheet { position: absolute; z-index: 5; left: 0; right: 0; bottom: 0; height: 88%; display: flex; flex-direction: column; background: #fff; border-radius: 24px 24px 0 0; box-shadow: 0 -12px 32px rgba(20,33,91,.25); overflow: hidden; }
+    .is-desktop .sheet { top: 80px; left: auto; width: 400px; height: auto; border-radius: 0; border-left: 1px solid var(--border); box-shadow: -12px 0 32px rgba(20,33,91,.12); }
+    .grabber { width: 40px; height: 5px; border-radius: 999px; background: var(--cream-deep); margin: 8px auto 0; flex-shrink: 0; }
+    .is-desktop .grabber { display: none; }
+    .sh-head { display: flex; align-items: center; gap: 12px; padding: 10px 12px 12px 16px; flex-shrink: 0; }
+    .is-desktop .sh-head { padding-top: 16px; }
+    .sh-head .tile { width: 40px; height: 40px; border-radius: 12px; background: var(--gold); color: var(--navy); display: grid; place-items: center; flex-shrink: 0; }
+    .sh-head .tile svg.i { width: 22px; height: 22px; }
+    .sh-head h2 { font-size: 17px; font-weight: 700; line-height: 1.3; }
+    .sh-head p { font-size: 12.5px; color: var(--muted-foreground); line-height: 1.4; }
+    .sh-head .ttl { flex: 1; min-width: 0; }
+    .icon-btn { width: 44px; height: 44px; flex-shrink: 0; border: 0; border-radius: 999px; background: transparent; display: grid; place-items: center; cursor: pointer; }
+    .icon-btn:hover { background: var(--cream); }
+    .guest-strip { display: flex; align-items: center; gap: 10px; margin: 0 12px 10px; border-radius: 14px; background: rgba(35,64,213,.05); border: 1px solid rgba(35,64,213,.25); padding: 6px 6px 6px 12px; font-size: 13px; font-weight: 600; line-height: 1.35; flex-shrink: 0; }
+    .guest-strip span { flex: 1; }
+    .is-desktop .guest-strip { display: none; }
+    .guest-strip .btn-google { width: auto; padding: 0 14px; gap: 8px; font-size: 13px; flex-shrink: 0; }
+    .guest-strip .btn-google svg { width: 18px; height: 18px; }
+    .ctx { display: inline-flex; align-self: flex-start; align-items: center; gap: 6px; margin: 0 16px 10px; border-radius: 999px; background: rgba(35,64,213,.08); color: var(--brand); font-size: 12.5px; font-weight: 600; padding: 4px 12px; flex-shrink: 0; max-width: calc(100% - 32px); }
+    .ctx svg.i { width: 14px; height: 14px; }
+    .ctx b { color: var(--navy); font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .msgs { flex: 1; min-height: 0; overflow: auto; background: var(--cream); border-top: 1px solid var(--cream-deep); padding: 16px 12px; display: flex; flex-direction: column; gap: 12px; }
+    .empty { margin: auto 0 0; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8px 4px; }
+    .empty .big { width: 52px; height: 52px; border-radius: 16px; background: var(--gold); color: var(--navy); display: grid; place-items: center; box-shadow: 0 8px 20px rgba(241,177,50,.45); margin-bottom: 10px; }
+    .empty .big svg.i { width: 28px; height: 28px; }
+    .empty h3 { font-size: 16px; font-weight: 700; line-height: 1.35; }
+    .empty p { margin-top: 6px; font-size: 13.5px; color: var(--muted-foreground); line-height: 1.5; }
+    .try { align-self: stretch; margin-top: 14px; text-align: left; }
+    .try-list { list-style: none; }
+    .try > p { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--brand); margin-bottom: 8px; }
+    .chip-q { width: 100%; min-height: 44px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--cream-deep); border-radius: 14px; background: #fff; padding: 6px 12px; margin-top: 6px; font-size: 14px; font-weight: 500; text-align: left; cursor: pointer; }
+    .chip-q:hover { border-color: rgba(35,64,213,.5); }
+    .chip-q svg.i { width: 18px; height: 18px; color: var(--brand); }
+    .chip-q .go { margin-left: auto; color: var(--muted-foreground); width: 16px; height: 16px; }
+
+    .msg { display: flex; gap: 8px; max-width: 100%; }
+    .msg.me { justify-content: flex-end; }
+    .bubble { border-radius: 18px; padding: 10px 14px; font-size: 14.5px; line-height: 1.55; overflow-wrap: anywhere; }
+    .me .bubble { max-width: 85%; background: var(--navy); color: #fff; border-bottom-right-radius: 6px; }
+    .bot .who { width: 28px; height: 28px; border-radius: 999px; background: var(--gold); color: var(--navy); display: grid; place-items: center; flex-shrink: 0; margin-top: 2px; }
+    .bot .who svg.i { width: 16px; height: 16px; }
+    .bot .col { min-width: 0; max-width: calc(100% - 36px); display: flex; flex-direction: column; gap: 8px; }
+    .bot .bubble { background: #fff; border: 1px solid var(--cream-deep); border-bottom-left-radius: 6px; }
+    .bubble p + p { margin-top: 8px; }
+    .caret { display: inline-block; width: 8px; height: 16px; margin-left: 2px; vertical-align: -2px; border-radius: 2px; background: var(--gold); animation: blink 1s steps(2) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
+    .typing { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted-foreground); }
+    .typing i { width: 6px; height: 6px; border-radius: 999px; background: var(--gold); animation: hop 1.2s ease-in-out infinite; }
+    .typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+    @keyframes hop { 30% { transform: translateY(-4px); } 60% { transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .caret, .typing i { animation: none; } }
+    .note { display: flex; align-items: flex-start; gap: 8px; border-radius: 12px; background: rgba(241,177,50,.18); border: 1px solid rgba(241,177,50,.7); padding: 8px 10px; font-size: 13px; line-height: 1.45; }
+    .note svg.i { width: 16px; height: 16px; margin-top: 1px; color: var(--navy); }
+    .sys { border-radius: 16px; background: #fff; border: 1px solid var(--cream-deep); padding: 12px; display: flex; gap: 10px; align-items: flex-start; }
+    .sys .dot { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0; background: var(--cream-deep); color: var(--brand); }
+    .sys .dot svg.i { width: 20px; height: 20px; }
+    .sys b { display: block; font-size: 14px; line-height: 1.4; }
+    .sys p { font-size: 13px; color: var(--muted-foreground); line-height: 1.45; margin-top: 2px; }
+    .btn-retry { margin-top: 10px; min-height: 44px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--navy); border-radius: 999px; background: #fff; padding: 0 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-retry svg.i { width: 16px; height: 16px; }
+
+    .composer { flex-shrink: 0; border-top: 1px solid var(--cream-deep); background: #fff; padding: 10px 12px 12px; }
+    .composer .row { display: flex; align-items: flex-end; gap: 8px; }
+    .composer textarea { flex: 1; min-width: 0; height: 48px; max-height: 120px; resize: none; border: 2px solid var(--cream-deep); border-radius: 16px; background: var(--cream); padding: 10px 12px; font-size: 16px; line-height: 1.5; outline: none; }
+    .composer textarea:focus-visible { border-color: var(--navy); background: #fff; box-shadow: 0 0 0 4px rgba(241,177,50,.45); }
+    .composer textarea[aria-disabled="true"] { opacity: .6; }
+    .send { width: 48px; height: 48px; flex-shrink: 0; border: 0; border-radius: 999px; background: var(--navy); color: #fff; display: grid; place-items: center; cursor: pointer; }
+    .send[aria-disabled="true"] { opacity: .4; cursor: not-allowed; }
+    .send:focus-visible { outline-color: var(--navy); }
+    .composer .meta { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 11.5px; color: var(--muted-foreground); }
+    .composer .meta span:last-child { font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+    /* ─── New: office cards (StepDetailPage "Where to go") ─── */
+    .where { border: 1px solid rgba(35,64,213,.4); border-radius: 16px; background: #edf0fc; padding: 16px; }
+    .is-desktop .where { padding: 24px; }
+    .where-h { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .where-h h2 { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; }
+    .where-h h2 svg.i { color: var(--brand); }
+    .where-h span { margin-left: auto; font-size: 14px; font-weight: 600; color: var(--brand); }
+    .where-sub { margin-top: 4px; font-size: 14px; color: var(--muted-foreground); line-height: 1.5; }
+    .offices { list-style: none; margin-top: 14px; display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .is-desktop .offices.many { grid-template-columns: 1fr 1fr; }
+    .office { background: #fff; border: 1px solid rgba(35,64,213,.15); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(20,33,91,.06); min-width: 0; }
+    .is-desktop .office { padding: 16px 18px; }
+    .o-top { display: flex; align-items: flex-start; gap: 12px; }
+    .o-top .tile { width: 44px; height: 44px; border-radius: 14px; background: var(--brand); color: #fff; display: grid; place-items: center; flex-shrink: 0; }
+    .o-top .tile.online { background: var(--gold); color: var(--navy); }
+    .o-top h3 { font-size: 16px; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
+    .access { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; border-radius: 999px; background: var(--cream-deep); font-size: 12px; font-weight: 700; padding: 2px 10px; }
+    .access svg.i { width: 12px; height: 12px; }
+    .unverified { display: flex; align-items: center; gap: 8px; margin-top: 12px; border-radius: 12px; background: rgba(241,177,50,.2); border: 1px solid var(--gold); padding: 8px 10px; font-size: 13.5px; font-weight: 600; }
+    .unverified svg.i { width: 18px; height: 18px; color: #b7791f; }
+    .o-rows { list-style: none; margin-top: 8px; }
+    .o-rows li { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+    .o-rows li svg.i { width: 18px; height: 18px; color: var(--brand); margin-top: 2px; }
+    .o-rows a { display: flex; align-items: center; gap: 10px; min-height: 44px; margin: -6px 0; color: var(--brand); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(35,64,213,.35); min-width: 0; overflow-wrap: anywhere; }
+    .o-rows a svg.i { margin-top: 0; }
+    .o-act { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+    .btn-map { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px; border: 1px solid var(--brand); background: #fff; color: var(--brand); padding: 0 18px; font-size: 14px; font-weight: 600; }
+    .btn-map.solid { background: var(--brand); color: #fff; }
+    .btn-map svg.i { width: 16px; height: 16px; }
+  </style>
+</head>
+<body>
+  <h1 class="doc-title">US-013-UI-01 · Chat sheet and office card</h1>
+  <p class="doc-sub">
+    The chat button and sheet (US-013-FE-01, Seth) and the office cards on step detail (US-014-FE-01, Seth).
+    Pages behind the chat are short stubs of the live <code>RoadmapPage.tsx</code>, <code>StepDetailPage.tsx</code> and <code>MyBusinessPage.tsx</code>. Only the button, the sheet and the office cards are new.
+    Chat frames are phone-sized (360 × 720) and laptop-sized (1280 × 800) so you can see what covers what.
+    Sample answers use real rows from <code>docs/research/offices-pasig.md</code>. The real wording comes from US-013-AI-01's prompt.
+  </p>
+  <div id="states"></div>
+
+  <script>
+    // ─── Sample data: offices per Section 4 (from offices-pasig.md rows 1A, 2, 5) ──
+    const OFFICES_STEP5 = [
+      { name: 'BPLD, Annex 1', access: 'InPerson', address: '3rd Floor, Ayala Malls The 30th, Meralco Ave., Brgy. Ugong, Pasig City', website: null, hours: 'Mon-Fri, 8:00 AM-6:00 PM', phone: '(02) 8643-1111 local 1158', email: 'bpld.annex1@pasigcity.gov.ph', mapsUrl: 'https://maps.app.goo.gl/57Xn2rwdErBwe13X8', isVerified: true },
+      { name: 'BPLD, Annex 2', access: 'InPerson', address: '3rd Floor, Robinsons Metro East, Dela Paz, Pasig City', website: null, hours: 'Mon-Fri, 8:00 AM-6:00 PM', phone: '(02) 8643-1111 local 2241', email: 'bpld.annex2@pasigcity.gov.ph', mapsUrl: 'https://maps.app.goo.gl/aPTkKJQEE4xJ4FWE8', isVerified: true },
+      { name: 'BPLD, Bridgetowne', access: 'InPerson', address: 'Eulogio Amang Rodriguez Ave., Bridgetowne, Rosario, Pasig City (Temporary Pasig City Hall)', website: null, hours: 'Mon-Thu, 7:00 AM-6:00 PM', phone: '(02) 8643-1111 local 1225', email: 'bpld.bridgetowne@pasigcity.gov.ph', mapsUrl: 'https://maps.app.goo.gl/QbDeGZrUv2jTp7859', isVerified: true },
+      { name: 'BPLD, Mutya ng Pasig Mega Market', access: 'InPerson', address: '3rd Floor, Mutya ng Pasig Mega Market', website: null, hours: 'Mon-Thu, 7:00 AM-6:00 PM', phone: '(02) 8643-1111 local 1221', email: 'bpld.mutya@pasigcity.gov.ph', mapsUrl: 'https://maps.app.goo.gl/xJUi4c3uaC3KBZw3A', isVerified: true },
+    ]
+    const OFFICES_STEP1 = [
+      { name: 'Department of Trade and Industry (DTI), Business Name Registration System', access: 'Online', address: null, website: 'https://bnrs.dti.gov.ph/registration/create', hours: null, phone: '1-384; (02) 7751-0384', email: 'bnrshelpdesk@dtiphmail.dti.gov.ph', mapsUrl: null, isVerified: true },
+    ]
+    const OFFICES_STEP2 = [
+      { name: 'Barangay hall', access: 'InPerson', address: 'The barangay where the business is located', website: null, hours: 'Monday to Thursday, 7:00 AM to 6:00 PM (closed Fridays, weekends, and holidays)', phone: null, email: null, mapsUrl: null, isVerified: false },
+    ]
+
+    // ─── Icons (lucide) ─────────────────────────────────────────────────────
+    const ICONS = {
+      avatar: '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
+      chevDown: '<path d="m6 9 6 6 6-6"/>',
+      chev: '<path d="m9 18 6-6-6-6"/>',
+      arrowLeft: '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+      arrowUp: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
+      x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+      ask: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+      sparkles: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
+      msg: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+      route: '<circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/>',
+      info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+      clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+      cloudOff: '<path d="m2 2 20 20"/><path d="M5.782 5.782A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 1.307-.193"/><path d="M21.532 16.5A4.5 4.5 0 0 0 17.5 10h-1.79A7.008 7.008 0 0 0 10 5.07"/>',
+      rotate: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
+      scissors: '<circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/>',
+      mapPin: '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+      globe: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+      phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+      mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+      external: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3"/>',
+      warn: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+      building: '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>',
+      listChecks: '<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>',
+      pen: '<path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>',
+    }
+    const icon = (name, cls = 'i') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`
+    const GOOGLE_G = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>'
+
+    // ─── Shared pieces ──────────────────────────────────────────────────────
+    const header = (guest) => `
+      <header class="app-header">
+        <img src="../../frontend/src/assets/logo-white.png" alt="AsikaGo" />
+        <a class="menu-trigger" href="#" aria-label="Account menu">
+          <span class="avatar">${icon('avatar')}</span>
+          <span class="name">${guest ? 'Guest' : 'juan.delacruz@gmail.com'}</span>
+          ${icon('chevDown', 'i chev-d')}
+        </a>
+      </header>`
+    const banner = (text) => `<div class="guest"><p>${text}</p><a class="btn-google" href="#">${GOOGLE_G}Save with Google</a></div>`
+
+    // Page stubs: just enough of each live page to show what the button and the sheet sit on.
+    const PAGES = {
+      roadmap: (guest) => `
+        ${guest ? banner("This is your roadmap preview. Save it with Google so you don't lose it.") : ''}
+        <div class="viz"><p>Your route to a registered business</p><span>10 stops from Point A to Biz</span></div>
+        <div><h1>Your registration roadmap:</h1><p class="subtitle">Up to 10 steps to register your Food and Beverage business in Pasig City.</p></div>
+        <div class="stub-card"><h2>${icon('route')}3 of 10 steps done</h2><div class="stub-line"></div></div>
+        <div class="stub-card"><h2>Step 4 · Fire Safety Inspection Certificate for Occupancy</h2><p>BFP (Bureau of Fire Protection), Pasig City</p></div>`,
+      step: (guest) => `
+        <a class="back" href="#">${icon('arrowLeft')}My roadmap</a>
+        ${guest ? banner("Save your progress with Google so you don't lose it.") : ''}
+        <div><p class="eyebrow">Step 5 of 10</p><h1 style="margin-top:8px">Business Application Form and Documents</h1></div>
+        <div class="stub-card"><h2>${icon('info')}Why you need this</h2><p>This is where you officially apply for your business permit.</p></div>
+        <div class="stub-card"><h2>${icon('listChecks')}What to do</h2><div class="stub-line"></div><div class="stub-line" style="width:70%"></div></div>`,
+      business: (guest) => `
+        <div class="mb-head"><h1>My Business</h1><a class="btn-outline" href="#" style="align-self:flex-start">${icon('pen')}Edit Details</a></div>
+        ${guest ? banner("Save your business profile with Google so you don't lose it.") : ''}
+        <div class="stub-card"><p class="kicker">Business Profile · Pasig City</p><h2 style="margin-top:4px">Aling Nena's Karinderya</h2><div class="stub-line"></div><div class="stub-line" style="width:60%"></div></div>`,
+    }
+
+    const fab = `<button class="ask-fab" type="button" aria-haspopup="dialog"><span class="ic">${icon('ask')}</span>Ask a question</button>`
+
+    // ─── Chat sheet ─────────────────────────────────────────────────────────
+    const EXAMPLES = {
+      roadmap: ['Ano pa ang kulang ko?', 'Which step needs a barangay clearance?', 'Saan ako kukuha ng business permit?'],
+      step: ['Ano ang dadalhin ko dito?', 'Which BPLD office is open on Friday?', 'What is the phone number of BPLD Annex 1?'],
+    }
+    const emptyState = (from) => `
+      <div class="empty">
+        <span class="big">${icon('sparkles')}</span>
+        <h3>Ask me about your steps, documents, and offices.</h3>
+        <p>Type in English, Tagalog, or Taglish.</p>
+        <div class="try">
+          <p id="try-label">Try asking</p>
+          <ul class="try-list" aria-labelledby="try-label">
+            ${EXAMPLES[from].map((q) => `<li><button class="chip-q" type="button">${icon('msg')}<span>${q}</span>${icon('chev', 'i go')}</button></li>`).join('')}
+          </ul>
+        </div>
+      </div>`
+    const me = (text) => `<div class="msg me"><div class="bubble">${text}</div></div>`
+    const bot = (html, after = '') => `<div class="msg bot"><span class="who">${icon('sparkles')}</span><div class="col"><div class="bubble">${html}</div>${after}</div></div>`
+    const sys = (ic, title, body, retry) => `
+      <div class="sys"><span class="dot">${icon(ic)}</span><div><b>${title}</b><p>${body}</p>
+        ${retry ? `<button class="btn-retry" type="button">${icon('rotate')}Try again</button>` : ''}</div></div>`
+
+    const STREAMING = '<p>Sa BPLD (Business Permits and Licensing Department) ka mag-a-apply. Step 5 yan sa roadmap mo.</p><p>May 4 na branch: Annex 1 sa Ayala Malls The 30th, Annex 2 sa Robinsons<span class="caret" aria-hidden="true"></span></p>'
+
+    function sheet({ from = 'roadmap', step = null, guest = false, body = null, streaming = false, draft = '', announce = '' } = {}, modal = true) {
+      return `
+        ${modal ? '<div class="backdrop" aria-hidden="true"></div>' : ''}
+        <section class="sheet" role="dialog" aria-modal="${modal}" aria-labelledby="chat-title" aria-describedby="chat-desc">
+          <div class="grabber" aria-hidden="true"></div>
+          <div class="sh-head">
+            <span class="tile">${icon('sparkles')}</span>
+            <div class="ttl"><h2 id="chat-title">Ask about your roadmap</h2><p id="chat-desc">Answers come only from your roadmap.</p></div>
+            <button class="icon-btn" type="button" aria-label="Close chat">${icon('x')}</button>
+          </div>
+          ${guest ? `<div class="guest-strip"><span>Save your roadmap so you don't lose it.</span><a class="btn-google" href="#">${GOOGLE_G}Save with Google</a></div>` : ''}
+          ${step ? `<p class="ctx">${icon('mapPin')}Asking about <b>Step ${step}</b></p>` : ''}
+          <div class="msgs">${body ?? emptyState(from)}</div>
+          <p class="sr-only" role="status">${announce}</p>
+          <form class="composer" onsubmit="return false">
+            <div class="row">
+              <label class="sr-only" for="ask">Your question</label>
+              <textarea id="ask" rows="1" maxlength="1000" placeholder="${streaming ? 'Wait for the answer to finish…' : 'Type your question…'}" aria-describedby="ask-count"${streaming ? ' readonly aria-disabled="true"' : ''}>${draft}</textarea>
+              <button class="send" type="submit" aria-label="Send question"${streaming || !draft.trim() ? ' aria-disabled="true"' : ''}>${icon('arrowUp')}</button>
+            </div>
+            <div class="meta"><span>Check with the office if you're unsure.</span><span id="ask-count">${draft.length} / 1000</span></div>
+          </form>
+        </section>`
+    }
+
+    // A viewport frame: page stub (shifted left on desktop when the panel is open), the button, and an optional sheet.
+    function screen({ page = 'roadmap', guest = false, open = null } = {}, mobile) {
+      const desktopOpen = open && !mobile
+      return `
+        ${header(guest)}
+        <div class="page${desktopOpen ? ' shifted' : ''}"><div class="container">${PAGES[page](guest)}</div></div>
+        ${open ? sheet(open, mobile) : fab}`
+    }
+
+    // ─── Office cards ───────────────────────────────────────────────────────
+    // One tel: link per number. "(02) 8643-1111 local 1158" dials the trunk line, waits, then the local: tel:0286431111,1158.
+    const telHref = (n) => { const [main, local] = n.split(/local/i); return 'tel:' + main.replace(/[^\d+]/g, '') + (local ? ',' + local.replace(/\D/g, '') : '') }
+    const newTab = (cls, href, label, lead = '') => `<a class="btn-map${cls}" href="${href}" target="_blank" rel="noopener noreferrer">${lead}${label}${icon('external')}<span class="sr-only"> (opens in a new tab)</span></a>`
+    function officeCard(o) {
+      const online = o.access === 'Online'
+      const rows = [
+        o.address && `<li>${icon('mapPin')}<span>${o.address}</span></li>`,
+        o.hours && `<li>${icon('clock')}<span>${o.hours}</span></li>`,
+        ...(o.phone ? o.phone.split(';').map((n) => `<li><a href="${telHref(n.trim())}">${icon('phone')}${n.trim()}</a></li>`) : []),
+        o.email && `<li><a href="mailto:${o.email}">${icon('mail')}<span>${o.email.replace('@', '@<wbr>')}</span></a></li>`,
+      ].filter(Boolean).join('')
+      const action = [
+        o.website && newTab(online ? ' solid' : '', o.website, 'Go to the website'),
+        o.mapsUrl && newTab('', o.mapsUrl, 'Open in Google Maps', icon('mapPin')),
+      ].filter(Boolean).join('')
+      return `
+        <li class="office">
+          <div class="o-top">
+            <span class="tile${online ? ' online' : ''}">${icon(online ? 'globe' : 'building')}</span>
+            <div><h3>${o.name}</h3><span class="access">${icon(online ? 'globe' : 'mapPin')}${online ? 'Online' : 'In person'}</span></div>
+          </div>
+          ${o.isVerified ? '' : `<p class="unverified" role="note">${icon('warn')}Confirm before you go.</p>`}
+          ${rows ? `<ul class="o-rows">${rows}</ul>` : ''}
+          ${action ? `<div class="o-act">${action}</div>` : ''}
+        </li>`
+    }
+    function wherePage(number, name, offices) {
+      const many = offices.length > 1
+      return `
+        ${header(false)}
+        <div class="page" style="padding-bottom:48px"><div class="container">
+          <div><p class="eyebrow">Step ${number} of 10</p><h1 style="margin-top:8px">${name}</h1></div>
+          <div class="stub-card"><h2>${icon('listChecks')}What to bring</h2><div class="stub-line"></div><div class="stub-line" style="width:70%"></div></div>
+          <section class="where" aria-labelledby="where-h">
+            <div class="where-h"><h2 id="where-h">${icon('mapPin')}Where to go</h2>${many ? `<span>${offices.length} offices</span>` : ''}</div>
+            ${many ? '<p class="where-sub">Go to any one of these.</p>' : ''}
+            <ul class="offices${many ? ' many' : ''}">${offices.map(officeCard).join('')}</ul>
+          </section>
+        </div></div>`
+    }
+
+    // ─── Frames ─────────────────────────────────────────────────────────────
+    // Every frame sits in one page, so prefix its ids, radio names and id references with the frame number.
+    let frameNo = 0
+    const scope = (html, p = `f${++frameNo}-`) => html
+      .replace(/\b(id|for|name)="([^"]+)"/g, (_, a, v) => `${a}="${p}${v}"`)
+      .replace(/\b(aria-describedby|aria-labelledby)="([^"]+)"/g, (_, a, v) => `${a}="${v.split(' ').map((t) => p + t).join(' ')}"`)
+    const frame = (label, size, body, vp) => `
+      <div><p class="frame-label">${label}</p><div class="frame-${size} is-${size}${vp ? ' vp' : ''}">${scope(body)}</div></div>`
+    // Chat frames are viewport-sized; office frames grow with their content.
+    const pairVp = (name, opts) => [[`${name} · Mobile 360 × 720`, 'mobile', () => screen(opts, true), true], [`${name} · Desktop 1280 × 800`, 'desktop', () => screen(opts, false), true]]
+    const mobileVp = (name, opts) => [`${name} · Mobile 360 × 720`, 'mobile', () => screen(opts, true), true]
+    const pair = (name, render) => [[`${name} · Mobile 360`, 'mobile', render], [`${name} · Desktop 1280`, 'desktop', render]]
+    const mobile = (name, render) => [`${name} · Mobile 360`, 'mobile', render]
+
+    const STATES = [
+      ['Screen 1 · Chat button', '1. Roadmap, signed in as a guest', pairVp('Roadmap', { page: 'roadmap', guest: true }), `<ul>
+        <li>New <code>AskButton</code> in <code>src/features/assistant/</code>, rendered by the roadmap, step detail and My Business pages, for guests and Google users (US-013-FE-01). Not on the assessment screens (Section 14).</li>
+        <li>Floating pill, <code>fixed right-4 bottom-4 md:right-6 md:bottom-6 z-30</code>, <code>h-13 rounded-full bg-gold text-navy font-bold pl-2 pr-5 shadow-xl</code> with a white 4 px halo (<code>ring-4 ring-white/70</code>) so it stands out on cream and on white cards. Navy circle with lucide <code>MessageCircleQuestion</code> in gold. Label "Ask a question". Focus ring is navy.</li>
+        <li>Each of the 3 pages gets <code>pb-24</code> so the button never sits over the last control on the page.</li>
+        <li>The guest banner is at the top of the page, in the normal flow, so the button never covers its "Save with Google" button.</li>
+        <li>Hidden while the sheet is open. Hidden when there's no business profile (the pages already show "Answer a few questions first", and the ask API would return 404).</li>
+      </ul>`],
+      [null, '2. Step detail and My Business', [
+        mobileVp('Step detail', { page: 'step' }),
+        mobileVp('My Business', { page: 'business' }),
+      ], `<ul>
+        <li>Same button, same place. On a step page it sends <code>stepNumber</code> with every question. Elsewhere <code>stepNumber</code> is null (US-013-FE-01).</li>
+      </ul>`],
+
+      ['Screen 2 · Chat sheet', '3. Open, empty (from the roadmap, guest)', pairVp('Empty', { page: 'roadmap', guest: true, open: { from: 'roadmap', guest: true } }), `<ul>
+        <li><b>Mobile:</b> the shadcn <code>sheet</code> (<code>side="bottom"</code>), a modal on Radix Dialog from the <code>radix-ui</code> package we already have, so no new dependency. <code>h-[88dvh] rounded-t-3xl</code> with a grabber bar, and a <code>bg-navy/45</code> backdrop. <code>dvh</code> keeps the box above the phone keyboard.</li>
+        <li><b>Desktop (≥ 1024 px):</b> a panel docked on the right, <code>w-[400px]</code>, under the header, <b>non-modal</b>. The page column moves left (<code>lg:mr-[400px]</code>), so the guest banner and everything else stay visible and clickable.</li>
+        <li><b>Guest banner (ticket):</b> on desktop nothing covers it. On mobile the sheet has to cover the page, so for guests it carries its own slim row: "Save your roadmap so you don't lose it." and the same <code>GoogleButton</code> (same <code>useLinkGoogle</code> call). Google users don't see the row, and neither do desktop users, since the banner stays visible beside the panel.</li>
+        <li>Header: gold <code>size-10 rounded-xl</code> tile with <code>Sparkles</code>, title "Ask about your roadmap" (the dialog's <code>aria-labelledby</code>), line "Answers come only from your roadmap." (<code>aria-describedby</code>), and a 44 px close button (<code>X</code>, <code>aria-label="Close chat"</code>).</li>
+        <li>Empty state: big gold tile, "Ask me about your steps, documents, and offices." and "Type in English, Tagalog, or Taglish." The header line already says answers come only from the roadmap. Then "Try asking" and 3 example questions as full-width buttons (<code>min-h-11 rounded-xl border bg-white</code>). Tapping one sends it right away.</li>
+        <li>Examples from the roadmap and My Business: "Ano pa ang kulang ko?", "Which step needs a barangay clearance?", "Saan ako kukuha ng business permit?". All three can be answered from the user's rows (D22).</li>
+        <li>Composer: <code>&lt;textarea rows={1} maxLength={1000}&gt;</code>, placeholder "Type your question…" (the empty state already says which languages work), <code>h-12 max-h-30 rounded-2xl border-2 border-cream-deep bg-cream text-base</code> (16 px, so iOS doesn't zoom). On focus: navy border, white fill, gold ring, the same as the describe screen. Enter sends, Shift+Enter adds a line. Send is a 48 px navy circle with <code>ArrowUp</code>, off while the <b>trimmed</b> box is empty, so a question of only spaces is never sent. Under it: "Check with the office if you're unsure." and the "0 / 1000" counter (linked with <code>aria-describedby</code>, not live).</li>
+        <li>Keyboard: focus goes to the box on open. Esc closes on both sizes, and focus returns to the "Ask a question" button (US-013-FE-01). The mobile sheet traps focus (Radix). The desktop panel doesn't, since the page beside it stays usable.</li>
+        <li>Closing or refreshing clears the conversation (D22). There's no "new chat" button, since closing is the same thing.</li>
+      </ul>`],
+      [null, '4. Open, empty (from a step page)', [mobileVp('Empty, Step 5', { page: 'step', open: { from: 'step', step: 5 } })], `<ul>
+        <li>On a step page, a chip under the header says "Asking about <b>Step 5</b>" (<code>rounded-full bg-brand/8 text-brand text-[12.5px]</code>), so the user knows "here" means this step. It matches the <code>stepNumber</code> the request sends.</li>
+        <li>The examples are about this step: "Ano ang dadalhin ko dito?", "Which BPLD office is open on Friday?", "What is the phone number of BPLD Annex 1?". Step 5's rows answer all three.</li>
+      </ul>`],
+      [null, '5. An answer streaming in', pairVp('Streaming', { page: 'roadmap', open: { from: 'roadmap', streaming: true, announce: 'Answering…', body: me('Saan ako kukuha ng business permit?') + bot(STREAMING, '<span class="typing" aria-hidden="true"><i></i><i></i><i></i>Answering…</span>') } }), `<ul>
+        <li>User bubble: right, <code>max-w-[85%] rounded-2xl rounded-br-md bg-navy text-white</code>. Assistant: left, a 28 px gold avatar with <code>Sparkles</code>, then <code>rounded-2xl rounded-bl-md border border-cream-deep bg-white</code>. Messages sit on <code>bg-cream</code>.</li>
+        <li>Text is appended per <code>delta</code> event and ends with a blinking gold caret. Under the bubble, three hopping gold dots and "Answering…". Both stop under <code>motion-reduce</code>.</li>
+        <li>While streaming, the box and Send are off (US-013-FE-01), but use <code>readOnly</code> + <code>aria-disabled="true"</code>, not <code>disabled</code>, so focus stays in the box. When <code>done</code> arrives the user can type the next question without hunting for the box. The placeholder reads "Wait for the answer to finish…".</li>
+        <li>Screen readers: the message list is <b>not</b> a live region, so the answer isn't read word by word. One hidden <code>&lt;p className="sr-only" role="status"&gt;</code> per sheet says "Answering…" when the stream starts, then the whole answer when <code>done</code> arrives. On <code>error</code>, 429 or 503 it says the card's title and line. The cards themselves have no <code>role</code>, so nothing is read twice.</li>
+        <li>The list scrolls to the newest message as text arrives, unless the user has scrolled up to read.</li>
+        <li>Answer text is rendered as plain text with line breaks (<code>whitespace-pre-line</code>), never as HTML, since it's model output.</li>
+      </ul>`],
+      [null, '6. "Not in your roadmap" and a refusal', [mobileVp('Not in roadmap + refusal', { page: 'roadmap', open: { from: 'roadmap', body:
+        me('Magkano ang babayaran ko sa business permit?') +
+        bot("<p>Wala sa roadmap mo ang eksaktong halaga. Itanong sa BPLD (Business Permits and Licensing Department). You can call Annex 1 at (02) 8643-1111 local 1158.</p>") +
+        me('Paano ako makakaiwas sa pagbabayad ng tax?') +
+        bot("<p>Sorry, I can't help with that. I can answer questions about your registration steps, documents, and offices.</p>") } })], `<ul>
+        <li>When the roadmap doesn't have the answer, the assistant says so and names the office from the user's rows (D22). Same bubble as any answer. The wording comes from US-013-AI-01.</li>
+        <li>A flagged or off-topic question gets a polite refusal as normal <code>delta</code> text (Section 4), so it looks like any answer. No red, no warning icon: the user did nothing wrong by asking.</li>
+      </ul>`],
+      [null, '7. Answer cut short, and the stream stopped', [
+        mobileVp('Incomplete', { page: 'roadmap', open: { from: 'roadmap', body: me('Pakisabi lahat ng steps at lahat ng dadalhin ko sa bawat isa, pati saan at kailan bukas ang bawat office.') + bot('<p>Step 1: DTI Business Name Registration. Online ito sa BNRS. Dalhin: one valid government ID, 2 or 3 business names, email address and mobile number.</p><p>Step 2: Barangay Business Clearance, sa barangay hall ng business address mo. Bukas Monday to Thursday, 7:00 AM to 6:00 PM. Dalhin: …</p>', `<p class="note">${icon('scissors')}<span>The answer was cut short. Try asking a shorter question.</span></p>`) } }),
+        mobileVp('Error mid-stream', { page: 'roadmap', open: { from: 'roadmap', body: me('Saan ako kukuha ng business permit?') + bot('<p>Sa BPLD (Business Permits and Licensing Department) ka mag-a-apply. Step 5 yan sa roadmap mo.</p><p>May 4 na branch: Annex 1 sa Ayala Malls</p>', sys('cloudOff', 'The answer stopped before it finished.', 'Check your connection, then try again.', true)) } }),
+      ], `<ul>
+        <li><code>done</code> with <code>incomplete: true</code>: the partial answer stays, then a gold note under it with <code>Scissors</code>: "The answer was cut short. Try asking a shorter question." (<code>rounded-xl border border-gold/70 bg-gold/18 text-[13px]</code>).</li>
+        <li>An <code>error</code> event after the stream started: the partial answer stays (US-013-FE-01), then a white card with <code>CloudOff</code>, "The answer stopped before it finished." and "Check your connection, then try again." and a "Try again" button (<code>min-h-11 rounded-full border-navy</code>). Try again sends the same question and history again and replaces the partial answer.</li>
+      </ul>`],
+      [null, '8. 429 (too many questions) and 503 (busy)', [
+        mobileVp('429', { page: 'roadmap', open: { from: 'roadmap', draft: '', body: me('Ano pa ang kulang ko?') + sys('clock', "You've asked a lot of questions.", 'Please wait a few minutes before asking again. Your roadmap and checklists still work.', false) } }),
+        mobileVp('503', { page: 'roadmap', open: { from: 'roadmap', body: me('Ano pa ang kulang ko?') + sys('cloudOff', 'The assistant is busy right now.', 'Try again in a minute. Your roadmap and checklists still work.', true) } }),
+      ], `<ul>
+        <li>Both are friendly cards in the conversation, not red <code>Alert</code>s, and both say the roadmap still works (US-013-FE-01). The question stays in the list so the user sees what wasn't answered.</li>
+        <li>429: <code>Clock</code>, "You've asked a lot of questions." and "Please wait a few minutes before asking again. Your roadmap and checklists still work." No retry button, since trying right away fails again. The box stays usable.</li>
+        <li>503 (or a timeout before the first token): <code>CloudOff</code>, "The assistant is busy right now." and "Try again in a minute. Your roadmap and checklists still work." with "Try again", which resends the question.</li>
+        <li>400 can't happen from this screen: Send needs a non-blank question of at most 1000 characters, and the client sends at most 6 history messages, each cut to 2000. 401 goes through the app's normal sign-in redirect. 404 has two causes: no profile (can't happen, since the button is hidden then) or a <code>stepNumber</code> no longer in the roadmap (an old tab after the user changed their answers). For 404 show a card with <code>RotateCw</code>: "Your roadmap changed." and "Refresh the page, then ask again."</li>
+      </ul>`],
+
+      ['Screen 3 · Office cards on step detail', '9. Several offices, in person (Step 5)', pair('Step 5', () => wherePage(5, 'Business Application Form and Documents', OFFICES_STEP5)), `<ul>
+        <li>Replaces today's "Where to go" box, which shows only <code>step.agency</code>. Same box (<code>rounded-2xl border border-brand/40 bg-[#edf0fc]</code>), now with a <code>MapPin</code> in the heading. If <code>offices</code> is empty, keep today's agency row.</li>
+        <li>More than one office: "4 offices" on the right of the heading and "Go to any one of these." under it. The cards stack on mobile and sit in 2 columns on desktop (<code>md:grid-cols-2</code>). One office takes the full width.</li>
+        <li>Card: <code>rounded-2xl border border-brand/15 bg-white p-3.5 shadow-sm</code>. A 44 px tile (<code>Building2</code> on brand for in person), the name, and an "In person" chip (<code>rounded-full bg-cream-deep text-xs font-bold</code>).</li>
+        <li>Rows with <code>text-brand</code> icons: <code>MapPin</code> address, <code>Clock</code> hours, <code>Phone</code> as a <code>tel:</code> link, <code>Mail</code> as a <code>mailto:</code> link. Link rows are <code>min-h-11</code>, so they're easy to tap. Addresses wrap (<code>break-words</code>). Emails break only after the "@" (<code>@&lt;wbr&gt;</code>), so the domain stays on one line.</li>
+        <li>"Open in Google Maps": <code>min-h-11 rounded-full border border-brand text-brand</code>, <code>target="_blank" rel="noopener noreferrer"</code>, with sr-only "(opens in a new tab)" (US-014-FE-01).</li>
+        <li>Phone: the API sends the display form (<code>"(02) 8643-1111 local 1158"</code>, Section 4). Several numbers are separated by <code>"; "</code> and each gets its own row and <code>tel:</code> link. The link keeps the digits and turns "local" into a pause (<code>tel:0286431111,1158</code>), so a phone dials the trunk line, then the local number. For US-014-BE-01: seed hotlines by their digits (DTI's "1-DTI (384)" as "1-384"), and a row with two locals (Annex 1's "local 1158 / 1222") as two numbers.</li>
+      </ul>`],
+      [null, '10. Online office (Step 1) and an unverified office (Step 2)', [
+        mobile('Online · Step 1', () => wherePage(1, 'DTI Business Name Registration', OFFICES_STEP1)),
+        mobile('Unverified · Step 2', () => wherePage(2, 'Barangay Business Clearance', OFFICES_STEP2)),
+      ], `<ul>
+        <li><b>Online</b>: gold tile with <code>Globe</code> and an "Online" chip. Online offices have no address or map in the data, so the main action is "Go to the website" (<code>bg-brand text-white</code>, new tab), in place of the address (US-014-FE-01). DTI has two hotlines, so two phone rows. Email still shows.</li>
+        <li>Every field that's present shows, whatever <code>access</code> says. <code>access</code> only picks the tile, the chip, and whether "Go to the website" is the filled button. For US-014-BE-01: where the research's hours cell is just "Online" (DTI, SEC, CPDO), seed <code>hours</code> as null. BFP keeps its "Mon-Fri, 8:00 AM-5:00 PM". Seed BIR's mixed row (10A / 10B) as two offices: Online (ORUS, "24/7") and In person (RDO 043 with its address, hours and map).</li>
+        <li><b>Unverified</b> (<code>isVerified: false</code>): a gold note under the name, <code>TriangleAlert</code> and "Confirm before you go." (D23, <code>role="note"</code>).</li>
+        <li>Missing fields are hidden, never "N/A" (US-014-FE-01). The barangay hall has no phone, email or map link, so only the address and hours show.</li>
+      </ul>`],
+    ]
+
+    document.getElementById('states').innerHTML = STATES.map(([screen, title, frames, notes]) => `
+      ${screen ? `<h2 class="doc-screen">${screen}</h2>` : ''}
+      <section class="state">
+        <h2>${title}</h2>
+        <div class="frames">${frames.map(([l, s, r, vp]) => frame(l, s, r(), vp)).join('')}</div>
+        <div class="notes">${notes}</div>
+      </section>`).join('')
+  </script>
+</body>
+</html>
