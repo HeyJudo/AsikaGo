@@ -5,6 +5,7 @@ using System.Text.Json;
 using AsikaGo.Api.Data;
 using AsikaGo.Api.Features.Assistant;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -309,5 +310,135 @@ public class AssistantTests(AssistantFactory factory) : IClassFixture<AssistantF
 
         Assert.Contains(factory.Logs, l => l.Contains("412 input") && l.Contains("17 output") && l.Contains("0 cached") && l.Contains(" ms"));
         Assert.DoesNotContain(factory.Logs, l => l.Contains(secret) || l.Contains("sk-test-secret"));
+    }
+
+    [Fact]
+    public async Task Ask_WithoutToken_ReturnsUnauthorized()
+    {
+        var factoryWithoutAuth = new WebApplicationFactory<Program>();
+        var client = factoryWithoutAuth.CreateClient();
+        var response = await client.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan kukunin ang cedula?" });
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Ask_Guest_Returns200AndEventStream()
+    {
+        var response = await Client().PostAsJsonAsync("/api/assistant/ask", new { question = "Saan kukunin ang cedula?" });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/event-stream", response.Content.Headers.ContentType!.MediaType);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public async Task Ask_EmptyQuestion_Returns400(string? question)
+    {
+        var response = await Client().PostAsJsonAsync("/api/assistant/ask", new { question });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Ask_QuestionTooLong_Returns400()
+    {
+        var response = await Client().PostAsJsonAsync("/api/assistant/ask", new { question = new string('a', 1001) });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Ask_StepNumberInvalid_Returns400()
+    {
+        var response = await Client().PostAsJsonAsync("/api/assistant/ask", new { question = "Test", stepNumber = 0 });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Ask_HistoryTooManyItems_Returns400()
+    {
+        var history = Enumerable.Range(0, 7).Select(_ => new { role = "user", text = "Hi" }).ToList();
+        var response = await Client().PostAsJsonAsync("/api/assistant/ask", new { question = "Test", history });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Ask_NullHistoryItem_Returns400()
+    {
+        var response = await Client().PostAsJsonAsync("/api/assistant/ask", new { question = "Test", history = new object?[] { null } });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("admin")]
+    [InlineData("USER")]
+    [InlineData("system")]
+    [InlineData("")]
+    public async Task Ask_InvalidRole_Returns400(string role)
+    {
+        var history = new[] { new { role, text = "Hi" } };
+        var response = await Client().PostAsJsonAsync("/api/assistant/ask", new { question = "Test", history });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Ask_HistoryTextTooLong_Returns400()
+    {
+        var history = new[] { new { role = "user", text = new string('a', 2001) } };
+        var response = await Client().PostAsJsonAsync("/api/assistant/ask", new { question = "Test", history });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Ask_EmptyOrNullHistoryText_Returns200()
+    {
+        ChatMessageDto[] history = [new("user", null), new("assistant", "")];
+        var response = await Client().PostAsJsonAsync("/api/assistant/ask", new { question = "Test", history });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Ask_ValidRequest_StreamsSSEEventsInOrder()
+    {
+        var response = await Client().PostAsJsonAsync("/api/assistant/ask", new { question = "Saan kukunin ang cedula?" });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("text/event-stream", response.Content.Headers.ContentType!.MediaType);
+
+        var stream = await response.Content.ReadAsStreamAsync();
+        using var reader = new StreamReader(stream);
+
+        var events = new List<(string Event, string Data)>();
+        string? currentEvent = null;
+
+        while (await reader.ReadLineAsync() is { } line)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                currentEvent = null;
+                continue;
+            }
+
+            if (line.StartsWith("event: "))
+            {
+                currentEvent = line["event: ".Length..].Trim();
+            }
+            else if (line.StartsWith("data: ") && currentEvent is not null)
+            {
+                var data = line["data: ".Length..].Trim();
+                events.Add((currentEvent, data));
+            }
+        }
+
+        Assert.Equal(4, events.Count);
+        Assert.Equal("delta", events[0].Event);
+        Assert.Equal("{\"text\":\"Placeholder \"}", events[0].Data);
+
+        Assert.Equal("delta", events[1].Event);
+        Assert.Equal("{\"text\":\"answer \"}", events[1].Data);
+
+        Assert.Equal("delta", events[2].Event);
+        Assert.Equal("{\"text\":\"stream.\"}", events[2].Data);
+
+        Assert.Equal("done", events[3].Event);
+        Assert.Equal("{\"incomplete\":false}", events[3].Data);
     }
 }
