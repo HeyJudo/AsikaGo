@@ -10,6 +10,7 @@ import type { StepDetail } from '../src/lib/queries.ts'
 let server: ViteDevServer
 let queries: typeof import('../src/lib/queries.ts')
 let Page: typeof import('../src/features/roadmap/StepDetailPage.tsx').StepDetailPage
+let Auth: typeof import('../src/app/AuthProvider.tsx').AuthProvider
 const originalFetch = globalThis.fetch
 let save: (id: string, prepared: boolean) => Promise<Response>
 let saved: StepDetail
@@ -32,6 +33,7 @@ before(async () => {
   supabase.auth.getSession = async () => ({ data: { session: null }, error: null })
   queries = await server.ssrLoadModule('/src/lib/queries.ts')
   Page = (await server.ssrLoadModule('/src/features/roadmap/StepDetailPage.tsx')).StepDetailPage
+  Auth = (await server.ssrLoadModule('/src/app/AuthProvider.tsx')).AuthProvider
   globalThis.fetch = async (input, init) => {
     if (init?.method === 'PUT') {
       return save(String(input).split('/').at(-1)!, JSON.parse(String(init.body)).isPrepared)
@@ -80,8 +82,8 @@ function deferred() {
 
 test('every document has a native labeled checkbox, 44px target, and separate source link', () => {
   const cache = client()
-  const html = render(cache, createElement(MemoryRouter, { initialEntries: ['/roadmap/steps/1'] },
-    createElement(Routes, null, createElement(Route, { path: '/roadmap/steps/:number', element: createElement(Page) }))))
+  const html = render(cache, createElement(Auth, null, createElement(MemoryRouter, { initialEntries: ['/roadmap/steps/1'] },
+    createElement(Routes, null, createElement(Route, { path: '/roadmap/steps/:number', element: createElement(Page) })))))
   assert.equal((html.match(/type="checkbox"/g) ?? []).length, 2)
   const labels = [...html.matchAll(/<label\b[^>]*>[\s\S]*?<\/label>/g)].map((match) => match[0])
   assert.equal(labels.length, 2)

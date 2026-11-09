@@ -10,6 +10,7 @@ import type { Documents } from '../src/lib/queries.ts'
 let server: ViteDevServer
 let setPrepared: typeof import('../src/lib/queries.ts').setPrepared
 let Page: typeof import('../src/features/progress/DocumentsPage.tsx').DocumentsPage
+let Auth: typeof import('../src/app/AuthProvider.tsx').AuthProvider
 
 before(async () => {
   // supabase.ts throws at import without these; these tests never call Supabase
@@ -18,6 +19,7 @@ before(async () => {
   server = await createServer({ server: { middlewareMode: true, watch: null, ws: false } })
   setPrepared = (await server.ssrLoadModule('/src/lib/queries.ts')).setPrepared
   Page = (await server.ssrLoadModule('/src/features/progress/DocumentsPage.tsx')).DocumentsPage
+  Auth = (await server.ssrLoadModule('/src/app/AuthProvider.tsx')).AuthProvider
 })
 after(async () => { await server?.close() })
 
@@ -72,7 +74,7 @@ function renderPage(data: Documents | null | undefined | Error) {
     client.setQueryData(['roadmap-documents'], data)
   }
   return renderToStaticMarkup(createElement(QueryClientProvider, { client },
-    createElement(MemoryRouter, null, createElement(Page))))
+    createElement(Auth, null, createElement(MemoryRouter, null, createElement(Page)))))
 }
 
 test('documents are grouped by step with counts, checkboxes, and step links', () => {
@@ -118,7 +120,6 @@ test('loading and error use the shared page states', () => {
 
 test('the roadmap links to All documents with the summed ready count', async () => {
   const Roadmap = (await server.ssrLoadModule('/src/features/roadmap/RoadmapPage.tsx')).RoadmapPage
-  const Auth = (await server.ssrLoadModule('/src/app/AuthProvider.tsx')).AuthProvider
   const client = new QueryClient()
   client.setQueryData(['roadmap'], {
     roadmapId: 'r-1', createdAt: '2026-10-28T00:00:00Z', businessType: 'Sole Proprietorship',

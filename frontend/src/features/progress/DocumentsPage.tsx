@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Centered, FullPageError, FullPageLoader } from '@/components/PageStates'
 import { NoProfileState } from '@/features/roadmap/RoadmapPage'
+import { GuestBanner } from '@/features/auth/GuestBanner'
 import { type Requirement, useDocuments, useSetRequirementPrepared } from '@/lib/queries'
 
 function EmptyIllustration() {
@@ -113,6 +114,8 @@ export function DocumentsPage() {
           <ArrowLeft className="size-4.5" />
           My roadmap
         </Link>
+
+        <GuestBanner />
 
         <div>
           <h1 className="text-navy text-3xl font-extrabold break-words md:text-4xl">All documents to bring</h1>
