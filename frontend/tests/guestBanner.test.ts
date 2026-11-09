@@ -90,9 +90,9 @@ test('Google users see no banner on any of the three pages', () => {
 
 test('Save with Google returns the guest to the page they were on', async () => {
   const calls: any[] = []
+  const realLink = mods.supabase.auth.linkIdentity
   mods.supabase.auth.linkIdentity = async (arg: unknown) => { calls.push(arg); return { data: {}, error: null } }
   const g = globalThis as any
-  const realWindow = g.window
   g.window = { location: { origin: 'http://localhost:5173' } }
   try {
     let banner: ReactNode = null
@@ -107,6 +107,7 @@ test('Save with Google returns the guest to the page they were on', async () => 
     await findClick(banner)!()
     assert.deepEqual(calls, [{ provider: 'google', options: { redirectTo: 'http://localhost:5173/roadmap/steps/3' } }])
   } finally {
-    g.window = realWindow
+    mods.supabase.auth.linkIdentity = realLink
+    delete g.window
   }
 })
