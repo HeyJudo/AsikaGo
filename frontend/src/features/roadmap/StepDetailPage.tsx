@@ -18,6 +18,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { FullPageError, FullPageLoader } from '@/components/PageStates'
 import { StepNotFound } from '@/features/roadmap/StepNotFound'
+import { GuestBanner } from '@/features/auth/GuestBanner'
 import { type Requirement, useRoadmapStep, useUpdateRequirement, useUpdateStepStatus } from '@/lib/queries'
 
 function formatDate(iso: string): string {
@@ -136,6 +137,8 @@ function StepDetailContent({ number }: { number: number }) {
           <ArrowLeft className="size-4.5" />
           My roadmap
         </Link>
+
+        <GuestBanner />
 
         <div>
           <div className="flex flex-wrap items-center gap-2">

@@ -1,11 +1,8 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router'
-import { AlertCircle, ArrowRight, Check, ChevronRight, ClipboardList, Flag, Info, PartyPopper } from 'lucide-react'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { ArrowRight, Check, ChevronRight, ClipboardList, Flag, Info, PartyPopper } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { GoogleButton } from '@/components/GoogleButton'
-import { useAuth } from '@/app/AuthProvider'
-import { useLinkGoogle } from '@/features/auth/useLinkGoogle'
+import { GuestBanner } from '@/features/auth/GuestBanner'
 import { Centered, FullPageError, FullPageLoader } from '@/components/PageStates'
 import { useRoadmap } from '@/lib/queries'
 import { RoadmapVisualizer } from '@/features/roadmap/RoadmapVisualizer'
@@ -64,29 +61,7 @@ export function NoProfileState() {
   )
 }
 
-function GuestBanner() {
-  const { link, pending, error } = useLinkGoogle('/roadmap')
-
-  return (
-    <div className="border-brand/30 bg-brand/5 flex flex-col gap-4 rounded-xl border p-4 md:flex-row md:items-center md:justify-between md:p-5">
-      <p className="text-navy font-semibold">This is your roadmap preview. Save it with Google so you don't lose it.</p>
-      <div className="flex w-full flex-col gap-2 md:w-72 md:shrink-0">
-        <GoogleButton onClick={() => void link()} disabled={pending}>
-          Save with Google
-        </GoogleButton>
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-      </div>
-    </div>
-  )
-}
-
 export function RoadmapPage() {
-  const { user } = useAuth()
   const { data: roadmap, isLoading, isError, refetch } = useRoadmap()
 
   const visualizerSteps = useMemo(() => {
@@ -120,7 +95,7 @@ export function RoadmapPage() {
   return (
     <div className="bg-cream min-h-[calc(100svh-4rem)] px-6 py-8 md:px-8 md:py-12">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
-        {user?.is_anonymous && <GuestBanner />}
+        <GuestBanner />
 
         {visualizerSteps.length > 0 && (
           <RoadmapVisualizer steps={visualizerSteps} nextStepNumber={roadmap.nextStepNumber != null ? Number(roadmap.nextStepNumber) : null} />
