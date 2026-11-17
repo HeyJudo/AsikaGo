@@ -9,7 +9,7 @@ Sprint 7's second week is testing and fixes. Sprint 8 (December 14 - 16) is the
 final demo and any extras outside the MVP.
 **Prepared:** November 17, 2026
 **Owner:** Product Owner
-**Status:** Draft for PO approval. Not yet in Azure Boards.
+**Status:** Approved by PO on Nov 17, 2026. Tickets created in Azure Boards (AB#134 to AB#149).
 **Purpose:** Merge the unfinished Sprint 5 work with the Sprint 6 stories into
 one plan, and split the four stories that have no tasks yet (US-010, US-015,
 US-016, US-017).
@@ -81,6 +81,7 @@ any AI on screen, file storage, any voice code.
 
 | Field | Value |
 |---|---|
+| AB# | AB#134 |
 | Parent | US-013A (AB#38) |
 | Type | Product |
 | Assignee | Jude |
@@ -150,6 +151,7 @@ story adds the map itself.
 
 | Field | Value |
 |---|---|
+| AB# | AB#135 |
 | Parent | US-015 (AB#41) |
 | Type | Frontend |
 | Assignee | Keisuke |
@@ -175,6 +177,7 @@ story adds the map itself.
 
 | Field | Value |
 |---|---|
+| AB# | AB#136 |
 | Parent | US-010 (AB#39) |
 | Type | Product / Decision |
 | Assignee | Jude |
@@ -203,6 +206,7 @@ are private to the user.
 
 | Field | Value |
 |---|---|
+| AB# | AB#137 |
 | Parent | US-010 (AB#39) |
 | Type | UI/UX |
 | Assignee | Keisuke |
@@ -217,6 +221,7 @@ are private to the user.
 
 | Field | Value |
 |---|---|
+| AB# | AB#139 |
 | Parent | US-010 (AB#39) |
 | Type | Backend |
 | Assignee | Jude |
@@ -235,6 +240,7 @@ are private to the user.
 
 | Field | Value |
 |---|---|
+| AB# | AB#140 |
 | Parent | US-010 (AB#39) |
 | Type | Backend / QA |
 | Assignee | Krystelle |
@@ -250,6 +256,7 @@ are private to the user.
 
 | Field | Value |
 |---|---|
+| AB# | AB#141 |
 | Parent | US-010 (AB#39) |
 | Type | Frontend |
 | Assignee | Keisuke |
@@ -272,6 +279,7 @@ by US-017-AI-01's result on Nov 24.
 
 | Field | Value |
 |---|---|
+| AB# | AB#142 |
 | Parent | US-017 (AB#111) |
 | Type | Backend / AI |
 | Assignee | Krystelle |
@@ -291,6 +299,7 @@ by US-017-AI-01's result on Nov 24.
 
 | Field | Value |
 |---|---|
+| AB# | AB#143 |
 | Parent | US-017 (AB#111) |
 | Type | Frontend |
 | Assignee | Seth |
@@ -313,6 +322,7 @@ US-016-FE-01 alone.
 
 | Field | Value |
 |---|---|
+| AB# | AB#138 |
 | Parent | US-016 (AB#110) |
 | Type | UI/UX |
 | Assignee | Keisuke |
@@ -327,6 +337,7 @@ US-016-FE-01 alone.
 
 | Field | Value |
 |---|---|
+| AB# | AB#144 |
 | Parent | US-016 (AB#110) |
 | Type | Frontend |
 | Assignee | Seth |
@@ -342,6 +353,7 @@ US-016-FE-01 alone.
 
 | Field | Value |
 |---|---|
+| AB# | AB#145 |
 | Parent | US-016 (AB#110) |
 | Type | Backend / AI |
 | Assignee | Krystelle |
@@ -360,6 +372,7 @@ US-016-FE-01 alone.
 
 | Field | Value |
 |---|---|
+| AB# | AB#146 |
 | Parent | US-016 (AB#110) |
 | Type | Frontend |
 | Assignee | Seth (Jude pairs) |
@@ -377,6 +390,7 @@ US-016-FE-01 alone.
 
 | Field | Value |
 |---|---|
+| AB# | AB#147 |
 | Parent | US-016 (AB#110) |
 | Type | AI / QA |
 | Assignee | Michelle |
@@ -419,6 +433,7 @@ Dec 11. About 3 h per person is held free for this.
 
 | Field | Value |
 |---|---|
+| AB# | AB#149 |
 | Assignee | Jude |
 | Estimate | 2 h |
 | Due | Dec 11 |
@@ -431,6 +446,7 @@ Dec 11. About 3 h per person is held free for this.
 
 | Field | Value |
 |---|---|
+| AB# | AB#148 |
 | Assignee | Jude |
 | Estimate | 1 h |
 | Due | Dec 7 |
@@ -444,7 +460,7 @@ Dec 11. About 3 h per person is held free for this.
 
 | ID | Title | Owner | Est. | Due | Part |
 |---|---|---|---|---|---|
-| S6-PM-01 | Azure / Notion sync | Jude | 2 h | Nov 18 | A |
+| S6-PM-01 (AB#134) | Azure / Notion sync | Jude | 2 h | Nov 18 | A |
 | AB#121 | "Not sure" helper text | Michelle | 1 h | Nov 19 | A |
 | AB#122 | Extraction prompt + rerun | Michelle | 2 h | Nov 19 / 24 | A |
 | AB#130 | Offices table + seed | Krystelle | 4 h | Nov 19 | A |
@@ -460,24 +476,24 @@ Dec 11. About 3 h per person is held free for this.
 | AB#133 | Transcribe check | Michelle | 2 h | Nov 24 | A |
 | AB#127 | "Not sure" helper | Keisuke | 3 h | Nov 25 | A |
 | AB#118 | Ask API tests | Krystelle | 3 h | Nov 25 | A |
-| S7-PM-01 | Decisions D24-D26 | Jude | 1 h | Nov 25 | B |
+| S7-PM-01 (AB#136) | Decisions D24-D26 | Jude | 1 h | Nov 25 | B |
 | AB#129 | Chat sheet | Seth | 6 h | Nov 26 | A |
-| US-010-UI-01 | Photo design | Keisuke | 2 h | Nov 26 | B |
-| US-016-UI-01 | Voice design | Keisuke | 2 h | Nov 26 | B |
+| US-010-UI-01 (AB#137) | Photo design | Keisuke | 2 h | Nov 26 | B |
+| US-016-UI-01 (AB#138) | Voice design | Keisuke | 2 h | Nov 26 | B |
 | AB#119 | Run Q&A test set | Michelle | 3 h | Nov 27 | A |
-| US-015-FE-01 | Embedded map | Keisuke | 3 h | Nov 27 | A |
-| US-010-BE-01 | Photo storage + endpoints | Jude | 5 h | Dec 1 | B |
-| US-017-BE-01 | Transcribe endpoint | Krystelle | 3 h | Dec 1 | B |
-| US-010-BE-02 | Photo tests | Krystelle | 2 h | Dec 2 | B |
-| US-016-BE-01 | Voice session endpoint | Krystelle | 5 h | Dec 2 | B |
-| US-017-FE-01 | Mic on describe step | Seth | 3 h | Dec 2 | B |
-| US-010-FE-01 | Photos on document rows | Keisuke | 4 h | Dec 3 | B |
-| US-016-FE-01 | Mic + read aloud in chat | Seth | 3 h | Dec 3 | B |
-| US-016-FE-02 | Talk mode | Seth (Jude pairs) | 5 h | Dec 4 | B |
-| US-016-AI-02 | Voice test run | Michelle | 2 h | Dec 4 | B |
-| S7-OPS-01 | Production config | Jude | 1 h | Dec 7 | C |
+| US-015-FE-01 (AB#135) | Embedded map | Keisuke | 3 h | Nov 27 | A |
+| US-010-BE-01 (AB#139) | Photo storage + endpoints | Jude | 5 h | Dec 1 | B |
+| US-017-BE-01 (AB#142) | Transcribe endpoint | Krystelle | 3 h | Dec 1 | B |
+| US-010-BE-02 (AB#140) | Photo tests | Krystelle | 2 h | Dec 2 | B |
+| US-016-BE-01 (AB#145) | Voice session endpoint | Krystelle | 5 h | Dec 2 | B |
+| US-017-FE-01 (AB#143) | Mic on describe step | Seth | 3 h | Dec 2 | B |
+| US-010-FE-01 (AB#141) | Photos on document rows | Keisuke | 4 h | Dec 3 | B |
+| US-016-FE-01 (AB#144) | Mic + read aloud in chat | Seth | 3 h | Dec 3 | B |
+| US-016-FE-02 (AB#146) | Talk mode | Seth (Jude pairs) | 5 h | Dec 4 | B |
+| US-016-AI-02 (AB#147) | Voice test run | Michelle | 2 h | Dec 4 | B |
+| S7-OPS-01 (AB#148) | Production config | Jude | 1 h | Dec 7 | C |
 | AB#109 | End-to-end + user test | Keisuke | 6 h | Dec 9 | C |
-| S7-PM-02 | Final docs + board | Jude | 2 h | Dec 11 | C |
+| S7-PM-02 (AB#149) | Final docs + board | Jude | 2 h | Dec 11 | C |
 
 ---
 
