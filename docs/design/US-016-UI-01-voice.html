@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AsikaGo – Mic, Read Aloud and Talk Mode (US-016-UI-01 Design)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* Tokens copied from frontend/src/index.css (:root) so the build matches the live app. */
+    :root {
+      --brand: #2340d5;
+      --brand-dark: #1a31a8;
+      --gold: #f1b132;
+      --navy: #14215b;
+      --cream: #faf7f0;
+      --cream-deep: #f1ece0;
+      --muted-foreground: #5b6478;
+      --border: #e5e5e5;
+      --secondary: #f5f5f5;
+      --destructive: #e7000b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; color: var(--navy); background: #e9ecf2; padding: 32px; }
+    a { color: inherit; text-decoration: none; }
+    button, textarea { font: inherit; color: inherit; }
+    svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    :focus-visible { outline: 3px solid rgba(35,64,213,.45); outline-offset: 2px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+    @keyframes pulse { 50% { opacity: .35; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes ring { from { transform: scale(1); opacity: .55; } to { transform: scale(1.6); opacity: 0; } }
+    @keyframes bars { 50% { transform: scaleY(.35); } }
+
+    /* ─── Doc chrome (not part of the design) ─── */
+    .doc-title { font-size: 28px; font-weight: 800; }
+    .doc-sub { color: var(--muted-foreground); margin: 4px 0 32px; max-width: 900px; line-height: 1.6; }
+    .doc-screen { font-size: 24px; font-weight: 800; margin: 24px 0 20px; padding-top: 24px; border-top: 2px solid #c9cfdb; }
+    .state { margin-bottom: 56px; }
+    .state > h2 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+    .frames { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+    .frame-label { font-size: 12px; font-weight: 600; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+    .frame-mobile, .frame-desktop { position: relative; background: var(--cream); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(20,33,91,.15); }
+    .frame-mobile { width: 360px; }
+    .frame-desktop { width: 1280px; }
+    .vp.frame-mobile { height: 720px; }
+    .vp.frame-desktop { height: 800px; }
+    .notes { background: #fff; border-left: 4px solid var(--brand); border-radius: 8px; padding: 12px 16px; margin-top: 16px; max-width: 1672px; font-size: 13px; line-height: 1.6; }
+    .notes li { margin-left: 18px; }
+    .notes code { background: #f1f5f9; padding: 0 4px; border-radius: 4px; font-size: 12px; }
+
+    /* ─── App header (AppLayout.tsx SiteHeader, signed in) ─── */
+    .app-header { position: relative; z-index: 2; background: var(--brand); height: 64px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.1); }
+    .is-desktop .app-header { height: 80px; padding: 0 32px; }
+    .app-header img { height: 32px; }
+    .is-desktop .app-header img { height: 48px; }
+    .menu-trigger { min-height: 44px; display: flex; align-items: center; gap: 8px; border-radius: 999px; padding: 2px; color: #fff; font-size: 14px; font-weight: 600; }
+    .is-desktop .menu-trigger { padding-right: 12px; }
+    .avatar { width: 40px; height: 40px; border-radius: 999px; background: var(--gold); color: var(--navy); display: grid; place-items: center; }
+    .menu-trigger .name { display: none; }
+    .is-desktop .menu-trigger .name { display: block; }
+    .menu-trigger svg.chev-d { width: 16px; height: 16px; margin-right: 4px; }
+
+    /* ─── Describe step (from US-012-UI-01) ─── */
+    .wrap { display: flex; justify-content: center; padding: 24px 12px; }
+    .is-desktop .wrap { padding: 40px 16px; }
+    .card { width: 100%; max-width: 640px; background: #fff; border-radius: 24px; padding: 20px; box-shadow: 0 10px 15px -3px rgba(20,33,91,.1), 0 4px 6px -4px rgba(20,33,91,.1); }
+    .is-desktop .card { padding: 32px; }
+    .card h1 { font-size: 24px; font-weight: 700; line-height: 1.33; margin-bottom: 8px; }
+    .help { font-size: 14px; line-height: 1.5; color: var(--muted-foreground); }
+    .lead { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .lead-tile { width: 48px; height: 48px; border-radius: 16px; background: var(--gold); color: var(--navy); display: grid; place-items: center; box-shadow: 0 6px 16px rgba(241,177,50,.4); }
+    .lead-tile svg.i { width: 24px; height: 24px; }
+    .badge { border-radius: 999px; background: var(--cream-deep); font-size: 12px; font-weight: 600; padding: 4px 12px; }
+    .field-label { display: block; margin-top: 20px; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
+    textarea.box { display: block; width: 100%; min-height: 152px; resize: vertical; border: 2px solid var(--cream-deep); border-radius: 16px; background: var(--cream); padding: 12px 14px; font-size: 16px; line-height: 1.5; outline: none; }
+    textarea.box::placeholder { color: var(--muted-foreground); }
+    textarea.box[readonly] { color: var(--muted-foreground); opacity: .75; }
+    .meter { margin-top: 8px; height: 4px; border-radius: 999px; background: var(--cream-deep); overflow: hidden; }
+    .meter span { display: block; height: 100%; border-radius: 999px; background: var(--gold); }
+    .box-meta { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-top: 8px; font-size: 12px; color: var(--muted-foreground); line-height: 1.5; }
+    .box-meta .private { display: flex; gap: 6px; align-items: flex-start; border-radius: 10px; background: rgba(35,64,213,.06); color: var(--navy); padding: 4px 10px; }
+    .box-meta .private svg.i { width: 14px; height: 14px; margin-top: 2px; color: var(--brand); }
+    .box-meta .count { flex-shrink: 0; padding-top: 4px; font-variant-numeric: tabular-nums; }
+    .hint { margin-top: 12px; display: flex; align-items: center; gap: 10px; border-radius: 14px; background: rgba(241,177,50,.2); border: 2px solid var(--gold); padding: 10px 12px; font-size: 14px; line-height: 1.45; }
+    .hint .ht { width: 32px; height: 32px; flex-shrink: 0; border-radius: 10px; background: var(--gold); color: var(--navy); display: grid; place-items: center; }
+    .hint .ht svg.i { width: 18px; height: 18px; }
+    .actions { margin-top: 32px; display: flex; flex-direction: column-reverse; gap: 12px; }
+    .is-desktop .actions { flex-direction: row; }
+    .is-desktop .actions .btn { flex: 1 1 0; }
+    .btn { height: 48px; flex: none; border-radius: 14px; border: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; cursor: pointer; padding: 0 16px; }
+    .btn svg.i { width: 16px; height: 16px; }
+    .btn-primary { background: var(--navy); color: #fff; font-weight: 700; }
+    .btn-secondary { background: var(--secondary); color: #262626; font-weight: 500; }
+    .btn[disabled] { opacity: .5; cursor: not-allowed; }
+
+    /* ─── New: mic on the describe step ─── */
+    .speak { width: 100%; min-height: 48px; margin-bottom: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 2px solid var(--navy); border-radius: 14px; background: #fff; color: var(--navy); font-size: 15px; font-weight: 700; cursor: pointer; }
+    .is-desktop .speak { width: auto; padding: 0 20px; }
+    .speak .mi { width: 30px; height: 30px; border-radius: 999px; background: var(--gold); display: grid; place-items: center; }
+    .speak .mi svg.i { width: 18px; height: 18px; }
+    .rec { margin-bottom: 10px; border-radius: 16px; background: var(--navy); color: #fff; padding: 10px 10px 12px 14px; }
+    .rec .top { display: flex; align-items: center; gap: 12px; }
+    .rec .what { flex: 1; min-width: 0; }
+    .rec b { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+    .rec small { display: block; font-size: 12.5px; color: rgba(255,255,255,.75); font-variant-numeric: tabular-nums; }
+    .dot-red { width: 10px; height: 10px; border-radius: 999px; background: #ff4d4f; box-shadow: 0 0 0 4px rgba(255,77,79,.25); animation: pulse 1.2s ease-in-out infinite; flex-shrink: 0; }
+    .spin { animation: spin 1s linear infinite; }
+    .btn-stop { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; background: #fff; color: var(--navy); padding: 0 16px; font-size: 14px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+    .btn-stop svg.i { width: 14px; height: 14px; fill: currentColor; }
+    .rec .bar { margin-top: 10px; height: 4px; border-radius: 999px; background: rgba(255,255,255,.2); overflow: hidden; }
+    .rec .bar span { display: block; height: 100%; background: var(--gold); }
+    .vline { margin-top: 10px; display: flex; align-items: flex-start; gap: 8px; font-size: 13.5px; color: var(--muted-foreground); line-height: 1.45; }
+    .vline svg.i { width: 16px; height: 16px; margin-top: 2px; }
+    @media (prefers-reduced-motion: reduce) { .dot-red, .spin { animation: none; } }
+
+    /* ─── Page stubs behind the chat (from US-013-UI-01) ─── */
+    .page { padding: 32px 24px 96px; }
+    .is-desktop .page { padding: 48px 32px 96px; }
+    .container { max-width: 768px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+    .is-desktop .shifted .container { margin: 0 auto 0 calc((1280px - 400px - 768px) / 2); }
+    .page h1 { font-size: 30px; font-weight: 800; line-height: 1.2; }
+    .is-desktop .page h1 { font-size: 36px; }
+    .subtitle { color: var(--muted-foreground); margin-top: 8px; line-height: 1.5; }
+    .guest { border: 1px solid rgba(35,64,213,.3); background: rgba(35,64,213,.05); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+    .is-desktop .guest { flex-direction: row; align-items: center; justify-content: space-between; padding: 20px; }
+    .guest p { font-weight: 600; line-height: 1.45; }
+    .btn-google { min-height: 44px; width: 100%; border-radius: 999px; border: 1px solid #8e918f; background: #131314; color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 0 24px; font-size: 14px; font-weight: 500; }
+    .is-desktop .guest .btn-google { width: 288px; flex-shrink: 0; }
+    .btn-google svg { width: 20px; height: 20px; }
+    .viz { border-radius: 20px; background: var(--brand); color: #fff; padding: 16px 20px; height: 150px; box-shadow: 0 10px 30px rgba(35,64,213,.25); }
+    .viz p { font-weight: 700; }
+    .stub-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
+    .stub-card h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .stub-line { height: 12px; border-radius: 999px; background: var(--cream-deep); margin-top: 10px; }
+
+    /* ─── Chat sheet (from US-013-UI-01) ─── */
+    .backdrop { position: absolute; inset: 0; z-index: 4; background: rgba(20,33,91,.45); }
+    .sheet { position: absolute; z-index: 5; left: 0; right: 0; bottom: 0; height: 88%; display: flex; flex-direction: column; background: #fff; border-radius: 24px 24px 0 0; box-shadow: 0 -12px 32px rgba(20,33,91,.25); overflow: hidden; }
+    .is-desktop .sheet { top: 80px; left: auto; width: 400px; height: auto; border-radius: 0; border-left: 1px solid var(--border); box-shadow: -12px 0 32px rgba(20,33,91,.12); }
+    .grabber { width: 40px; height: 5px; border-radius: 999px; background: var(--cream-deep); margin: 8px auto 0; flex-shrink: 0; }
+    .is-desktop .grabber { display: none; }
+    .sh-head { display: flex; align-items: center; gap: 10px; padding: 10px 12px 12px 16px; flex-shrink: 0; }
+    .is-desktop .sh-head { padding-top: 16px; }
+    .is-mobile .sh-head .tile { display: none; }
+    .sh-head .tile { width: 40px; height: 40px; border-radius: 12px; background: var(--gold); color: var(--navy); display: grid; place-items: center; flex-shrink: 0; }
+    .sh-head .tile svg.i { width: 22px; height: 22px; }
+    .sh-head h2 { font-size: 17px; font-weight: 700; line-height: 1.3; }
+    .sh-head p { font-size: 12.5px; color: var(--muted-foreground); line-height: 1.4; }
+    .sh-head .ttl { flex: 1; min-width: 0; }
+    .icon-btn { width: 44px; height: 44px; flex-shrink: 0; border: 0; border-radius: 999px; background: transparent; display: grid; place-items: center; cursor: pointer; }
+    .icon-btn:hover { background: var(--cream); }
+    .guest-strip { display: flex; align-items: center; gap: 10px; margin: 0 12px 10px; border-radius: 14px; background: rgba(35,64,213,.05); border: 1px solid rgba(35,64,213,.25); padding: 6px 6px 6px 12px; font-size: 13px; font-weight: 600; line-height: 1.35; flex-shrink: 0; }
+    .guest-strip span { flex: 1; }
+    .is-desktop .guest-strip { display: none; }
+    .is-desktop .guest-strip.for-talk { display: flex; }
+    .guest-strip .btn-google { width: auto; padding: 0 14px; gap: 8px; font-size: 13px; flex-shrink: 0; }
+    .guest-strip .btn-google svg { width: 18px; height: 18px; }
+    .msgs { flex: 1; min-height: 0; overflow: auto; background: var(--cream); border-top: 1px solid var(--cream-deep); padding: 16px 12px; display: flex; flex-direction: column; gap: 12px; }
+    .msg { display: flex; gap: 8px; max-width: 100%; }
+    .msg.me { justify-content: flex-end; }
+    .bubble { border-radius: 18px; padding: 10px 14px; font-size: 14.5px; line-height: 1.55; overflow-wrap: anywhere; }
+    .me .bubble { max-width: 85%; background: var(--navy); color: #fff; border-bottom-right-radius: 6px; }
+    .bot .who { width: 28px; height: 28px; border-radius: 999px; background: var(--gold); color: var(--navy); display: grid; place-items: center; flex-shrink: 0; margin-top: 2px; }
+    .bot .who svg.i { width: 16px; height: 16px; }
+    .bot .col { min-width: 0; max-width: calc(100% - 36px); display: flex; flex-direction: column; gap: 2px; }
+    .bot .bubble { background: #fff; border: 1px solid var(--cream-deep); border-bottom-left-radius: 6px; }
+    .bubble p + p { margin-top: 8px; }
+    .sys { border-radius: 16px; background: #fff; border: 1px solid var(--cream-deep); padding: 12px; display: flex; gap: 10px; align-items: flex-start; }
+    .sys .dot { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0; background: var(--cream-deep); color: var(--brand); }
+    .sys .dot svg.i { width: 20px; height: 20px; }
+    .sys b { display: block; font-size: 14px; line-height: 1.4; padding-top: 7px; }
+    .sys p { font-size: 13px; color: var(--muted-foreground); line-height: 1.45; margin-top: 2px; }
+    .btn-retry { margin-top: 10px; min-height: 44px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--navy); border-radius: 999px; background: #fff; padding: 0 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-retry svg.i { width: 16px; height: 16px; }
+    .composer { flex-shrink: 0; border-top: 1px solid var(--cream-deep); background: #fff; padding: 10px 12px 12px; }
+    .composer .row { display: flex; align-items: flex-end; gap: 8px; }
+    .composer textarea { flex: 1; min-width: 0; height: 48px; max-height: 120px; resize: none; border: 2px solid var(--cream-deep); border-radius: 16px; background: var(--cream); padding: 10px 12px; font-size: 16px; line-height: 1.5; outline: none; }
+    .composer textarea.tall { height: 120px; }
+    .composer textarea[aria-disabled="true"] { opacity: .6; }
+    .send { width: 48px; height: 48px; flex-shrink: 0; border: 0; border-radius: 999px; background: var(--navy); color: #fff; display: grid; place-items: center; cursor: pointer; }
+    .send[aria-disabled="true"] { opacity: .4; cursor: not-allowed; }
+    .composer .meta { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 11.5px; color: var(--muted-foreground); }
+    .composer .meta b { color: var(--navy); font-weight: 600; }
+    .composer .meta span:last-child { font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+    /* ─── New: mic in the composer, recording bar, read aloud ─── */
+    .mic { width: 48px; height: 48px; flex-shrink: 0; border: 2px solid var(--cream-deep); border-radius: 999px; background: #fff; color: var(--navy); display: grid; place-items: center; cursor: pointer; }
+    .mic:hover { border-color: var(--navy); }
+    .recbar { display: flex; align-items: center; gap: 8px; height: 48px; }
+    .recbar .what { flex: 1; min-width: 0; height: 48px; display: flex; align-items: center; gap: 10px; border-radius: 16px; background: var(--navy); color: #fff; padding: 0 14px; font-size: 14px; font-weight: 600; }
+    .recbar .what small { margin-left: auto; font-size: 12.5px; font-weight: 500; color: rgba(255,255,255,.75); font-variant-numeric: tabular-nums; }
+    .recbar .stop { background: #ff4d4f; }
+    .recbar .stop svg.i { width: 16px; height: 16px; fill: currentColor; }
+    .ra { align-self: flex-start; min-height: 44px; display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; color: var(--brand); padding: 0 8px; margin-left: -8px; font-size: 13.5px; font-weight: 600; border-radius: 999px; cursor: pointer; }
+    .ra:hover { background: rgba(35,64,213,.06); }
+    .ra svg.i { width: 18px; height: 18px; }
+    .ra[aria-pressed="true"] { color: var(--navy); }
+    .ra .eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 14px; margin-left: 2px; }
+    .ra .eq i { width: 3px; height: 14px; border-radius: 2px; background: var(--gold); transform-origin: bottom; animation: bars .9s ease-in-out infinite; }
+    .ra .eq i:nth-child(2) { animation-delay: .2s; } .ra .eq i:nth-child(3) { animation-delay: .4s; }
+    @media (prefers-reduced-motion: reduce) { .ra .eq i { animation: none; } }
+
+    /* ─── New: talk switch and talk view ─── */
+    .talk-sw { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--cream-deep); border-radius: 999px; background: #fff; padding: 0 8px 0 12px; font-size: 13.5px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+    .talk-sw svg.i { width: 18px; height: 18px; color: var(--brand); }
+    .talk-sw .trk { width: 34px; height: 20px; border-radius: 999px; background: #c9cfdb; position: relative; }
+    .talk-sw .trk::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 999px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+    .talk-sw[aria-checked="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .talk-sw[aria-checked="true"] svg.i { color: var(--gold); }
+    .talk-sw[aria-checked="true"] .trk { background: var(--gold); }
+    .talk-sw[aria-checked="true"] .trk::after { left: 16px; }
+    .talk { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; background: radial-gradient(circle at 50% 38%, #24358a 0%, var(--navy) 62%); color: #fff; padding: 14px 16px 16px; text-align: center; }
+    .timer { align-self: stretch; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .timer .bar { flex: 1; height: 4px; border-radius: 999px; background: rgba(255,255,255,.2); overflow: hidden; }
+    .timer .bar span { display: block; height: 100%; background: var(--gold); }
+    .timer.low { color: var(--gold); }
+    .orb-wrap { flex: 1; min-height: 0; display: grid; place-items: center; }
+    .orb { position: relative; width: 128px; height: 128px; border-radius: 999px; background: radial-gradient(circle at 35% 30%, #ffd77a, var(--gold) 55%, #d48f10); display: grid; place-items: center; color: var(--navy); box-shadow: 0 0 60px rgba(241,177,50,.35); }
+    .orb svg.i { width: 44px; height: 44px; }
+    .orb::before, .orb::after { content: ''; position: absolute; inset: 0; border-radius: 999px; border: 3px solid var(--gold); opacity: 0; }
+    .orb.speaking::before { animation: ring 1.6s ease-out infinite; }
+    .orb.speaking::after { animation: ring 1.6s ease-out .8s infinite; }
+    .orb.listening { box-shadow: 0 0 0 10px rgba(241,177,50,.18), 0 0 60px rgba(241,177,50,.3); }
+    .orb.dim { background: #3a4a9c; color: #fff; box-shadow: none; }
+    .orb.quiet { opacity: .55; }
+    @media (prefers-reduced-motion: reduce) { .orb::before, .orb::after { animation: none !important; } }
+    .talk h3 { font-size: 20px; font-weight: 700; }
+    .talk .sub { margin-top: 4px; font-size: 13.5px; color: rgba(255,255,255,.8); line-height: 1.5; max-width: 300px; }
+    .did { list-style: none; margin-top: 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .did li { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; background: rgba(255,255,255,.12); padding: 4px 12px; font-size: 13px; font-weight: 600; }
+    .did svg.i { width: 16px; height: 16px; color: var(--gold); }
+    .end { margin-top: 16px; align-self: stretch; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 999px; background: var(--destructive); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
+    .end svg.i { width: 18px; height: 18px; }
+    .talk .fine { margin-top: 8px; font-size: 11.5px; color: rgba(255,255,255,.65); }
+  </style>
+</head>
+<body>
+  <h1 class="doc-title">US-016-UI-01 · Mic, read aloud and talk mode</h1>
+  <p class="doc-sub">
+    Voice in AsikaGo: the mic on the describe step (US-017-FE-01, Seth), the mic and read aloud in the chat (US-016-FE-01, Seth), and talk mode (US-016-FE-02, Seth with Jude).
+    The describe card is <code>US-012-UI-01</code>'s and the chat sheet is <code>US-013-UI-01</code>'s. Only the voice parts are new.
+    Typing stays the main way in. Every voice failure is one quiet line, and typing still works.
+  </p>
+  <div id="states"></div>
+
+  <script>
+    // ─── Icons (lucide) ─────────────────────────────────────────────────────
+    const ICONS = {
+      avatar: '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
+      chevDown: '<path d="m6 9 6 6 6-6"/>',
+      arrow: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+      arrowUp: '<path d="m5 12 7-7 7 7"/><path d="M12 19V5"/>',
+      x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+      sparkles: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/>',
+      mic: '<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>',
+      micOff: '<line x1="2" x2="22" y1="2" y2="22"/><path d="M18.89 13.23A7.12 7.12 0 0 0 19 12v-2"/><path d="M5 10v2a7 7 0 0 0 12 5"/><path d="M15 9.34V5a3 3 0 0 0-5.68-1.33"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12"/><line x1="12" x2="12" y1="19" y2="22"/>',
+      square: '<rect width="14" height="14" x="5" y="5" rx="2"/>',
+      volume: '<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>',
+      audioLines: '<path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/>',
+      loader: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+      phoneOff: '<path d="M10.1 13.9a14 14 0 0 0 3.732 2.668 1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2 18 18 0 0 1-12.728-5.272"/><path d="M22 2 2 22"/><path d="M4.76 13.582A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 .244.473"/>',
+      circleCheck: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+      clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+      cloudOff: '<path d="m2 2 20 20"/><path d="M5.782 5.782A7 7 0 0 0 9 19h8.5a4.5 4.5 0 0 0 1.307-.193"/><path d="M21.532 16.5A4.5 4.5 0 0 0 17.5 10h-1.79A7.008 7.008 0 0 0 10 5.07"/>',
+      rotate: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
+      lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+      pen: '<path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>',
+    }
+    const icon = (name, cls = 'i') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`
+    const GOOGLE_G = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>'
+
+    const header = (guest) => `
+      <header class="app-header">
+        <img src="../../frontend/src/assets/logo-white.png" alt="AsikaGo" />
+        <a class="menu-trigger" href="#" aria-label="Account menu">
+          <span class="avatar">${icon('avatar')}</span>
+          <span class="name">${guest ? 'Guest' : 'juan.delacruz@gmail.com'}</span>
+          ${icon('chevDown', 'i chev-d')}
+        </a>
+      </header>`
+
+    // ─── Screen 1: describe step with the mic ───────────────────────────────
+    const SPOKEN = 'Nagtitinda ako ng lutong ulam at kakanin sa harap ng bahay namin sa Pasig. Ako lang ang may-ari.'
+    const VLINE = {
+      denied: 'Your mic is blocked, so you can type instead.',
+      nomic: 'We couldn\'t find a mic, so you can type instead.',
+      limit: 'You\'ve used the mic a lot today, so you can type instead.',
+      busy: 'We couldn\'t write down what you said, so you can type instead.',
+    }
+    function describe({ text = '', mic = 'idle', secs = 0, line = null, hint = false } = {}, guest = false) {
+      const n = text.length
+      const busy = mic === 'recording' || mic === 'writing'
+      const micPart = {
+        idle: `<button class="speak" type="button"><span class="mi">${icon('mic')}</span>${text ? 'Speak again' : 'Speak instead'}</button>`,
+        recording: `<div class="rec"><div class="top"><div class="what"><b><span class="dot-red" aria-hidden="true"></span>Recording…</b><small>0:${String(secs).padStart(2, '0')} of 1:00</small></div>
+          <button class="btn-stop" type="button">${icon('square')}Stop</button></div><div class="bar" aria-hidden="true"><span style="width:${(secs / 60) * 100}%"></span></div></div>`,
+        writing: `<div class="rec"><div class="top"><div class="what"><b>${icon('loader', 'i spin')}Writing down what you said…</b><small>This takes a few seconds.</small></div></div></div>`,
+      }[mic]
+      return `
+        ${header(guest)}
+        <div class="wrap"><div class="card">
+          <div class="lead"><span class="lead-tile">${icon('sparkles')}</span><span class="badge">Optional · saves you time</span></div>
+          <h1>Tell us about your business.</h1>
+          <p class="help" id="describe-help">Write or say it in your own words, in English, Tagalog, or Taglish. We'll use it to fill in your business type and category. You can change them after.</p>
+          <label class="field-label" for="describe">What does your business do, and who owns it?</label>
+          ${micPart}
+          <p class="sr-only" role="status">${mic === 'recording' ? 'Recording. Tap Stop when you\'re done.' : mic === 'writing' ? 'Writing down what you said.' : hint ? 'Added what you said to the box.' : ''}</p>
+          <textarea class="box" id="describe" rows="5" maxlength="1000"
+            placeholder="e.g. Nagtitinda ako ng lutong ulam sa harap ng bahay namin. Ako lang ang may-ari."
+            aria-describedby="describe-help describe-count"${busy ? ' readonly' : ''}>${text}</textarea>
+          <div class="meter" aria-hidden="true"><span style="width: ${n / 10}%"></span></div>
+          <div class="box-meta">
+            <span class="private">${icon('lock')}We only use this to fill in the form. We don't save it or your voice.</span>
+            <span class="count" id="describe-count">${n} / 1000</span>
+          </div>
+          ${hint ? `<p class="hint"><span class="ht">${icon('pen')}</span><span><b>Check what we wrote down.</b> You can fix it before you continue.</span></p>` : ''}
+          ${line ? `<p class="vline">${icon('micOff')}<span>${VLINE[line]}</span></p>` : ''}
+          <div class="actions">
+            <button class="btn btn-secondary" type="button">Skip, I'll choose myself</button>
+            <button class="btn btn-primary" type="submit"${busy ? ' disabled' : ''}>Fill in my answers ${icon('arrow')}</button>
+          </div>
+        </div></div>`
+    }
+
+    // ─── Screens 2 and 3: chat sheet with voice ─────────────────────────────
+    const banner = `<div class="guest"><p>This is your roadmap preview. Save it with Google so you don't lose it.</p><a class="btn-google" href="#">${GOOGLE_G}Save with Google</a></div>`
+    const roadmapStub = (guest) => `
+      ${guest ? banner : ''}
+      <div class="viz"><p>Your route to a registered business</p></div>
+      <div><h1>Your registration roadmap:</h1><p class="subtitle">Up to 10 steps to register your Food and Beverage business in Pasig City.</p></div>
+      <div class="stub-card"><h2>3 of 10 steps done</h2><div class="stub-line"></div></div>`
+
+    const ANSWER = '<p>Sa BPLD (Business Permits and Licensing Department) ka mag-a-apply. Step 5 yan sa roadmap mo.</p><p>May 4 na branch. Ang Annex 1 ay nasa 3rd Floor, Ayala Malls The 30th, bukas Mon-Fri, 8:00 AM-6:00 PM.</p>'
+    const me = (text) => `<div class="msg me"><div class="bubble">${text}</div></div>`
+    const readAloud = (on) => on
+      ? `<button class="ra" type="button" aria-pressed="true">${icon('square')}Stop reading<span class="eq" aria-hidden="true"><i></i><i></i><i></i></span></button>`
+      : `<button class="ra" type="button" aria-pressed="false">${icon('volume')}Read aloud</button>`
+    const bot = (html, reading = null) => `<div class="msg bot"><span class="who">${icon('sparkles')}</span><div class="col"><div class="bubble">${html}</div>${reading == null ? '' : readAloud(reading)}</div></div>`
+    const sys = (ic, title, body = '', retry = false) => `
+      <div class="sys"><span class="dot">${icon(ic)}</span><div><b>${title}</b>${body ? `<p>${body}</p>` : ''}
+        ${retry ? `<button class="btn-retry" type="button">${icon('rotate')}Try again</button>` : ''}</div></div>`
+
+    function composer({ mode = 'idle', draft = '', secs = 0, line = null } = {}) {
+      const row = mode === 'recording'
+        ? `<div class="recbar">
+            <button class="icon-btn" type="button" aria-label="Cancel recording">${icon('x')}</button>
+            <span class="what"><span class="dot-red" aria-hidden="true"></span>Recording…<small>0:${String(secs).padStart(2, '0')} of 1:00</small></span>
+            <button class="send stop" type="button" aria-label="Stop recording">${icon('square')}</button>
+          </div>`
+        : `<div class="row">
+            <label class="sr-only" for="ask">Your question</label>
+            <textarea id="ask" class="${draft.length > 40 ? 'tall' : ''}" rows="1" maxlength="1000" placeholder="${mode === 'writing' ? 'Writing down what you said…' : 'Type your question…'}" aria-describedby="ask-count"${mode === 'writing' ? ' readonly aria-disabled="true"' : ''}>${draft}</textarea>
+            <button class="mic" type="button" aria-label="Speak your question"${mode === 'writing' ? ' aria-disabled="true"' : ''}>${icon(mode === 'writing' ? 'loader' : 'mic', mode === 'writing' ? 'i spin' : 'i')}</button>
+            <button class="send" type="submit" aria-label="Send question"${!draft.trim() || mode === 'writing' ? ' aria-disabled="true"' : ''}>${icon('arrowUp')}</button>
+          </div>`
+      const left = line ? VLINE[line] : draft && mode === 'filled' ? '<b>Check the text, then send.</b>' : 'Check with the office if you\'re unsure.'
+      return `
+        <form class="composer" onsubmit="return false">
+          ${row}
+          <div class="meta"><span>${left}</span>${mode === 'recording' ? '' : `<span id="ask-count">${draft.length} / 1000</span>`}</div>
+        </form>`
+    }
+
+    // talk: null (text chat) or { state, left, did }
+    function talkView({ state, left = 161, did = [] }) {
+      const t = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`
+      const S = {
+        connecting: ['dim', 'loader', 'Connecting…', 'Allow the mic if your browser asks.'],
+        listening: ['listening', 'mic', 'Listening…', 'Talk in English, Tagalog, or Taglish.'],
+        speaking: ['speaking', 'audioLines', 'Speaking…', 'Start talking any time to cut in.'],
+        quiet: ['quiet', 'mic', 'Still there?', 'Talk mode closes in 5 seconds if it stays quiet.'],
+      }[state]
+      return `
+        <div class="talk">
+          <div class="timer${left <= 30 ? ' low' : ''}"><span>${state === 'connecting' ? '3:00' : t} left</span><span class="bar" aria-hidden="true"><span style="width:${(left / 180) * 100}%"></span></span></div>
+          <div class="orb-wrap"><div class="orb ${S[0]}" aria-hidden="true">${icon(S[1], S[1] === 'loader' ? 'i spin' : 'i')}</div></div>
+          <h3>${S[2]}</h3>
+          <p class="sub">${S[3]}</p>
+          ${did.length ? `<ul class="did" aria-label="Done in this talk">${did.map((d) => `<li>${icon('circleCheck')}Checked off: ${d}</li>`).join('')}</ul>` : ''}
+          <p class="sr-only" role="status">${state === 'quiet' ? S[3] : S[2]}</p>
+          <button class="end" type="button">${icon('phoneOff')}End talk</button>
+          <p class="fine">Up to 3 minutes. We don't record your voice.</p>
+        </div>`
+    }
+
+    function sheet({ guest = false, body = '', comp = {}, talk = null, sw = 'show', guestTalk = false } = {}, modal = true) {
+      const switchBtn = sw === 'hide' ? '' : `<button class="talk-sw" type="button" role="switch" aria-checked="${talk ? 'true' : 'false'}" aria-label="Talk mode">${icon('audioLines')}Talk<span class="trk" aria-hidden="true"></span></button>`
+      return `
+        ${modal ? '<div class="backdrop" aria-hidden="true"></div>' : ''}
+        <section class="sheet" role="dialog" aria-modal="${modal}" aria-labelledby="chat-title">
+          <div class="grabber" aria-hidden="true"></div>
+          <div class="sh-head">
+            <span class="tile">${icon('sparkles')}</span>
+            <div class="ttl"><h2 id="chat-title">Ask about your roadmap</h2></div>
+            ${switchBtn}
+            <button class="icon-btn" type="button" aria-label="Close chat">${icon('x')}</button>
+          </div>
+          ${guest ? `<div class="guest-strip${guestTalk ? ' for-talk' : ''}" ${guestTalk ? 'role="status"' : ''}><span>${guestTalk ? 'Sign in with Google to use talk mode.' : 'Save your roadmap so you don\'t lose it.'}</span><a class="btn-google" href="#">${GOOGLE_G}Save with Google</a></div>` : ''}
+          ${talk ? talkView(talk) : `<div class="msgs">${body}</div>${composer(comp)}`}
+        </section>`
+    }
+
+    function screen(opts, mobile) {
+      return `
+        ${header(opts.guest)}
+        <div class="page${mobile ? '' : ' shifted'}"><div class="container">${roadmapStub(opts.guest)}</div></div>
+        ${sheet(opts, mobile)}`
+    }
+
+    const QA = me('Saan ako kukuha ng business permit?') + bot(ANSWER, false)
+
+    // ─── Frames ─────────────────────────────────────────────────────────────
+    let frameNo = 0
+    const scope = (html, p = `f${++frameNo}-`) => html
+      .replace(/\b(id|for|name)="([^"]+)"/g, (_, a, v) => `${a}="${p}${v}"`)
+      .replace(/\b(aria-describedby|aria-labelledby)="([^"]+)"/g, (_, a, v) => `${a}="${v.split(' ').map((t) => p + t).join(' ')}"`)
+    const frame = (label, size, body, vp) => `
+      <div><p class="frame-label">${label}</p><div class="frame-${size} is-${size}${vp ? ' vp' : ''}">${scope(body)}</div></div>`
+    const pair = (name, render) => [[`${name} · Mobile 360`, 'mobile', render], [`${name} · Desktop 1280`, 'desktop', render]]
+    const mobile = (name, render) => [`${name} · Mobile 360`, 'mobile', render]
+    const pairVp = (name, opts) => [[`${name} · Mobile 360 × 720`, 'mobile', () => screen(opts, true), true], [`${name} · Desktop 1280 × 800`, 'desktop', () => screen(opts, false), true]]
+    const mobileVp = (name, opts) => [`${name} · Mobile 360 × 720`, 'mobile', () => screen(opts, true), true]
+
+    const STATES = [
+      ['Screen 1 · Mic on the describe step', '1. Ready to speak', pair('Ready', () => describe()), `<ul>
+        <li>"Speak instead" sits right under the question, above the box, so people who find typing hard see it before the box. <code>min-h-12 w-full md:w-auto rounded-xl border-2 border-navy bg-white font-bold</code>, a gold circle with lucide <code>Mic</code>. It has a text label (US-017-FE-01).</li>
+        <li>The help line now says "Write or say it". Everything else on the card is US-012-UI-01's.</li>
+        <li>Shown to guests too: the assessment runs before sign-in, and US-017 has no guest limit beyond the daily audio cap.</li>
+        <li>Hidden if the browser has no <code>MediaRecorder</code> or <code>navigator.mediaDevices</code> (old browsers, or a page not on HTTPS). The box still works.</li>
+      </ul>`],
+      [null, '2. Recording, then writing it down', [
+        mobile('Recording', () => describe({ mic: 'recording', secs: 12 })),
+        mobile('Writing it down', () => describe({ mic: 'writing' })),
+      ], `<ul>
+        <li>Tapping "Speak instead" asks for the mic (<code>getUserMedia({ audio: true })</code>) and starts <code>MediaRecorder</code>. The button becomes a navy panel: a pulsing red dot, "Recording…" (US-017-FE-01), "0:12 of 1:00", a gold bar for the minute, and a white "Stop" button. The dot stops pulsing under <code>motion-reduce</code>.</li>
+        <li>At 60 seconds it stops by itself and sends what it has (US-017-FE-01, US-017-BE-01's 60 s cap).</li>
+        <li>After Stop, the panel says "Writing down what you said…" and "This takes a few seconds." while <code>POST /api/assistant/transcribe</code> runs. The box is <code>readOnly</code> and "Fill in my answers" is off during both states, so the transcript can't land on top of typing. "Skip" stays on and cancels both (<code>recorder.stop()</code> and <code>AbortController</code>), as in US-012.</li>
+        <li>Screen readers: a hidden <code>role="status"</code> says "Recording. Tap Stop when you're done.", then "Writing down what you said.", then "Added what you said to the box." The timer is not live, so it isn't read every second.</li>
+        <li>Send the recorder's own type (<code>audio/webm</code> on Chrome and Android, <code>audio/mp4</code> on Safari). US-017-BE-01 has to accept both.</li>
+      </ul>`],
+      [null, '3. What they said is in the box', [mobile('Transcript added', () => describe({ text: SPOKEN, hint: true }))], `<ul>
+        <li>The transcript is <b>added to the end</b> of what's already in the box (with a space), never put in its place, so typed text is never lost. The result is cut at 1000 characters (the box's limit). Focus moves to the box with the cursor at the end.</li>
+        <li>A gold hint under the box: "<b>Check what we wrote down.</b> You can fix it before you continue." (US-017-FE-01: the user can edit it). It goes away on the next keystroke.</li>
+        <li>The button now says "Speak again" and adds more. From here it's US-012 unchanged: "Fill in my answers" sends the box to extract.</li>
+        <li>The privacy line now says "We don't save it or your voice." That's true: US-017-BE-01 stores and logs no audio.</li>
+      </ul>`],
+      [null, '4. When the mic can\'t be used', [
+        mobile('Mic blocked', () => describe({ line: 'denied' })),
+        mobile('Too many today (429)', () => describe({ text: SPOKEN, line: 'limit' })),
+      ], `<ul>
+        <li>One quiet line under the box (<code>text-[13.5px] text-muted-foreground</code>, <code>MicOff</code>), never a red error. Typing still works (US-017-FE-01).</li>
+        <li>Lines: permission denied: "Your mic is blocked, so you can type instead." No mic (<code>NotFoundError</code>): "We couldn't find a mic, so you can type instead." 429: "You've used the mic a lot today, so you can type instead." 503, timeout or network: "We couldn't write down what you said, so you can type instead."</li>
+        <li>Whatever was in the box stays. The line clears when the user taps "Speak instead" again or types.</li>
+      </ul>`],
+
+      ['Screen 2 · Mic and read aloud in the chat', '5. Recording a question', pairVp('Recording', { comp: { mode: 'recording', secs: 7 }, body: QA }), `<ul>
+        <li>The composer gets a 48 px mic button between the box and Send (<code>size-12 rounded-full border-2 border-cream-deep bg-white</code>, <code>Mic</code>, <code>aria-label="Speak your question"</code>). For guests and Google users (US-016-FE-01).</li>
+        <li>Tapping it swaps the box for a recording bar: a 44 px "Cancel recording" (<code>X</code>, throws the audio away), a navy pill with the red dot, "Recording…" and "0:07 of 1:00", and a red 48 px "Stop recording" (<code>Square</code>) where Send was. Same 60 s limit and the same transcribe call as the describe step.</li>
+        <li>Esc while recording cancels the recording, not the sheet.</li>
+      </ul>`],
+      [null, '6. Transcript in the box, and read aloud', [
+        mobileVp('Transcript in the box', { comp: { mode: 'filled', draft: 'Ano pa ang kulang ko para sa barangay clearance? Dala ko na yung lease.' }, body: QA }),
+        mobileVp('Reading aloud', { comp: {}, body: me('Saan ako kukuha ng business permit?') + bot(ANSWER, true) }),
+      ], `<ul>
+        <li>The transcript goes into the box (added to the end, like the describe step). It is <b>not</b> sent: the user reads it, fixes it, and taps Send (US-016-FE-01). The box grows to show it. Under the box, "<b>Check the text, then send.</b>" replaces the usual line until they edit or send. While transcribing, the box says "Writing down what you said…" and the mic shows a spinner.</li>
+        <li>Mic failures use the same four lines as the describe step, in the composer's line under the box.</li>
+        <li>"Read aloud" under each <b>finished</b> answer (not while it streams): <code>min-h-11 text-brand text-[13.5px] font-semibold</code>, <code>Volume2</code>. It's <code>aria-pressed</code>. While reading it says "Stop reading" with <code>Square</code> and three small gold bars. Starting another answer stops the first. Closing the sheet stops it.</li>
+        <li>Uses <code>speechSynthesis</code> (no OpenAI call). Pick a <code>fil-PH</code> voice if <code>getVoices()</code> has one, else the browser's default voice. Hide the button if <code>speechSynthesis</code> doesn't exist.</li>
+      </ul>`],
+
+      ['Screen 3 · Talk mode', '7. The Talk switch, and a guest tapping it', [
+        mobileVp('Google user', { comp: {}, body: QA }),
+        mobileVp('Guest tapped Talk', { guest: true, guestTalk: true, comp: {}, body: QA }),
+      ], `<ul>
+        <li>A "Talk" switch in the sheet header, left of Close: <code>role="switch"</code>, <code>min-h-11 rounded-full border</code>, <code>AudioLines</code> and a small track. On: navy fill, gold track. The header's second line ("Answers come only from your roadmap.") moves to the empty state, and the gold tile is hidden below <code>lg</code> (<code>hidden lg:grid</code>), so the title fits in two lines at 360 px.</li>
+        <li>Hidden when <code>OpenAI:VoiceEnabled</code> is off. The frontend needs to know the flag before showing it, so US-016-BE-01 should return it somewhere the app already loads (for example a field on <code>/api/me</code>), not only as a 404.</li>
+        <li><b>Guests:</b> they see the switch too, so they know talk mode exists. Tapping it doesn't turn on. The sheet's guest row changes to "Sign in with Google to use talk mode." with the same Save with Google button, and shows on desktop too. US-016-FE-02 says "shown only to Google users", so this changes that line. Decide it in the US-016-FE-02 PR.</li>
+      </ul>`],
+      [null, '8. Connecting and talking', [
+        mobileVp('Connecting', { talk: { state: 'connecting' } }),
+        ...pairVp('Talking', { talk: { state: 'speaking', left: 161, did: ['Barangay clearance'] } }),
+      ], `<ul>
+        <li>Turning the switch on replaces the messages and the composer with the talk view. The text conversation is kept and comes back when talk ends.</li>
+        <li>Connecting: dim orb with a spinner, "Connecting…" and "Allow the mic if your browser asks." The app calls <code>POST /api/assistant/voice-session</code>, then connects with <code>RTCPeerConnection</code> using the short-lived secret (D25).</li>
+        <li>Talking: a gold orb on navy. "Listening…" (<code>Mic</code>, still halo) when the user talks, "Speaking…" (<code>AudioLines</code>, two rings going out) when the assistant talks. The rings stop under <code>motion-reduce</code>. "Start talking any time to cut in." (US-016-FE-02: the user can interrupt).</li>
+        <li>Timer at the top: "2:41 left" and a gold bar for the 3 minutes. It turns gold at 0:30. At 0:00 the talk ends.</li>
+        <li>When the model calls <code>check_document</code>, the app calls the existing US-009 endpoint and invalidates the roadmap queries. A chip appears: "Checked off: Barangay clearance" (<code>CircleCheck</code> in gold). The checklist behind the sheet updates.</li>
+        <li>"End talk": red, full width, 48 px, <code>PhoneOff</code>. Esc does the same. Under it: "Up to 3 minutes. We don't record your voice."</li>
+        <li>Screen readers: a hidden <code>role="status"</code> says each state once ("Connecting…", "Listening…", "Speaking…"). Talk mode is for people who can hear. The text chat stays the main way in.</li>
+      </ul>`],
+      [null, '9. Quiet, and after it ends', [
+        mobileVp('Still there?', { talk: { state: 'quiet', left: 98, did: ['Barangay clearance'] } }),
+        mobileVp('Ended', { comp: {}, body: QA + sys('audioLines', 'Talk mode ended after 15 seconds of quiet.', 'You checked off 1 document. You can type another question below.') }),
+      ], `<ul>
+        <li>After 10 seconds with no one talking, the orb dims and says "Still there?" and "Talk mode closes in 5 seconds if it stays quiet." Talking brings it back. At 15 seconds it closes (US-016-FE-02).</li>
+        <li>When talk ends, the text chat comes back with a card: what ended it ("Talk mode ended after 15 seconds of quiet.", "Talk mode ended at 3 minutes." or "You ended talk mode.") and how many documents were checked off. The switch turns off. Focus goes to the box.</li>
+      </ul>`],
+      [null, '10. When talk mode can\'t start', [
+        mobileVp('Mic blocked', { comp: {}, body: QA + sys('micOff', 'Talk mode needs your mic. Allow it in your browser, or type below.') }),
+        mobileVp('Connection failed', { comp: {}, body: QA + sys('cloudOff', 'We couldn\'t start talk mode. Try again, or type below.', '', true) }),
+        mobileVp('3 talks today (429)', { comp: {}, body: QA + sys('clock', 'You\'ve used talk mode 3 times today. You can still type your questions.') }),
+      ], `<ul>
+        <li>One friendly line as a card in the text chat, and the switch turns back off. The text chat still works (US-016-FE-02).</li>
+        <li>Mic denied: <code>MicOff</code>, no retry (the browser has to allow it). Connection failed (voice-session 503, or WebRTC fails): <code>CloudOff</code> and "Try again". 429: <code>Clock</code>, no retry, since it fails again until tomorrow.</li>
+        <li>A 403 can only mean the user is a guest, and guests never reach the call (frame 7). A 404 means the flag was turned off: hide the switch.</li>
+      </ul>`],
+    ]
+
+    document.getElementById('states').innerHTML = STATES.map(([screen, title, frames, notes]) => `
+      ${screen ? `<h2 class="doc-screen">${screen}</h2>` : ''}
+      <section class="state">
+        <h2>${title}</h2>
+        <div class="frames">${frames.map(([l, s, r, vp]) => frame(l, s, r(), vp)).join('')}</div>
+        <div class="notes">${notes}</div>
+      </section>`).join('')
+  </script>
+</body>
+</html>
