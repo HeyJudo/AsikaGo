@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AsikaGo – Document Photos (US-010-UI-01 Design)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* Tokens copied from frontend/src/index.css (:root) so the build matches the live app. */
+    :root {
+      --brand: #2340d5;
+      --brand-dark: #1a31a8;
+      --gold: #f1b132;
+      --navy: #14215b;
+      --cream: #faf7f0;
+      --cream-deep: #f1ece0;
+      --muted-foreground: #5b6478;
+      --border: #e5e5e5;
+      --destructive: #e7000b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; color: var(--navy); background: #e9ecf2; padding: 32px; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; color: inherit; }
+    svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    :focus-visible { outline: 3px solid rgba(35,64,213,.45); outline-offset: 2px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+
+    /* ─── Doc chrome (not part of the design) ─── */
+    .doc-title { font-size: 28px; font-weight: 800; }
+    .doc-sub { color: var(--muted-foreground); margin: 4px 0 32px; max-width: 900px; line-height: 1.6; }
+    .doc-screen { font-size: 24px; font-weight: 800; margin: 24px 0 20px; padding-top: 24px; border-top: 2px solid #c9cfdb; }
+    .state { margin-bottom: 56px; }
+    .state > h2 { font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+    .frames { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+    .frame-label { font-size: 12px; font-weight: 600; color: var(--muted-foreground); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+    .frame-mobile, .frame-desktop { position: relative; background: var(--cream); border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(20,33,91,.15); }
+    .frame-mobile { width: 360px; }
+    .frame-desktop { width: 1280px; }
+    .vp.frame-mobile { height: 720px; }
+    .vp.frame-desktop { height: 800px; }
+    .notes { background: #fff; border-left: 4px solid var(--brand); border-radius: 8px; padding: 12px 16px; margin-top: 16px; max-width: 1672px; font-size: 13px; line-height: 1.6; }
+    .notes li { margin-left: 18px; }
+    .notes code { background: #f1f5f9; padding: 0 4px; border-radius: 4px; font-size: 12px; }
+
+    /* ─── App header (AppLayout.tsx SiteHeader, signed in) ─── */
+    .app-header { position: relative; z-index: 2; background: var(--brand); height: 64px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: 0 4px 6px rgba(0,0,0,.1); }
+    .is-desktop .app-header { height: 80px; padding: 0 32px; }
+    .app-header img { height: 32px; }
+    .is-desktop .app-header img { height: 48px; }
+    .menu-trigger { min-height: 44px; display: flex; align-items: center; gap: 8px; border-radius: 999px; padding: 2px; color: #fff; font-size: 14px; font-weight: 600; }
+    .is-desktop .menu-trigger { padding-right: 12px; }
+    .avatar { width: 40px; height: 40px; border-radius: 999px; background: var(--gold); color: var(--navy); display: grid; place-items: center; }
+    .menu-trigger .name { display: none; }
+    .is-desktop .menu-trigger .name { display: block; }
+    .menu-trigger svg.chev-d { width: 16px; height: 16px; margin-right: 4px; }
+
+    /* ─── Page stubs (StepDetailPage, DocumentsPage) ─── */
+    .page { padding: 16px 24px 32px; }
+    .is-desktop .page { padding: 24px 32px 48px; }
+    .container { max-width: 768px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+    h1 { font-size: 30px; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+    .is-desktop h1 { font-size: 36px; }
+    .subtitle { color: var(--muted-foreground); margin-top: 8px; line-height: 1.5; }
+    .back { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; color: var(--brand); font-size: 14px; font-weight: 600; }
+    .back svg.i { width: 18px; height: 18px; }
+    .pill-step { display: inline-block; border-radius: 999px; background: var(--gold); padding: 2px 12px; font-size: 14px; font-weight: 700; }
+    .guest { border: 1px solid rgba(35,64,213,.3); background: rgba(35,64,213,.05); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+    .is-desktop .guest { flex-direction: row; align-items: center; justify-content: space-between; padding: 20px; }
+    .guest p { font-weight: 600; line-height: 1.45; }
+    .btn-google { min-height: 44px; width: 100%; border-radius: 999px; border: 1px solid #8e918f; background: #131314; color: #fff; display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 0 24px; font-size: 14px; font-weight: 500; }
+    .is-desktop .guest .btn-google { width: 288px; flex-shrink: 0; }
+    .btn-google svg { width: 20px; height: 20px; }
+    .bring { border: 2px solid var(--brand); border-radius: 16px; background: #fff; padding: 16px; box-shadow: 0 10px 15px rgba(35,64,213,.15); }
+    .is-desktop .bring { padding: 24px; }
+    .bring > h2 { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; margin-bottom: 12px; }
+    .bring > h2 svg.i { color: var(--brand); }
+    .bring > h2 span { margin-left: auto; font-size: 14px; font-weight: 500; color: var(--brand); white-space: nowrap; }
+    .card { border: 1px solid var(--border); border-radius: 16px; background: #fff; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    .is-desktop .card { padding: 24px; }
+    .card-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+    .card-head > div { flex: 1; min-width: 0; }
+    .card-head h2 { font-size: 18px; font-weight: 700; line-height: 1.35; margin-top: 12px; }
+    .card-head .count { color: var(--brand); font-size: 14px; font-weight: 700; white-space: nowrap; padding-top: 2px; }
+    .chip-step { display: inline-block; border-radius: 999px; background: var(--gold); padding: 2px 10px; font-size: 12px; font-weight: 700; }
+    .progress-card { border: 1px solid var(--border); border-radius: 12px; background: #fff; padding: 16px; }
+    .progress-card b { display: block; margin-bottom: 10px; }
+    .bar { height: 12px; border-radius: 999px; background: var(--cream-deep); overflow: hidden; }
+    .bar i { display: block; height: 100%; border-radius: 999px; background: var(--gold); }
+
+    /* ─── Document row (RequirementItem / RequirementRow) ─── */
+    .rows { list-style: none; }
+    .row { border-top: 1px solid var(--border); padding: 12px 0; min-width: 0; }
+    .rows .row:first-child { border-top: 0; padding-top: 0; }
+    .rows .row:last-child { padding-bottom: 0; }
+    .compact .row { padding: 4px 0; }
+    .row label { display: flex; gap: 2px; margin-left: -10px; min-height: 44px; border-radius: 8px; cursor: pointer; }
+    .box { width: 24px; height: 24px; margin: 10px; flex-shrink: 0; border: 2px solid var(--brand); border-radius: 6px; background: #fff; display: grid; place-items: center; color: #fff; }
+    .box.on { background: var(--brand); }
+    .box svg.i { width: 16px; height: 16px; stroke-width: 3; }
+    .row .txt { flex: 1; min-width: 0; padding: 10px 0; }
+    .row .txt b { display: block; font-weight: 600; line-height: 1.375; overflow-wrap: anywhere; }
+    .row .txt span { display: block; margin-top: 2px; font-size: 14px; color: var(--muted-foreground); line-height: 1.5; }
+
+    /* ─── New: photos under a row ─── */
+    .ph { margin-left: 36px; display: flex; flex-direction: column; gap: 8px; }
+    .compact .ph { padding-bottom: 8px; }
+    .thumbs { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+    .thumb { position: relative; width: 56px; height: 56px; padding: 0; border: 1px solid var(--cream-deep); border-radius: 12px; overflow: hidden; background: var(--cream); cursor: zoom-in; display: block; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .thumb.up { cursor: default; }
+    .thumb.up img { opacity: .45; }
+    .thumb .ring { position: absolute; inset: 0; display: grid; place-items: center; }
+    .thumb .ring svg { width: 40px; height: 40px; transform: rotate(-90deg); }
+    .thumb .ring b { position: absolute; font-size: 11px; font-weight: 700; }
+    .thumb.broken { display: grid; place-items: center; align-content: center; gap: 2px; cursor: pointer; color: var(--muted-foreground); font-size: 10px; font-weight: 600; line-height: 1.1; text-align: center; border-style: dashed; }
+    .thumb.broken svg.i { width: 18px; height: 18px; }
+    .add { align-self: flex-start; min-height: 44px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(35,64,213,.4); border-radius: 999px; background: #fff; color: var(--brand); padding: 0 16px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .add:hover { background: rgba(35,64,213,.05); }
+    .add svg.i { width: 18px; height: 18px; }
+    .add[aria-disabled="true"] { opacity: .6; cursor: wait; }
+    .limit { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--muted-foreground); line-height: 1.45; }
+    .limit svg.i { width: 16px; height: 16px; margin-top: 1px; }
+    .fix { display: flex; align-items: flex-start; gap: 8px; border-radius: 12px; background: rgba(241,177,50,.18); border: 1px solid rgba(241,177,50,.7); padding: 8px 10px; font-size: 13.5px; line-height: 1.45; }
+    .fix svg.i { width: 16px; height: 16px; margin-top: 2px; }
+    .alert { display: flex; align-items: flex-start; gap: 10px; border: 1px solid rgba(231,0,11,.35); border-radius: 10px; background: #fff; color: var(--destructive); padding: 10px 12px; font-size: 14px; line-height: 1.45; }
+    .alert svg.i { width: 16px; height: 16px; margin-top: 2px; }
+    .alert .btn-retry { margin-top: 8px; }
+    .btn-retry { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--navy); border-radius: 999px; background: #fff; color: var(--navy); padding: 0 18px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-retry svg.i { width: 16px; height: 16px; }
+    .gnote { border-radius: 12px; border: 1px solid rgba(35,64,213,.3); background: rgba(35,64,213,.05); padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
+    .gnote p { font-size: 14px; font-weight: 600; line-height: 1.45; display: flex; gap: 8px; }
+    .gnote p svg.i { width: 18px; height: 18px; color: var(--brand); }
+    .gnote .btn-google { width: auto; align-self: flex-start; padding: 0 18px; gap: 10px; }
+    .gnote .btn-google svg { width: 18px; height: 18px; }
+
+    /* ─── New: full view (Dialog) and delete confirm (AlertDialog) ─── */
+    .backdrop { position: absolute; inset: 0; z-index: 4; background: #0d1640; }
+    .is-desktop .backdrop { background: rgba(20,33,91,.6); }
+    .viewer { position: absolute; z-index: 5; inset: 0; display: flex; flex-direction: column; color: #fff; }
+    .is-desktop .viewer { inset: 48px auto 48px 50%; width: 760px; margin-left: -380px; border-radius: 20px; background: #0d1640; box-shadow: 0 24px 48px rgba(0,0,0,.35); overflow: hidden; }
+    .v-head { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 16px; flex-shrink: 0; }
+    .v-head .ttl { flex: 1; min-width: 0; }
+    .v-head h2 { font-size: 16px; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
+    .v-head p { font-size: 13px; color: rgba(255,255,255,.75); }
+    .icon-btn { width: 44px; height: 44px; flex-shrink: 0; border: 0; border-radius: 999px; background: rgba(255,255,255,.12); color: #fff; display: grid; place-items: center; cursor: pointer; }
+    .icon-btn:hover { background: rgba(255,255,255,.22); }
+    .icon-btn:focus-visible { outline-color: var(--gold); }
+    .v-body { flex: 1; min-height: 0; position: relative; }
+    .v-body img { position: absolute; top: 8px; left: 56px; width: calc(100% - 112px); height: calc(100% - 16px); object-fit: contain; }
+    .v-body .icon-btn { position: absolute; top: 50%; margin-top: -22px; }
+    .v-body .prev { left: 6px; } .v-body .next { right: 6px; }
+    .v-foot { flex-shrink: 0; padding: 12px 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+    .is-desktop .v-foot { flex-direction: row; align-items: center; justify-content: space-between; }
+    .v-foot .hint { font-size: 12.5px; color: rgba(255,255,255,.75); line-height: 1.45; }
+    .btn-del { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(255,255,255,.5); border-radius: 999px; background: transparent; color: #fff; padding: 0 20px; font-size: 14px; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+    .btn-del svg.i { width: 16px; height: 16px; }
+    .v-foot .alert { color: var(--destructive); }
+    .confirm-bd { position: absolute; inset: 0; z-index: 6; background: rgba(0,0,0,.5); }
+    .confirm { position: absolute; z-index: 7; left: 16px; right: 16px; top: 50%; transform: translateY(-50%); background: #fff; color: var(--navy); border-radius: 20px; padding: 20px; box-shadow: 0 24px 48px rgba(0,0,0,.3); }
+    .is-desktop .confirm { left: 50%; right: auto; width: 420px; margin-left: -210px; }
+    .confirm h2 { font-size: 18px; font-weight: 700; }
+    .confirm p { margin-top: 6px; font-size: 14.5px; color: var(--muted-foreground); line-height: 1.5; }
+    .confirm .acts { margin-top: 18px; display: flex; flex-direction: column-reverse; gap: 8px; }
+    .is-desktop .confirm .acts { flex-direction: row; justify-content: flex-end; }
+    .btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px; padding: 0 20px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn.outline { border: 1px solid var(--border); background: #fff; color: var(--navy); }
+    .btn.danger { border: 0; background: var(--destructive); color: #fff; }
+    .btn svg.i { width: 16px; height: 16px; }
+  </style>
+</head>
+<body>
+  <h1 class="doc-title">US-010-UI-01 · Photos on a document row</h1>
+  <p class="doc-sub">
+    Adding, viewing and deleting photos of a document the user has prepared (US-010-FE-01, Keisuke), on step detail and All documents.
+    Pages are short stubs of the live <code>StepDetailPage.tsx</code> and <code>DocumentsPage.tsx</code>. Only the photo strip under each row, the full view and the delete confirm are new.
+    Sample rows are Step 2's seeded documents. Limits are D26: JPG, PNG or WebP, 5 MB, 5 photos per document, Google users only.
+  </p>
+  <div id="states"></div>
+
+  <script>
+    // ─── Sample photos: drawings of paper documents, so no real document is in the repo ──
+    function docPhoto(seed, w = 600, h = 800) {
+      const tint = ['#cdbfa3', '#b9c4d6', '#c9b8a8', '#a9b8a0', '#d2c6b8'][seed % 5]
+      const tilt = [-3, 2, -1, 3, -2][seed % 5]
+      const lines = Array.from({ length: 9 }, (_, i) => `<rect x="120" y="${300 + i * 44}" width="${300 - (i * 37) % 120}" height="12" rx="6" fill="#c7cbd6"/>`).join('')
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}"><rect width="${w}" height="${h}" fill="${tint}"/>
+        <g transform="rotate(${tilt} 300 400)"><rect x="80" y="80" width="440" height="640" rx="6" fill="#fdfcf8"/>
+        <rect x="160" y="140" width="280" height="22" rx="8" fill="#14215b" opacity=".8"/><rect x="200" y="186" width="200" height="12" rx="6" fill="#9aa1b4"/>
+        <rect x="120" y="240" width="360" height="3" fill="#d8dbe3"/>${lines}
+        <circle cx="430" cy="640" r="44" fill="none" stroke="#2340d5" stroke-width="5" opacity=".5"/><path d="M160 660q40-40 80 0t80 0" fill="none" stroke="#14215b" stroke-width="4"/></g></svg>`
+      return 'data:image/svg+xml,' + encodeURIComponent(svg)
+    }
+
+    // ─── Icons (lucide) ─────────────────────────────────────────────────────
+    const ICONS = {
+      avatar: '<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
+      chevDown: '<path d="m6 9 6 6 6-6"/>',
+      chevLeft: '<path d="m15 18-6-6 6-6"/>',
+      chevRight: '<path d="m9 18 6-6-6-6"/>',
+      arrowLeft: '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
+      check: '<path d="M20 6 9 17l-5-5"/>',
+      x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+      camera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+      clipboard: '<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/>',
+      info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+      warn: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+      alert: '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+      rotate: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
+      trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
+      imageOff: '<line x1="2" x2="22" y1="2" y2="22"/><path d="M10.41 10.41a2 2 0 1 1-2.83-2.83"/><line x1="13.5" x2="6" y1="13.5" y2="21"/><line x1="18" x2="21" y1="12" y2="15"/><path d="M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59"/><path d="M21 15V5a2 2 0 0 0-2-2H9"/>',
+      lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    }
+    const icon = (name, cls = 'i') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`
+    const GOOGLE_G = '<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>'
+
+    // ─── Shared pieces ──────────────────────────────────────────────────────
+    const header = (guest) => `
+      <header class="app-header">
+        <img src="../../frontend/src/assets/logo-white.png" alt="AsikaGo" />
+        <a class="menu-trigger" href="#" aria-label="Account menu">
+          <span class="avatar">${icon('avatar')}</span>
+          <span class="name">${guest ? 'Guest' : 'juan.delacruz@gmail.com'}</span>
+          ${icon('chevDown', 'i chev-d')}
+        </a>
+      </header>`
+    const banner = `<div class="guest"><p>Save your progress with Google so you don't lose it.</p><a class="btn-google" href="#">${GOOGLE_G}Save with Google</a></div>`
+
+    // Step 2's seeded documents (database/seed/001_pasig_knowledge_base.sql).
+    const DOCS = [
+      { id: 'clr', name: 'Barangay clearance for renovation', desc: 'If you did not renovate, bring a Certificate of Non-Renovation from the building administrator instead.' },
+      { id: 'dti', name: 'Copy of your DTI or SEC registration', desc: 'Bring your DTI certificate, or your SEC certificate with Articles and By-Laws.' },
+      { id: 'lease', name: 'Contract of lease or land title', desc: 'Bring your lease contract, or the Transfer Certificate of Title (TCT) if you own the place.' },
+      { id: 'ins', name: 'Business insurance policy', desc: 'A Comprehensive General Liability (CGL) insurance policy for your business.' },
+    ]
+    const docName = (id) => DOCS.find((d) => d.id === id).name
+
+    // ─── Photo strip under one row ──────────────────────────────────────────
+    // photos: number of saved photos. extra: an uploading or broken tile. msg: the line under the button.
+    const thumb = (docId, n, total) => `<li><button class="thumb" type="button" aria-label="Open photo ${n} of ${total}, ${docName(docId)}"><img src="${docPhoto(n + docId.length)}" alt="" /></button></li>`
+    const uploadingTile = (pct, docId) => `<li><span class="thumb up" role="progressbar" aria-label="Uploading photo for ${docName(docId)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}">
+      <img src="${docPhoto(7)}" alt="" /><span class="ring"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="16" fill="none" stroke="rgba(20,33,91,.15)" stroke-width="4"/><circle cx="20" cy="20" r="16" fill="none" stroke="#2340d5" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(pct / 100) * 100.5} 100.5"/></svg><b>${pct}%</b></span></span></li>`
+    const brokenTile = (n, total, docId) => `<li><button class="thumb broken" type="button" aria-label="Photo ${n} of ${total} didn't load, ${docName(docId)}. Try again">${icon('imageOff')}Tap to retry</button></li>`
+    const addBtn = (busy) => `<button class="add" type="button"${busy ? ' aria-disabled="true"' : ''}>${icon('camera')}${busy ? 'Uploading…' : 'Add photo'}</button>`
+
+    const MSG = {
+      type: `<p class="fix" role="alert">${icon('warn')}<span>We can only save JPG, PNG, or WebP photos. Choose another photo.</span></p>`,
+      size: `<p class="fix" role="alert">${icon('warn')}<span>This photo is too big. Choose one 5 MB or smaller.</span></p>`,
+      failed: `<div class="alert" role="alert">${icon('alert')}<div>We couldn't save this photo. Check your connection and try again.<br /><button class="btn-retry" type="button">${icon('rotate')}Try again</button></div></div>`,
+      guest: `<div class="gnote" role="status"><p>${icon('lock')}Sign in with Google to save photos.</p><a class="btn-google" href="#">${GOOGLE_G}Save with Google</a></div>`,
+    }
+
+    function photos(docId, { n = 0, uploading = null, broken = null, msg = null } = {}) {
+      const total = n + (broken ? 1 : 0)
+      const tiles = [
+        ...Array.from({ length: n }, (_, i) => thumb(docId, i + 1, total)),
+        broken ? brokenTile(total, total, docId) : '',
+        uploading != null ? uploadingTile(uploading, docId) : '',
+      ].join('')
+      const full = total >= 5
+      return `
+        <div class="ph">
+          ${tiles ? `<ul class="thumbs" aria-label="Photos of ${docName(docId)}">${tiles}</ul>` : ''}
+          ${full ? `<p class="limit">${icon('info')}<span>5 photos added. That's the most for one document. Delete one to add another.</span></p>` : addBtn(uploading != null)}
+          ${msg ? MSG[msg] : ''}
+          <p class="sr-only" role="status">${uploading != null ? 'Uploading photo…' : ''}</p>
+        </div>`
+    }
+
+    function row(doc, checked, ph, compact) {
+      return `
+        <li class="row">
+          <label><span class="box${checked ? ' on' : ''}">${checked ? icon('check') : ''}</span><input class="sr-only" type="checkbox" id="cb-${doc.id}"${checked ? ' checked' : ''} />
+            <span class="txt"><b>${doc.name}</b>${compact ? '' : `<span>${doc.desc}</span>`}</span></label>
+          ${ph}
+        </li>`
+    }
+
+    // A step detail stub, "What to bring" only. state maps doc id → { checked, photos options }.
+    function stepPage(state, guest = false) {
+      const ready = DOCS.filter((d) => state[d.id]?.checked).length
+      return `
+        ${header(guest)}
+        <div class="page"><div class="container">
+          <a class="back" href="#">${icon('arrowLeft')}My roadmap</a>
+          ${guest ? banner : ''}
+          <div><span class="pill-step">Step 2 of 10</span><h1 style="margin-top:8px">Barangay Business Clearance</h1></div>
+          <section class="bring" aria-labelledby="bring-h">
+            <h2 id="bring-h">${icon('clipboard')}What to bring<span>${ready} of ${DOCS.length} ready</span></h2>
+            <ul class="rows">${DOCS.map((d) => row(d, state[d.id]?.checked, photos(d.id, state[d.id]?.photos), false)).join('')}</ul>
+          </section>
+        </div></div>`
+    }
+
+    function documentsPage(state) {
+      const ready = DOCS.filter((d) => state[d.id]?.checked).length
+      return `
+        ${header(false)}
+        <div class="page"><div class="container">
+          <a class="back" href="#">${icon('arrowLeft')}My roadmap</a>
+          <div><h1>All documents to bring</h1><p class="subtitle">Tick each one when you have it ready.</p></div>
+          <section class="progress-card"><b>${ready + 9} of 31 ready</b><div class="bar"><i style="width:${((ready + 9) / 31) * 100}%"></i></div></section>
+          <section class="card" aria-labelledby="docs-s2">
+            <div class="card-head"><div><span class="chip-step">Step 2</span><h2 id="docs-s2">Barangay Business Clearance</h2></div><span class="count">${ready} of ${DOCS.length} ready</span></div>
+            <ul class="rows compact">${DOCS.map((d) => row(d, state[d.id]?.checked, photos(d.id, state[d.id]?.photos), true)).join('')}</ul>
+          </section>
+        </div></div>`
+    }
+
+    // ─── Full view ──────────────────────────────────────────────────────────
+    function viewer({ docId = 'lease', n = 2, total = 3, confirm = false, error = false } = {}) {
+      return `
+        ${stepPage({ dti: { checked: true, photos: { n: 1 } }, lease: { checked: true, photos: { n: 3 } } })}
+        <div class="backdrop" aria-hidden="true"></div>
+        <section class="viewer" role="dialog" aria-modal="true" aria-labelledby="v-title" aria-describedby="v-count">
+          <div class="v-head">
+            <div class="ttl"><h2 id="v-title">${docName(docId)}</h2><p id="v-count">Photo ${n} of ${total}</p></div>
+            <button class="icon-btn" type="button" aria-label="Close photo">${icon('x')}</button>
+          </div>
+          <div class="v-body">
+            <img src="${docPhoto(n + docId.length)}" alt="Photo ${n} of ${total} of ${docName(docId)}" />
+            ${total > 1 ? `<button class="icon-btn prev" type="button" aria-label="Previous photo">${icon('chevLeft')}</button><button class="icon-btn next" type="button" aria-label="Next photo">${icon('chevRight')}</button>` : ''}
+          </div>
+          <div class="v-foot">
+            ${error ? `<div class="alert" role="alert">${icon('alert')}<span>We couldn't delete this photo. Check your connection and try again.</span></div>` : '<p class="hint">Only you can see your photos.</p>'}
+            <button class="btn-del" type="button">${icon('trash')}Delete photo</button>
+          </div>
+        </section>
+        ${confirm ? `
+          <div class="confirm-bd" aria-hidden="true"></div>
+          <section class="confirm" role="alertdialog" aria-modal="true" aria-labelledby="c-title" aria-describedby="c-desc">
+            <h2 id="c-title">Delete this photo?</h2>
+            <p id="c-desc">You can't undo this. Your checkmark won't change.</p>
+            <div class="acts"><button class="btn outline" type="button">Keep photo</button><button class="btn danger" type="button">${icon('trash')}Delete photo</button></div>
+          </section>` : ''}`
+    }
+
+    // ─── Frames ─────────────────────────────────────────────────────────────
+    // Every frame sits in one page, so prefix its ids and id references with the frame number.
+    let frameNo = 0
+    const scope = (html, p = `f${++frameNo}-`) => html
+      .replace(/\b(id|for|name)="([^"]+)"/g, (_, a, v) => `${a}="${p}${v}"`)
+      .replace(/\b(aria-describedby|aria-labelledby)="([^"]+)"/g, (_, a, v) => `${a}="${v.split(' ').map((t) => p + t).join(' ')}"`)
+    const frame = (label, size, body, vp) => `
+      <div><p class="frame-label">${label}</p><div class="frame-${size} is-${size}${vp ? ' vp' : ''}">${scope(body)}</div></div>`
+    const pair = (name, render) => [[`${name} · Mobile 360`, 'mobile', render], [`${name} · Desktop 1280`, 'desktop', render]]
+    const mobile = (name, render) => [`${name} · Mobile 360`, 'mobile', render]
+    const pairVp = (name, render) => [[`${name} · Mobile 360 × 720`, 'mobile', render, true], [`${name} · Desktop 1280 × 800`, 'desktop', render, true]]
+    const mobileVp = (name, render) => [`${name} · Mobile 360 × 720`, 'mobile', render, true]
+
+    const STATES = [
+      ['Screen 1 · Photos on step detail', '1. No photos yet', pair('No photos', () => stepPage({ dti: { checked: true } })), `<ul>
+        <li>Each row in "What to bring" gets a photo strip under it. The row's <code>&lt;label&gt;</code> wraps the checkbox, so the strip sits <b>outside</b> the label, indented <code>ml-9</code> like the source link. Tapping a photo control never ticks the box.</li>
+        <li>"Add photo": <code>min-h-11 rounded-full border border-brand/40 bg-white px-4 text-sm font-semibold text-brand</code>, lucide <code>Camera</code>. It's a <code>&lt;button&gt;</code> that clicks a hidden <code>&lt;input type="file"&gt;</code>.</li>
+        <li><b>Input attributes (for US-010-FE-01):</b> <code>accept="image/jpeg,image/png,image/webp"</code>, no <code>capture</code>. <code>capture</code> opens the camera only, which drops "choose a photo" from the story. Without it, iOS and Android both offer Camera and Gallery in their own picker. The exact type list (not <code>image/*</code>) makes iOS send JPEG instead of HEIC, which the server would reject. The tech lead approved this change to the ticket's <code>capture</code> line.</li>
+        <li>One photo per pick (no <code>multiple</code>). A 3-page lease is 3 taps, and each gets its own progress and error.</li>
+        <li>A photo never ticks the document (D17). The user still ticks it.</li>
+      </ul>`],
+      [null, '2. Uploading', pair('Uploading', () => stepPage({ dti: { checked: true, photos: { n: 1 } }, lease: { photos: { uploading: 45 } } })), `<ul>
+        <li>The picked photo shows at once as a dimmed 56 px tile (<code>URL.createObjectURL</code>) with a progress ring and the percent. <code>fetch</code> can't report upload progress, so this one call uses <code>XMLHttpRequest</code> and its <code>upload.onprogress</code>. No new package.</li>
+        <li>The tile is a <code>role="progressbar"</code> with <code>aria-valuenow</code>. "Add photo" turns into "Uploading…" (<code>aria-disabled</code>, still focusable) until it ends, so one row uploads one photo at a time. Other rows still work.</li>
+        <li>A hidden <code>role="status"</code> per row says "Uploading photo…", then "Photo saved." When it's done, invalidate the step (or documents) query so the saved photo with its signed URL replaces the local tile. No full reload (US-010-FE-01).</li>
+      </ul>`],
+      [null, '3. Photos added', pair('3 photos', () => stepPage({ dti: { checked: true, photos: { n: 1 } }, lease: { checked: true, photos: { n: 3 } } })), `<ul>
+        <li>Thumbnails: <code>size-14 rounded-xl border border-cream-deep object-cover</code> in a wrapping row (<code>flex flex-wrap gap-2</code>), oldest first. Each is a button, <code>aria-label="Open photo 2 of 3, Contract of lease or land title"</code>, that opens the full view (Screen 3). The image itself has <code>alt=""</code>, since the button names it.</li>
+        <li>"Add photo" stays under the thumbnails until there are 5.</li>
+      </ul>`],
+      [null, '4. Five photos, and a photo that didn\'t load', [
+        ...pair('5 photos', () => stepPage({ lease: { checked: true, photos: { n: 5 } } })),
+        ...pair('Photo didn\'t load', () => stepPage({ lease: { checked: true, photos: { n: 2, broken: true } } })),
+      ], `<ul>
+        <li>At 5 photos "Add photo" is replaced by a muted line with <code>Info</code>: "5 photos added. That's the most for one document. Delete one to add another." The server's 400 on a sixth is a backstop only.</li>
+        <li>Signed URLs expire after 10 minutes (US-010-BE-01). On an image's <code>onError</code>, refetch the query once to get fresh URLs. If it still fails, show a dashed tile with <code>ImageOff</code> and "Tap to retry", which refetches again.</li>
+      </ul>`],
+
+      ['Screen 2 · Messages', '5. Wrong type, too big, upload failed', [
+        ...pair('Wrong type', () => stepPage({ lease: { photos: { msg: 'type' } } })),
+        ...pair('Too big', () => stepPage({ lease: { photos: { msg: 'size' } } })),
+        ...pair('Upload failed', () => stepPage({ lease: { photos: { n: 1, msg: 'failed' } } })),
+      ], `<ul>
+        <li>Type and size are checked in the browser before uploading, from <code>file.type</code> and <code>file.size</code>, so the user hears at once. The server checks the content again (US-010-BE-01) and its 400 shows the same lines.</li>
+        <li>Wrong type and too big are gold notes (<code>rounded-xl border border-gold/70 bg-gold/18</code>, <code>TriangleAlert</code>), since the user can fix them by picking again. "We can only save JPG, PNG, or WebP photos. Choose another photo." and "This photo is too big. Choose one 5 MB or smaller."</li>
+        <li><b>Too big will be common:</b> many phone cameras make photos over 5 MB. Agreed approach for US-010-FE-01: before uploading, draw the photo on a <code>&lt;canvas&gt;</code> at most 2000 px on the long side and export JPEG at 0.85 (<code>canvas.toBlob</code>). That's about 1 MB, still readable, no package. The "too big" line then only shows if that fails.</li>
+        <li>Network error, 5xx, or a timeout: the app's existing red <code>Alert</code> ("We couldn't save this photo. Check your connection and try again.") with "Try again", which sends the same file. The local tile is removed.</li>
+        <li>Each message clears when the user picks another photo. Messages use <code>role="alert"</code> so they're read once.</li>
+      </ul>`],
+      [null, '6. Guest taps "Add photo"', pair('Guest', () => stepPage({ lease: { photos: { msg: 'guest' } } }, true)), `<ul>
+        <li>Guests see the same "Add photo" button, so they know photos exist. Tapping it opens no picker (the server would answer 403, US-010-BE-01). It shows a note under the row: <code>Lock</code>, "Sign in with Google to save photos." and the same <code>GoogleButton</code> with <code>useLinkGoogle(pathname)</code>, so they come back to this page.</li>
+        <li>The note sits beside the row the user tapped, so they don't have to scroll up to the banner. Tapping "Add photo" again hides it.</li>
+        <li>After linking Google, the same user id keeps their checkmarks, and "Add photo" opens the picker.</li>
+      </ul>`],
+
+      ['Screen 3 · All documents', '7. All documents with photos', pair('All documents', () => documentsPage({ dti: { checked: true, photos: { n: 1 } }, lease: { checked: true, photos: { n: 3 } }, ins: {} })), `<ul>
+        <li>Same strip, same states, under each <code>RequirementRow</code>. Rows here are compact (no description), so the strip adds <code>pb-2</code>.</li>
+        <li>Photos come in each requirement of <code>GET /api/roadmap/documents</code> (US-010-BE-01), so no extra request per row.</li>
+        <li>Make the strip one component (<code>DocumentPhotos</code>) in <code>src/features/progress/</code>, used by both pages. It takes the requirement and the query key to invalidate.</li>
+      </ul>`],
+
+      ['Screen 4 · Full view and delete', '8. Full view', pairVp('Full view', () => viewer()), `<ul>
+        <li>shadcn <code>dialog</code>. <code>frontend/src/components/ui</code> has no <code>dialog.tsx</code> yet, so US-010-FE-01 adds it as a shadcn wrapper over the installed <code>radix-ui</code> package (no new npm package). Mobile: full screen on solid <code>bg-[#0d1640]</code>, so the page behind never shows through the photo. Desktop: a 760 px box on a <code>bg-navy/60</code> backdrop.</li>
+        <li>Header: the document name (the dialog's <code>aria-labelledby</code>), "Photo 2 of 3" (<code>aria-describedby</code>), and a 44 px close button (<code>aria-label="Close photo"</code>).</li>
+        <li>The photo is <code>object-contain</code>, so a whole page is visible. Pinch zoom is left to the browser. Previous and next are 44 px round buttons, shown only with 2 or more photos. Left and right arrow keys do the same. Esc closes and focus returns to the thumbnail that opened it.</li>
+        <li>Footer: "Only you can see your photos." (D26, private bucket) and "Delete photo" (<code>Trash2</code>, outline on dark).</li>
+      </ul>`],
+      [null, '9. Delete confirm, and delete failed', [
+        ...pairVp('Confirm', () => viewer({ confirm: true })),
+        ...pairVp('Delete failed', () => viewer({ error: true })),
+      ], `<ul>
+        <li>shadcn <code>alert-dialog</code>. There is no <code>alert-dialog.tsx</code> in <code>frontend/src/components/ui</code> yet, so US-010-FE-01 adds it the same way (wrapper over <code>radix-ui</code>). It sits on top of the viewer: "Delete this photo?" and "You can't undo this. Your checkmark won't change." Buttons "Keep photo" (outline) and "Delete photo" (<code>bg-destructive text-white</code>). Focus starts on "Keep photo", so Enter never deletes by accident.</li>
+        <li>On success: the viewer shows the next photo, or closes if it was the last one. The hidden status says "Photo deleted." and the query is invalidated.</li>
+        <li>On failure: the confirm closes, the photo stays, and a red <code>Alert</code> above "Delete photo" says "We couldn't delete this photo. Check your connection and try again."</li>
+      </ul>`],
+    ]
+
+    document.getElementById('states').innerHTML = STATES.map(([screen, title, frames, notes]) => `
+      ${screen ? `<h2 class="doc-screen">${screen}</h2>` : ''}
+      <section class="state">
+        <h2>${title}</h2>
+        <div class="frames">${frames.map(([l, s, r, vp]) => frame(l, s, r(), vp)).join('')}</div>
+        <div class="notes">${notes}</div>
+      </section>`).join('')
+  </script>
+</body>
+</html>
