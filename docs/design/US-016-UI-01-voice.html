@@ -24,6 +24,7 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Poppins', sans-serif; color: var(--navy); background: #e9ecf2; padding: 32px; }
+    @media (max-width: 480px) { body { padding: 32px 0; } }
     a { color: inherit; text-decoration: none; }
     button, textarea { font: inherit; color: inherit; }
     svg.i { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
@@ -75,7 +76,7 @@
     .lead-tile svg.i { width: 24px; height: 24px; }
     .badge { border-radius: 999px; background: var(--cream-deep); font-size: 12px; font-weight: 600; padding: 4px 12px; }
     .field-label { display: block; margin-top: 20px; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
-    textarea.box { display: block; width: 100%; min-height: 152px; resize: vertical; border: 2px solid var(--cream-deep); border-radius: 16px; background: var(--cream); padding: 12px 14px; font-size: 16px; line-height: 1.5; outline: none; }
+    textarea.box { display: block; width: 100%; min-height: 152px; resize: vertical; border: 2px solid var(--cream-deep); border-radius: 16px; background: var(--cream); padding: 12px 14px; font-size: 16px; line-height: 1.5; }
     textarea.box::placeholder { color: var(--muted-foreground); }
     textarea.box[readonly] { color: var(--muted-foreground); opacity: .75; }
     .meter { margin-top: 8px; height: 4px; border-radius: 999px; background: var(--cream-deep); overflow: hidden; }
@@ -177,7 +178,7 @@
     .btn-retry svg.i { width: 16px; height: 16px; }
     .composer { flex-shrink: 0; border-top: 1px solid var(--cream-deep); background: #fff; padding: 10px 12px 12px; }
     .composer .row { display: flex; align-items: flex-end; gap: 8px; }
-    .composer textarea { flex: 1; min-width: 0; height: 48px; max-height: 120px; resize: none; border: 2px solid var(--cream-deep); border-radius: 16px; background: var(--cream); padding: 10px 12px; font-size: 16px; line-height: 1.5; outline: none; }
+    .composer textarea { flex: 1; min-width: 0; height: 48px; max-height: 120px; resize: none; border: 2px solid var(--cream-deep); border-radius: 16px; background: var(--cream); padding: 10px 12px; font-size: 16px; line-height: 1.5; }
     .composer textarea.tall { height: 120px; }
     .composer textarea[aria-disabled="true"] { opacity: .6; }
     .send { width: 48px; height: 48px; flex-shrink: 0; border: 0; border-radius: 999px; background: var(--navy); color: #fff; display: grid; place-items: center; cursor: pointer; }
@@ -366,6 +367,7 @@
 
     // talk: null (text chat) or { state, left, did }
     function talkView({ state, left = 161, did = [] }) {
+      if (state === 'connecting') left = 180
       const t = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`
       const S = {
         connecting: ['dim', 'loader', 'Connecting…', 'Allow the mic if your browser asks.'],
@@ -375,7 +377,7 @@
       }[state]
       return `
         <div class="talk">
-          <div class="timer${left <= 30 ? ' low' : ''}"><span>${state === 'connecting' ? '3:00' : t} left</span><span class="bar" aria-hidden="true"><span style="width:${(left / 180) * 100}%"></span></span></div>
+          <div class="timer${left <= 30 ? ' low' : ''}"><span>${t} left</span><span class="bar" aria-hidden="true"><span style="width:${(left / 180) * 100}%"></span></span></div>
           <div class="orb-wrap"><div class="orb ${S[0]}" aria-hidden="true">${icon(S[1], S[1] === 'loader' ? 'i spin' : 'i')}</div></div>
           <h3>${S[2]}</h3>
           <p class="sub">${S[3]}</p>
