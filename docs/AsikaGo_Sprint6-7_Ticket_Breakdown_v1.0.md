@@ -266,7 +266,7 @@ are private to the user.
 | Blocks | AB#109 |
 
 - [ ] Matches US-010-UI-01 on step detail and All documents.
-- [ ] On a phone, "Add photo" offers the camera (`<input type="file" accept="image/*" capture>`). No new npm package.
+- [ ] "Add photo" opens the phone's picker so the user can take or choose a photo: `<input type="file" accept="image/jpeg,image/png,image/webp">`, no `capture` (it hides the gallery). Before upload, the browser shrinks the photo to at most 2000 px on the long side, JPEG 0.85 (`canvas.toBlob`). No new npm package.
 - [ ] Shows upload progress, and refreshes the list without a full reload.
 - [ ] A photo does not check the document. Checking stays the user's choice (D17).
 
@@ -288,7 +288,7 @@ by US-017-AI-01's result on Nov 24.
 | Depends on | S7-PM-01, US-012-BE-01 (fake mode) |
 | Blocks | US-017-FE-01, US-016-FE-01 |
 
-- [ ] Takes one audio file (multipart, 60 seconds at most, 2 MB at most) and returns `{ "text": "..." }` from `OpenAI:TranscribeModel` (D24). The key stays on the server.
+- [ ] Takes one audio file (multipart, 60 seconds at most, 2 MB at most) as `audio/webm` (Chrome, Android) or `audio/mp4` (Safari, iOS), what `MediaRecorder` produces, and returns `{ "text": "..." }` from `OpenAI:TranscribeModel` (D24). The key stays on the server.
 - [ ] Per-user cap of 10 audio minutes per day, on top of the existing `/api/assistant` rate limits. 429 over the cap.
 - [ ] A transcript over 1000 characters is cut at 1000.
 - [ ] Fake mode returns a fixed Taglish transcript when no key is set in Development.
@@ -330,7 +330,7 @@ US-016-FE-01 alone.
 | Due | **Nov 26** |
 | Blocks | US-016-FE-01, US-016-FE-02, US-017-FE-01 |
 
-- [ ] `docs/design/US-016-UI-01-voice.html` covers: the mic button and its states (in the chat and on the describe step), the editable transcript, read aloud on an answer, the talk mode toggle, connecting, talking, the session timer, auto-close, and the guest message ("Sign in with Google to use talk mode").
+- [ ] `docs/design/US-016-UI-01-voice.html` covers: the mic button and its states (in the chat and on the describe step), the editable transcript, read aloud on an answer, the talk mode toggle, connecting, talking, the session timer, and auto-close. Guests don't see the Talk switch.
 - [ ] 360 px and desktop. Jude and Seth approve it in the PR.
 
 #### US-016-FE-01: Mic and read aloud in the chat
@@ -366,6 +366,7 @@ US-016-FE-01 alone.
 - [ ] The session has one tool, `check_document(requirementId)`. The backend lists only the user's own requirements in the tool description.
 - [ ] Google users only: guests get 403. 3 sessions per user per day: 429 over it. Config flag `OpenAI:VoiceEnabled`, off by default: 404 when off.
 - [ ] 3-minute session cap set on the session, if the API allows it. Otherwise the frontend enforces it.
+- [ ] `GET /api/me` returns `voiceEnabled` (the `OpenAI:VoiceEnabled` flag) so the frontend knows whether to show the Talk switch.
 - [ ] Tests use the fake HTTP handler, and check that the context matches the text chat for the same user.
 
 #### US-016-FE-02: Talk mode
@@ -381,8 +382,8 @@ US-016-FE-01 alone.
 | Depends on | US-016-BE-01, US-016-UI-01 |
 | Blocks | AB#109 |
 
-- [ ] A talk mode toggle in the chat sheet, shown only to Google users when the flag is on.
-- [ ] Connects over WebRTC with the client secret. The user can interrupt. A timer shows the 3 minutes. The session closes after 15 s of silence.
+- [ ] A talk mode toggle in the chat sheet, shown only to Google users when the flag is on. The flag comes from `GET /api/me`.
+- [ ] Connects over WebRTC with the client secret. The user can interrupt. A timer shows the 3 minutes. A "Still there?" warning shows after 10 s of silence, before the session closes at 15 s.
 - [ ] When the model calls `check_document`, the frontend calls the existing US-009 endpoint, and the checklist updates.
 - [ ] Mic denied, connection failed, or 429: one friendly line, and the text chat still works.
 
