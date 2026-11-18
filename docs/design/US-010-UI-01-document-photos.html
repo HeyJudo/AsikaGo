@@ -248,7 +248,7 @@
 
     const MSG = {
       type: `<p class="fix" role="alert">${icon('warn')}<span>We can only save JPG, PNG, or WebP photos. Choose another photo.</span></p>`,
-      size: `<p class="fix" role="alert">${icon('warn')}<span>This photo is too big. Choose one under 5 MB.</span></p>`,
+      size: `<p class="fix" role="alert">${icon('warn')}<span>This photo is too big. Choose one 5 MB or smaller.</span></p>`,
       failed: `<div class="alert" role="alert">${icon('alert')}<div>We couldn't save this photo. Check your connection and try again.<br /><button class="btn-retry" type="button">${icon('rotate')}Try again</button></div></div>`,
       guest: `<div class="gnote" role="status"><p>${icon('lock')}Sign in with Google to save photos.</p><a class="btn-google" href="#">${GOOGLE_G}Save with Google</a></div>`,
     }
@@ -355,11 +355,11 @@
       ['Screen 1 · Photos on step detail', '1. No photos yet', pair('No photos', () => stepPage({ dti: { checked: true } })), `<ul>
         <li>Each row in "What to bring" gets a photo strip under it. The row's <code>&lt;label&gt;</code> wraps the checkbox, so the strip sits <b>outside</b> the label, indented <code>ml-9</code> like the source link. Tapping a photo control never ticks the box.</li>
         <li>"Add photo": <code>min-h-11 rounded-full border border-brand/40 bg-white px-4 text-sm font-semibold text-brand</code>, lucide <code>Camera</code>. It's a <code>&lt;button&gt;</code> that clicks a hidden <code>&lt;input type="file"&gt;</code>.</li>
-        <li><b>Input attributes (for US-010-FE-01):</b> <code>accept="image/jpeg,image/png,image/webp"</code>, no <code>capture</code>. <code>capture</code> opens the camera only, which drops "choose a photo" from the story. Without it, iOS and Android both offer Camera and Gallery in their own picker. The exact type list (not <code>image/*</code>) makes iOS send JPEG instead of HEIC, which the server would reject. This changes the ticket's <code>capture</code> line, so decide it in the US-010-FE-01 PR.</li>
+        <li><b>Input attributes (for US-010-FE-01):</b> <code>accept="image/jpeg,image/png,image/webp"</code>, no <code>capture</code>. <code>capture</code> opens the camera only, which drops "choose a photo" from the story. Without it, iOS and Android both offer Camera and Gallery in their own picker. The exact type list (not <code>image/*</code>) makes iOS send JPEG instead of HEIC, which the server would reject. The tech lead approved this change to the ticket's <code>capture</code> line.</li>
         <li>One photo per pick (no <code>multiple</code>). A 3-page lease is 3 taps, and each gets its own progress and error.</li>
         <li>A photo never ticks the document (D17). The user still ticks it.</li>
       </ul>`],
-      [null, '2. Uploading', [mobile('Uploading', () => stepPage({ dti: { checked: true, photos: { n: 1 } }, lease: { photos: { uploading: 45 } } }))], `<ul>
+      [null, '2. Uploading', pair('Uploading', () => stepPage({ dti: { checked: true, photos: { n: 1 } }, lease: { photos: { uploading: 45 } } })), `<ul>
         <li>The picked photo shows at once as a dimmed 56 px tile (<code>URL.createObjectURL</code>) with a progress ring and the percent. <code>fetch</code> can't report upload progress, so this one call uses <code>XMLHttpRequest</code> and its <code>upload.onprogress</code>. No new package.</li>
         <li>The tile is a <code>role="progressbar"</code> with <code>aria-valuenow</code>. "Add photo" turns into "Uploading…" (<code>aria-disabled</code>, still focusable) until it ends, so one row uploads one photo at a time. Other rows still work.</li>
         <li>A hidden <code>role="status"</code> per row says "Uploading photo…", then "Photo saved." When it's done, invalidate the step (or documents) query so the saved photo with its signed URL replaces the local tile. No full reload (US-010-FE-01).</li>
@@ -369,26 +369,26 @@
         <li>"Add photo" stays under the thumbnails until there are 5.</li>
       </ul>`],
       [null, '4. Five photos, and a photo that didn\'t load', [
-        mobile('5 photos', () => stepPage({ lease: { checked: true, photos: { n: 5 } } })),
-        mobile('Photo didn\'t load', () => stepPage({ lease: { checked: true, photos: { n: 2, broken: true } } })),
+        ...pair('5 photos', () => stepPage({ lease: { checked: true, photos: { n: 5 } } })),
+        ...pair('Photo didn\'t load', () => stepPage({ lease: { checked: true, photos: { n: 2, broken: true } } })),
       ], `<ul>
         <li>At 5 photos "Add photo" is replaced by a muted line with <code>Info</code>: "5 photos added. That's the most for one document. Delete one to add another." The server's 400 on a sixth is a backstop only.</li>
         <li>Signed URLs expire after 10 minutes (US-010-BE-01). On an image's <code>onError</code>, refetch the query once to get fresh URLs. If it still fails, show a dashed tile with <code>ImageOff</code> and "Tap to retry", which refetches again.</li>
       </ul>`],
 
       ['Screen 2 · Messages', '5. Wrong type, too big, upload failed', [
-        mobile('Wrong type', () => stepPage({ lease: { photos: { msg: 'type' } } })),
-        mobile('Too big', () => stepPage({ lease: { photos: { msg: 'size' } } })),
-        mobile('Upload failed', () => stepPage({ lease: { photos: { n: 1, msg: 'failed' } } })),
+        ...pair('Wrong type', () => stepPage({ lease: { photos: { msg: 'type' } } })),
+        ...pair('Too big', () => stepPage({ lease: { photos: { msg: 'size' } } })),
+        ...pair('Upload failed', () => stepPage({ lease: { photos: { n: 1, msg: 'failed' } } })),
       ], `<ul>
         <li>Type and size are checked in the browser before uploading, from <code>file.type</code> and <code>file.size</code>, so the user hears at once. The server checks the content again (US-010-BE-01) and its 400 shows the same lines.</li>
-        <li>Wrong type and too big are gold notes (<code>rounded-xl border border-gold/70 bg-gold/18</code>, <code>TriangleAlert</code>), since the user can fix them by picking again. "We can only save JPG, PNG, or WebP photos. Choose another photo." and "This photo is too big. Choose one under 5 MB."</li>
-        <li><b>Too big will be common:</b> many phone cameras make photos over 5 MB. Recommended for US-010-FE-01: before uploading, draw the photo on a <code>&lt;canvas&gt;</code> at most 2000 px on the long side and export JPEG at 0.85 (<code>canvas.toBlob</code>). That's about 1 MB, still readable, no package. The "too big" line then only shows if that fails.</li>
+        <li>Wrong type and too big are gold notes (<code>rounded-xl border border-gold/70 bg-gold/18</code>, <code>TriangleAlert</code>), since the user can fix them by picking again. "We can only save JPG, PNG, or WebP photos. Choose another photo." and "This photo is too big. Choose one 5 MB or smaller."</li>
+        <li><b>Too big will be common:</b> many phone cameras make photos over 5 MB. Agreed approach for US-010-FE-01: before uploading, draw the photo on a <code>&lt;canvas&gt;</code> at most 2000 px on the long side and export JPEG at 0.85 (<code>canvas.toBlob</code>). That's about 1 MB, still readable, no package. The "too big" line then only shows if that fails.</li>
         <li>Network error, 5xx, or a timeout: the app's existing red <code>Alert</code> ("We couldn't save this photo. Check your connection and try again.") with "Try again", which sends the same file. The local tile is removed.</li>
         <li>Each message clears when the user picks another photo. Messages use <code>role="alert"</code> so they're read once.</li>
       </ul>`],
-      [null, '6. Guest taps "Add photo"', [mobile('Guest', () => stepPage({ lease: { photos: { msg: 'guest' } } }, true))], `<ul>
-        <li>Guests see the same "Add photo" button, so they know photos exist. Tapping it opens no picker (the server would answer 403, D26). It shows a note under the row: <code>Lock</code>, "Sign in with Google to save photos." and the same <code>GoogleButton</code> with <code>useLinkGoogle(pathname)</code>, so they come back to this page.</li>
+      [null, '6. Guest taps "Add photo"', pair('Guest', () => stepPage({ lease: { photos: { msg: 'guest' } } }, true)), `<ul>
+        <li>Guests see the same "Add photo" button, so they know photos exist. Tapping it opens no picker (the server would answer 403, US-010-BE-01). It shows a note under the row: <code>Lock</code>, "Sign in with Google to save photos." and the same <code>GoogleButton</code> with <code>useLinkGoogle(pathname)</code>, so they come back to this page.</li>
         <li>The note sits beside the row the user tapped, so they don't have to scroll up to the banner. Tapping "Add photo" again hides it.</li>
         <li>After linking Google, the same user id keeps their checkmarks, and "Add photo" opens the picker.</li>
       </ul>`],
@@ -400,16 +400,16 @@
       </ul>`],
 
       ['Screen 4 · Full view and delete', '8. Full view', pairVp('Full view', () => viewer()), `<ul>
-        <li>shadcn <code>dialog</code> (Radix Dialog from the <code>radix-ui</code> package we have, so no new dependency). Mobile: full screen on solid <code>bg-[#0d1640]</code>, so the page behind never shows through the photo. Desktop: a 760 px box on a <code>bg-navy/60</code> backdrop.</li>
+        <li>shadcn <code>dialog</code>. <code>frontend/src/components/ui</code> has no <code>dialog.tsx</code> yet, so US-010-FE-01 adds it as a shadcn wrapper over the installed <code>radix-ui</code> package (no new npm package). Mobile: full screen on solid <code>bg-[#0d1640]</code>, so the page behind never shows through the photo. Desktop: a 760 px box on a <code>bg-navy/60</code> backdrop.</li>
         <li>Header: the document name (the dialog's <code>aria-labelledby</code>), "Photo 2 of 3" (<code>aria-describedby</code>), and a 44 px close button (<code>aria-label="Close photo"</code>).</li>
         <li>The photo is <code>object-contain</code>, so a whole page is visible. Pinch zoom is left to the browser. Previous and next are 44 px round buttons, shown only with 2 or more photos. Left and right arrow keys do the same. Esc closes and focus returns to the thumbnail that opened it.</li>
         <li>Footer: "Only you can see your photos." (D26, private bucket) and "Delete photo" (<code>Trash2</code>, outline on dark).</li>
       </ul>`],
       [null, '9. Delete confirm, and delete failed', [
-        mobileVp('Confirm', () => viewer({ confirm: true })),
-        mobileVp('Delete failed', () => viewer({ error: true })),
+        ...pairVp('Confirm', () => viewer({ confirm: true })),
+        ...pairVp('Delete failed', () => viewer({ error: true })),
       ], `<ul>
-        <li>shadcn <code>alert-dialog</code> (Radix, same package) on top of the viewer: "Delete this photo?" and "You can't undo this. Your checkmark won't change." Buttons "Keep photo" (outline) and "Delete photo" (<code>bg-destructive text-white</code>). Focus starts on "Keep photo", so Enter never deletes by accident.</li>
+        <li>shadcn <code>alert-dialog</code>. There is no <code>alert-dialog.tsx</code> in <code>frontend/src/components/ui</code> yet, so US-010-FE-01 adds it the same way (wrapper over <code>radix-ui</code>). It sits on top of the viewer: "Delete this photo?" and "You can't undo this. Your checkmark won't change." Buttons "Keep photo" (outline) and "Delete photo" (<code>bg-destructive text-white</code>). Focus starts on "Keep photo", so Enter never deletes by accident.</li>
         <li>On success: the viewer shows the next photo, or closes if it was the last one. The hidden status says "Photo deleted." and the query is invalidated.</li>
         <li>On failure: the confirm closes, the photo stays, and a red <code>Alert</code> above "Delete photo" says "We couldn't delete this photo. Check your connection and try again."</li>
       </ul>`],
