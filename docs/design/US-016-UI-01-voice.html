@@ -156,7 +156,6 @@
     .guest-strip { display: flex; align-items: center; gap: 10px; margin: 0 12px 10px; border-radius: 14px; background: rgba(35,64,213,.05); border: 1px solid rgba(35,64,213,.25); padding: 6px 6px 6px 12px; font-size: 13px; font-weight: 600; line-height: 1.35; flex-shrink: 0; }
     .guest-strip span { flex: 1; }
     .is-desktop .guest-strip { display: none; }
-    .is-desktop .guest-strip.for-talk { display: flex; }
     .guest-strip .btn-google { width: auto; padding: 0 14px; gap: 8px; font-size: 13px; flex-shrink: 0; }
     .guest-strip .btn-google svg { width: 18px; height: 18px; }
     .msgs { flex: 1; min-height: 0; overflow: auto; background: var(--cream); border-top: 1px solid var(--cream-deep); padding: 16px 12px; display: flex; flex-direction: column; gap: 12px; }
@@ -290,6 +289,9 @@
       nomic: 'We couldn\'t find a mic, so you can type instead.',
       limit: 'You\'ve used the mic a lot today, so you can type instead.',
       busy: 'We couldn\'t write down what you said, so you can type instead.',
+      talkDenied: 'Talk mode needs your mic. Allow it in your browser, or type your question.',
+      talkFail: 'We couldn\'t start talk mode, so you can type instead. Tap Talk to try again.',
+      talkLimit: 'You\'ve used talk mode 3 times today, so you can type instead.',
     }
     function describe({ text = '', mic = 'idle', secs = 0, line = null, hint = false } = {}, guest = false) {
       const n = text.length
@@ -388,19 +390,19 @@
         </div>`
     }
 
-    function sheet({ guest = false, body = '', comp = {}, talk = null, sw = 'show', guestTalk = false } = {}, modal = true) {
+    function sheet({ guest = false, body = '', comp = {}, talk = null, sw = 'show' } = {}, modal = true) {
       const switchBtn = sw === 'hide' ? '' : `<button class="talk-sw" type="button" role="switch" aria-checked="${talk ? 'true' : 'false'}" aria-label="Talk mode">${icon('audioLines')}Talk<span class="trk" aria-hidden="true"></span></button>`
       return `
         ${modal ? '<div class="backdrop" aria-hidden="true"></div>' : ''}
-        <section class="sheet" role="dialog" aria-modal="${modal}" aria-labelledby="chat-title">
+        <section class="sheet" role="dialog" aria-modal="${modal}" aria-labelledby="chat-title" aria-describedby="chat-desc">
           <div class="grabber" aria-hidden="true"></div>
           <div class="sh-head">
             <span class="tile">${icon('sparkles')}</span>
-            <div class="ttl"><h2 id="chat-title">Ask about your roadmap</h2></div>
+            <div class="ttl"><h2 id="chat-title">Ask about your roadmap</h2><p id="chat-desc">Answers come only from your roadmap.</p></div>
             ${switchBtn}
             <button class="icon-btn" type="button" aria-label="Close chat">${icon('x')}</button>
           </div>
-          ${guest ? `<div class="guest-strip${guestTalk ? ' for-talk' : ''}" ${guestTalk ? 'role="status"' : ''}><span>${guestTalk ? 'Sign in with Google to use talk mode.' : 'Save your roadmap so you don\'t lose it.'}</span><a class="btn-google" href="#">${GOOGLE_G}Save with Google</a></div>` : ''}
+          ${guest ? `<div class="guest-strip"><span>Save your roadmap so you don\'t lose it.</span><a class="btn-google" href="#">${GOOGLE_G}Save with Google</a></div>` : ''}
           ${talk ? talkView(talk) : `<div class="msgs">${body}</div>${composer(comp)}`}
         </section>`
     }
@@ -434,24 +436,24 @@
         <li>Hidden if the browser has no <code>MediaRecorder</code> or <code>navigator.mediaDevices</code> (old browsers, or a page not on HTTPS). The box still works.</li>
       </ul>`],
       [null, '2. Recording, then writing it down', [
-        mobile('Recording', () => describe({ mic: 'recording', secs: 12 })),
-        mobile('Writing it down', () => describe({ mic: 'writing' })),
+        ...pair('Recording', () => describe({ mic: 'recording', secs: 12 })),
+        ...pair('Writing it down', () => describe({ mic: 'writing' })),
       ], `<ul>
         <li>Tapping "Speak instead" asks for the mic (<code>getUserMedia({ audio: true })</code>) and starts <code>MediaRecorder</code>. The button becomes a navy panel: a pulsing red dot, "Recording…" (US-017-FE-01), "0:12 of 1:00", a gold bar for the minute, and a white "Stop" button. The dot stops pulsing under <code>motion-reduce</code>.</li>
         <li>At 60 seconds it stops by itself and sends what it has (US-017-FE-01, US-017-BE-01's 60 s cap).</li>
         <li>After Stop, the panel says "Writing down what you said…" and "This takes a few seconds." while <code>POST /api/assistant/transcribe</code> runs. The box is <code>readOnly</code> and "Fill in my answers" is off during both states, so the transcript can't land on top of typing. "Skip" stays on and cancels both (<code>recorder.stop()</code> and <code>AbortController</code>), as in US-012.</li>
         <li>Screen readers: a hidden <code>role="status"</code> says "Recording. Tap Stop when you're done.", then "Writing down what you said.", then "Added what you said to the box." The timer is not live, so it isn't read every second.</li>
-        <li>Send the recorder's own type (<code>audio/webm</code> on Chrome and Android, <code>audio/mp4</code> on Safari). US-017-BE-01 has to accept both.</li>
+        <li>Send the recorder's own type (<code>audio/webm</code> on Chrome and Android, <code>audio/mp4</code> on Safari). US-017-BE-01 accepts both (agreed).</li>
       </ul>`],
-      [null, '3. What they said is in the box', [mobile('Transcript added', () => describe({ text: SPOKEN, hint: true }))], `<ul>
+      [null, '3. What they said is in the box', pair('Transcript added', () => describe({ text: SPOKEN, hint: true })), `<ul>
         <li>The transcript is <b>added to the end</b> of what's already in the box (with a space), never put in its place, so typed text is never lost. The result is cut at 1000 characters (the box's limit). Focus moves to the box with the cursor at the end.</li>
         <li>A gold hint under the box: "<b>Check what we wrote down.</b> You can fix it before you continue." (US-017-FE-01: the user can edit it). It goes away on the next keystroke.</li>
         <li>The button now says "Speak again" and adds more. From here it's US-012 unchanged: "Fill in my answers" sends the box to extract.</li>
         <li>The privacy line now says "We don't save it or your voice." That's true: US-017-BE-01 stores and logs no audio.</li>
       </ul>`],
       [null, '4. When the mic can\'t be used', [
-        mobile('Mic blocked', () => describe({ line: 'denied' })),
-        mobile('Too many today (429)', () => describe({ text: SPOKEN, line: 'limit' })),
+        ...pair('Mic blocked', () => describe({ line: 'denied' })),
+        ...pair('Too many today (429)', () => describe({ text: SPOKEN, line: 'limit' })),
       ], `<ul>
         <li>One quiet line under the box (<code>text-[13.5px] text-muted-foreground</code>, <code>MicOff</code>), never a red error. Typing still works (US-017-FE-01).</li>
         <li>Lines: permission denied: "Your mic is blocked, so you can type instead." No mic (<code>NotFoundError</code>): "We couldn't find a mic, so you can type instead." 429: "You've used the mic a lot today, so you can type instead." 503, timeout or network: "We couldn't write down what you said, so you can type instead."</li>
@@ -464,8 +466,8 @@
         <li>Esc while recording cancels the recording, not the sheet.</li>
       </ul>`],
       [null, '6. Transcript in the box, and read aloud', [
-        mobileVp('Transcript in the box', { comp: { mode: 'filled', draft: 'Ano pa ang kulang ko para sa barangay clearance? Dala ko na yung lease.' }, body: QA }),
-        mobileVp('Reading aloud', { comp: {}, body: me('Saan ako kukuha ng business permit?') + bot(ANSWER, true) }),
+        ...pairVp('Transcript in the box', { comp: { mode: 'filled', draft: 'Ano pa ang kulang ko para sa barangay clearance? Dala ko na yung lease.' }, body: QA }),
+        ...pairVp('Reading aloud', { comp: {}, body: me('Saan ako kukuha ng business permit?') + bot(ANSWER, true) }),
       ], `<ul>
         <li>The transcript goes into the box (added to the end, like the describe step). It is <b>not</b> sent: the user reads it, fixes it, and taps Send (US-016-FE-01). The box grows to show it. Under the box, "<b>Check the text, then send.</b>" replaces the usual line until they edit or send. While transcribing, the box says "Writing down what you said…" and the mic shows a spinner.</li>
         <li>Mic failures use the same four lines as the describe step, in the composer's line under the box.</li>
@@ -473,16 +475,15 @@
         <li>Uses <code>speechSynthesis</code> (no OpenAI call). Pick a <code>fil-PH</code> voice if <code>getVoices()</code> has one, else the browser's default voice. Hide the button if <code>speechSynthesis</code> doesn't exist.</li>
       </ul>`],
 
-      ['Screen 3 · Talk mode', '7. The Talk switch, and a guest tapping it', [
-        mobileVp('Google user', { comp: {}, body: QA }),
-        mobileVp('Guest tapped Talk', { guest: true, guestTalk: true, comp: {}, body: QA }),
+      ['Screen 3 · Talk mode', '7. The Talk switch', [
+        ...pairVp('Google user', { comp: {}, body: QA }),
       ], `<ul>
-        <li>A "Talk" switch in the sheet header, left of Close: <code>role="switch"</code>, <code>min-h-11 rounded-full border</code>, <code>AudioLines</code> and a small track. On: navy fill, gold track. The header's second line ("Answers come only from your roadmap.") moves to the empty state, and the gold tile is hidden below <code>lg</code> (<code>hidden lg:grid</code>), so the title fits in two lines at 360 px.</li>
-        <li>Hidden when <code>OpenAI:VoiceEnabled</code> is off. The frontend needs to know the flag before showing it, so US-016-BE-01 should return it somewhere the app already loads (for example a field on <code>/api/me</code>), not only as a 404.</li>
-        <li><b>Guests:</b> they see the switch too, so they know talk mode exists. Tapping it doesn't turn on. The sheet's guest row changes to "Sign in with Google to use talk mode." with the same Save with Google button, and shows on desktop too. US-016-FE-02 says "shown only to Google users", so this changes that line. Decide it in the US-016-FE-02 PR.</li>
+        <li>A "Talk" switch in the sheet header, left of Close: <code>role="switch"</code>, <code>min-h-11 rounded-full border</code>, <code>AudioLines</code> and a small track. On: navy fill, gold track. The gold tile is hidden below <code>lg</code> (<code>hidden lg:grid</code>), so the title and the header line fit at 360 px.</li>
+        <li>Shown only to Google users, and only when <code>OpenAI:VoiceEnabled</code> is on. Agreed: the frontend reads the flag from the existing <code>GET /api/me</code>, as a new <code>voiceEnabled</code> field next to <code>isAnonymous</code>.</li>
+        <li><b>Guests:</b> no Talk switch and no talk-mode message. The mic and read aloud still work for guests (US-016-FE-01).</li>
       </ul>`],
       [null, '8. Connecting and talking', [
-        mobileVp('Connecting', { talk: { state: 'connecting' } }),
+        ...pairVp('Connecting', { talk: { state: 'connecting' } }),
         ...pairVp('Talking', { talk: { state: 'speaking', left: 161, did: ['Barangay clearance'] } }),
       ], `<ul>
         <li>Turning the switch on replaces the messages and the composer with the talk view. The text conversation is kept and comes back when talk ends.</li>
@@ -494,19 +495,19 @@
         <li>Screen readers: a hidden <code>role="status"</code> says each state once ("Connecting…", "Listening…", "Speaking…"). Talk mode is for people who can hear. The text chat stays the main way in.</li>
       </ul>`],
       [null, '9. Quiet, and after it ends', [
-        mobileVp('Still there?', { talk: { state: 'quiet', left: 98, did: ['Barangay clearance'] } }),
-        mobileVp('Ended', { comp: {}, body: QA + sys('audioLines', 'Talk mode ended after 15 seconds of quiet.', 'You checked off 1 document. You can type another question below.') }),
+        ...pairVp('Still there?', { talk: { state: 'quiet', left: 98, did: ['Barangay clearance'] } }),
+        ...pairVp('Ended', { comp: {}, body: QA + sys('audioLines', 'Talk mode ended after 15 seconds of quiet.', 'You checked off 1 document. You can type another question below.') }),
       ], `<ul>
-        <li>After 10 seconds with no one talking, the orb dims and says "Still there?" and "Talk mode closes in 5 seconds if it stays quiet." Talking brings it back. At 15 seconds it closes (US-016-FE-02).</li>
+        <li>After 10 seconds with no one talking, the orb dims and says "Still there?" and "Talk mode closes in 5 seconds if it stays quiet." Talking brings it back. At 15 seconds it closes (US-016-FE-02). The 10 s warning is agreed.</li>
         <li>When talk ends, the text chat comes back with a card: what ended it ("Talk mode ended after 15 seconds of quiet.", "Talk mode ended at 3 minutes." or "You ended talk mode.") and how many documents were checked off. The switch turns off. Focus goes to the box.</li>
       </ul>`],
       [null, '10. When talk mode can\'t start', [
-        mobileVp('Mic blocked', { comp: {}, body: QA + sys('micOff', 'Talk mode needs your mic. Allow it in your browser, or type below.') }),
-        mobileVp('Connection failed', { comp: {}, body: QA + sys('cloudOff', 'We couldn\'t start talk mode. Try again, or type below.', '', true) }),
-        mobileVp('3 talks today (429)', { comp: {}, body: QA + sys('clock', 'You\'ve used talk mode 3 times today. You can still type your questions.') }),
+        ...pairVp('Mic blocked', { comp: { line: 'talkDenied' }, body: QA }),
+        ...pairVp('Connection failed', { comp: { line: 'talkFail' }, body: QA }),
+        ...pairVp('3 talks today (429)', { comp: { line: 'talkLimit' }, body: QA }),
       ], `<ul>
-        <li>One friendly line as a card in the text chat, and the switch turns back off. The text chat still works (US-016-FE-02).</li>
-        <li>Mic denied: <code>MicOff</code>, no retry (the browser has to allow it). Connection failed (voice-session 503, or WebRTC fails): <code>CloudOff</code> and "Try again". 429: <code>Clock</code>, no retry, since it fails again until tomorrow.</li>
+        <li>One friendly line in the chat sheet, in the composer's quiet line under the box (same style as the mic failures in frame 6), and the switch turns back off. The box and Send stay usable (US-016-FE-02).</li>
+        <li>Mic denied (the browser has to allow it), connection failed (voice-session 503, or WebRTC fails) and 429 each get their own line. There is no Try again button: tapping Talk again retries, except after the 429, which fails until tomorrow.</li>
         <li>A 403 can only mean the user is a guest, and guests never reach the call (frame 7). A 404 means the flag was turned off: hide the switch.</li>
       </ul>`],
     ]
