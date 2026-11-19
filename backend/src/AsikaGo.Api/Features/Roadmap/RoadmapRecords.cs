@@ -34,10 +34,22 @@ public sealed record StepDetailResponse(
     IReadOnlyList<string> Actions,
     string? ConditionNote,
     IReadOnlyList<RequirementResponse> Requirements,
+    IReadOnlyList<OfficeResponse> Offices,
     int? PreviousNumber,
     int? NextNumber,
     RoadmapStepStatus Status,
     DateTimeOffset? CompletedAt);
+
+public sealed record OfficeResponse(
+    string Name,
+    OfficeAccess Access,
+    string? Address,
+    string? Website,
+    string? Hours,
+    string? Phone,
+    string? Email,
+    string? MapsUrl,
+    bool IsVerified);
 
 public sealed record RequirementResponse(
     Guid Id,

@@ -158,6 +158,85 @@ namespace AsikaGo.Api.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("AsikaGo.Api.Data.Entities.Office", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Access")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("access");
+
+                    b.Property<string>("Address")
+                        .HasColumnType("text")
+                        .HasColumnName("address");
+
+                    b.Property<DateOnly>("CheckedOn")
+                        .HasColumnType("date")
+                        .HasColumnName("checked_on");
+
+                    b.Property<Guid?>("CityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("city_id");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("text")
+                        .HasColumnName("email");
+
+                    b.Property<string>("Hours")
+                        .HasColumnType("text")
+                        .HasColumnName("hours");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_verified");
+
+                    b.Property<string>("MapsUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("maps_url");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("text")
+                        .HasColumnName("phone");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("source");
+
+                    b.Property<Guid>("StepId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("step_id");
+
+                    b.Property<string>("Website")
+                        .HasColumnType("text")
+                        .HasColumnName("website");
+
+                    b.HasKey("Id")
+                        .HasName("pk_offices");
+
+                    b.HasIndex("CityId")
+                        .HasDatabaseName("ix_offices_city_id");
+
+                    b.HasIndex("StepId")
+                        .HasDatabaseName("ix_offices_step_id");
+
+                    b.ToTable("offices", (string)null);
+                });
+
             modelBuilder.Entity("AsikaGo.Api.Data.Entities.Profile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -467,6 +546,22 @@ namespace AsikaGo.Api.Data.Migrations
                     b.Navigation("City");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AsikaGo.Api.Data.Entities.Office", b =>
+                {
+                    b.HasOne("AsikaGo.Api.Data.Entities.City", null)
+                        .WithMany()
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_offices_cities_city_id");
+
+                    b.HasOne("AsikaGo.Api.Data.Entities.RegistrationStep", null)
+                        .WithMany()
+                        .HasForeignKey("StepId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_offices_registration_steps_step_id");
                 });
 
             modelBuilder.Entity("AsikaGo.Api.Data.Entities.Requirement", b =>

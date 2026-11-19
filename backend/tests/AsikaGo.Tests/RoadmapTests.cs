@@ -327,6 +327,51 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task GetStep_OfficesAreScopedToTheStepAndCityAndReturnedInResearchOrder()
+    {
+        var user = await UserWithProfile();
+        using var client = Client(user);
+        var roadmap = await Read<RoadmapResponse>(await client.GetAsync("/api/roadmap"));
+        var bpldStepId = Guid.NewGuid();
+        var branches = new[] { "Annex 1", "Annex 2", "Bridgetowne", "Mutya ng Pasig Mega Market" };
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var cityId = db.BusinessProfiles.Single(p => p.UserId == user).CityId;
+            db.RegistrationSteps.Add(new RegistrationStep
+            {
+                Id = bpldStepId, Name = "Business Application Form and Documents", Agency = "BPLD",
+                Description = "Apply for your business permit.", Actions = "Submit the form."
+            });
+            db.RoadmapProgress.AddRange(
+                new RoadmapProgress { RoadmapId = roadmap.RoadmapId, StepId = RetailStepId, SortOrder = 4 },
+                new RoadmapProgress { RoadmapId = roadmap.RoadmapId, StepId = bpldStepId, SortOrder = 5 });
+
+            for (var i = branches.Length - 1; i >= 0; i--)
+            {
+                db.Offices.Add(new Office
+                {
+                    StepId = bpldStepId, CityId = cityId, SortOrder = i + 1, Name = branches[i],
+                    Access = OfficeAccess.InPerson, Source = "BPLD Citizen's Charter", IsVerified = true
+                });
+            }
+
+            db.Offices.AddRange(
+                new Office { StepId = bpldStepId, CityId = Guid.NewGuid(), Name = "Other city", Source = "Test" },
+                new Office { StepId = BarangayId, Name = "Barangay hall", Access = OfficeAccess.InPerson, Source = "Test" });
+            await db.SaveChangesAsync();
+        }
+
+        var step2 = await Read<StepDetailResponse>(await client.GetAsync("/api/roadmap/steps/2"));
+        Assert.False(Assert.Single(step2.Offices).IsVerified);
+
+        var step5 = await Read<StepDetailResponse>(await client.GetAsync("/api/roadmap/steps/5"));
+        Assert.Equal(branches, step5.Offices.Select(o => o.Name));
+        Assert.All(step5.Offices, o => Assert.Equal(OfficeAccess.InPerson, o.Access));
+    }
+
+    [Fact]
     public async Task GetStep_FirstAndLast_HaveNoPreviousOrNext()
     {
         using var client = Client(await UserWithProfile());
