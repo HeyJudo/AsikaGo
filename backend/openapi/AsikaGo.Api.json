@@ -835,6 +835,73 @@
           }
         }
       },
+      "OfficeAccess": {
+        "enum": [
+          "Online",
+          "InPerson"
+        ]
+      },
+      "OfficeResponse": {
+        "required": [
+          "name",
+          "access",
+          "address",
+          "website",
+          "hours",
+          "phone",
+          "email",
+          "mapsUrl",
+          "isVerified"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "access": {
+            "$ref": "#/components/schemas/OfficeAccess"
+          },
+          "address": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "website": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "hours": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "phone": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "email": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "mapsUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "isVerified": {
+            "type": "boolean"
+          }
+        }
+      },
       "ProblemDetails": {
         "type": "object",
         "properties": {
@@ -1122,6 +1189,7 @@
           "actions",
           "conditionNote",
           "requirements",
+          "offices",
           "previousNumber",
           "nextNumber",
           "status",
@@ -1174,6 +1242,12 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/RequirementResponse"
+            }
+          },
+          "offices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OfficeResponse"
             }
           },
           "previousNumber": {

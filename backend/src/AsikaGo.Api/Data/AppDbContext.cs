@@ -10,6 +10,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<BusinessCategory> BusinessCategories => Set<BusinessCategory>();
     public DbSet<BusinessProfile> BusinessProfiles => Set<BusinessProfile>();
     public DbSet<RegistrationStep> RegistrationSteps => Set<RegistrationStep>();
+    public DbSet<Office> Offices => Set<Office>();
     public DbSet<SourceReference> SourceReferences => Set<SourceReference>();
     public DbSet<Requirement> Requirements => Set<Requirement>();
     public DbSet<RoadmapRule> RoadmapRules => Set<RoadmapRule>();
@@ -56,6 +57,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasOne(b => b.User).WithMany().HasForeignKey(b => b.UserId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(b => b.Category).WithMany().HasForeignKey(b => b.CategoryId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(b => b.City).WithMany().HasForeignKey(b => b.CityId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Office>(e =>
+        {
+            e.Property(o => o.Access).HasConversion<string>().HasMaxLength(10);
+            e.HasOne<RegistrationStep>().WithMany().HasForeignKey(o => o.StepId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<City>().WithMany().HasForeignKey(o => o.CityId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Requirement>(e =>

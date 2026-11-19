@@ -677,6 +677,19 @@ export interface components {
             email: null | string;
             isAnonymous: boolean;
         };
+        /** @enum {unknown} */
+        OfficeAccess: "Online" | "InPerson";
+        OfficeResponse: {
+            name: string;
+            access: components["schemas"]["OfficeAccess"];
+            address: null | string;
+            website: null | string;
+            hours: null | string;
+            phone: null | string;
+            email: null | string;
+            mapsUrl: null | string;
+            isVerified: boolean;
+        };
         ProblemDetails: {
             type?: null | string;
             title?: null | string;
@@ -755,6 +768,7 @@ export interface components {
             actions: string[];
             conditionNote: null | string;
             requirements: components["schemas"]["RequirementResponse"][];
+            offices: components["schemas"]["OfficeResponse"][];
             /** Format: int32 */
             previousNumber: null | number | string;
             /** Format: int32 */

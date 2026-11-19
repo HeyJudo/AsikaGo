@@ -200,6 +200,12 @@ public static class RoadmapEndpoints
             .Select(rp => rp.RequirementId)
             .ToHashSet();
         var preparedCount = requirements.Count(r => preparedReqIds.Contains(r.Requirement.Id));
+        var offices = await db.Offices.AsNoTracking()
+            .Where(o => o.StepId == step.Id && (o.CityId == null || o.CityId == roadmap.Profile.CityId))
+            .OrderBy(o => o.SortOrder).ThenBy(o => o.Id)
+            .Select(o => new OfficeResponse(o.Name, o.Access, o.Address, o.Website, o.Hours,
+                o.Phone, o.Email, o.MapsUrl, o.IsVerified))
+            .ToListAsync(ct);
 
         return TypedResults.Ok(new StepDetailResponse(
             number,
@@ -219,6 +225,7 @@ public static class RoadmapEndpoints
                     ToSource(r.Requirement.Source),
                     preparedReqIds.Contains(r.Requirement.Id)))
                 .ToList(),
+            offices,
             number == 1 ? null : number - 1,
             number == total ? null : number + 1,
             StepStatus(progress, preparedCount),
