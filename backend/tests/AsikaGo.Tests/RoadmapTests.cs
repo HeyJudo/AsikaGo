@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using AsikaGo.Api.Data;
 using AsikaGo.Api.Data.Entities;
+using AsikaGo.Api.Features.Assistant;
 using AsikaGo.Api.Features.Roadmap;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -369,6 +370,14 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
         var step5 = await Read<StepDetailResponse>(await client.GetAsync("/api/roadmap/steps/5"));
         Assert.Equal(branches, step5.Offices.Select(o => o.Name));
         Assert.All(step5.Offices, o => Assert.Equal(OfficeAccess.InPerson, o.Access));
+
+        using var contextScope = _factory.Services.CreateScope();
+        var contextDb = contextScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var context = Assert.IsType<RoadmapPromptContext>(await RoadmapPromptContext.LoadAsync(contextDb, user, 5, default));
+        var expectedOffices = branches.Select(b => $"Office: {b} (InPerson, verified)")
+            .Prepend("Office: Barangay hall (InPerson, unverified)");
+        Assert.Equal(expectedOffices,
+            context.Roadmap.Split('\n').Where(line => line.StartsWith("Office: ", StringComparison.Ordinal)));
     }
 
     [Fact]
@@ -758,10 +767,40 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
+    public async Task PromptContext_CheckingDocumentOnlyChangesCallersProgress()
+    {
+        var user = await UserWithProfile();
+        var otherUser = await UserWithProfile();
+        using var client = Client(user);
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var before = Assert.IsType<RoadmapPromptContext>(await RoadmapPromptContext.LoadAsync(db, user, 2, default));
+
+        var update = await client.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true });
+        Assert.Equal(HttpStatusCode.NoContent, update.StatusCode);
+        var after = Assert.IsType<RoadmapPromptContext>(await RoadmapPromptContext.LoadAsync(db, user, 2, default));
+        var other = Assert.IsType<RoadmapPromptContext>(await RoadmapPromptContext.LoadAsync(db, otherUser, 2, default));
+
+        Assert.Equal(before.Roadmap, after.Roadmap);
+        Assert.Equal(before.CurrentStep, after.CurrentStep);
+        Assert.Equal(before, other);
+        Assert.Contains("Step 2: Barangay — InProgress\nChecked documents: Valid ID", after.Progress);
+
+        var complete = await client.PutAsJsonAsync("/api/roadmap/steps/2/status", new { completed = true });
+        Assert.Equal(HttpStatusCode.NoContent, complete.StatusCode);
+        var secondUpdate = await client.PutAsJsonAsync($"/api/roadmap/requirements/{SanitaryReq}", new { isPrepared = true });
+        Assert.Equal(HttpStatusCode.NoContent, secondUpdate.StatusCode);
+        var completed = Assert.IsType<RoadmapPromptContext>(await RoadmapPromptContext.LoadAsync(db, user, 2, default));
+        Assert.Equal(before.Roadmap, completed.Roadmap);
+        Assert.Contains("Step 2: Barangay — Completed\nChecked documents: Valid ID, Sanitary permit", completed.Progress);
+    }
+
+    [Fact]
     public async Task UpdateRequirement_IgnoresRowsForRemovedRequirements_AndRestoresWhenApplicable()
     {
         // Start as Retail corporation so RetailReq applies to Barangay step
-        using var client = Client(Guid.NewGuid());
+        var user = Guid.NewGuid();
+        using var client = Client(user);
         await PutProfile(client, "Retail Shop", "Corporation", RetailId, "Started");
 
         var putRes = await client.PutAsJsonAsync($"/api/roadmap/requirements/{RetailReq}", new { isPrepared = true });
@@ -779,6 +818,11 @@ public class RoadmapTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(0, roadmapAfter.Steps.Single(s => s.Number == 2).PreparedCount);
         var stepAfter = await Read<StepDetailResponse>(await client.GetAsync("/api/roadmap/steps/2"));
         Assert.Equal(RoadmapStepStatus.NotStarted, stepAfter.Status);
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var context = Assert.IsType<RoadmapPromptContext>(await RoadmapPromptContext.LoadAsync(db, user, null, default));
+        Assert.DoesNotContain("Retail permit", context.Text);
+        Assert.Contains("Step 2: Barangay — NotStarted\nChecked documents: None", context.Progress);
 
         // Switch back to Retail category -> preparedCount returns to 1 (row was ignored, not deleted)
         await PutProfile(client, "Retail Shop", "Corporation", RetailId, "Started");
