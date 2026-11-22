@@ -18,7 +18,7 @@ let saved: StepDetail
 const step: StepDetail = {
   number: 1, totalSteps: 2, stepId: 'step-1', name: 'Register business', agency: 'Agency',
   description: 'Register your business.', actions: ['Prepare documents'], conditionNote: null,
-  previousNumber: null, nextNumber: 2, status: 'NotStarted', completedAt: null,
+  previousNumber: null, nextNumber: 2, status: 'NotStarted', completedAt: null, offices: [],
   requirements: ['a', 'b'].map((id) => ({
     id, name: `Document ${id}`, description: 'Bring a copy.', appliesTo: null, isPrepared: false,
     source: { name: 'Official source', url: 'https://example.com', dateVerified: '2026-10-01' },
@@ -96,6 +96,18 @@ test('every document has a native labeled checkbox, 44px target, and separate so
   }
   assert.match(html, /0 of 2 ready/)
   assert.equal((html.match(/href="https:\/\/example.com"/g) ?? []).length, 2)
+  cache.clear()
+})
+
+test('step detail renders the offices returned with the step', () => {
+  const cache = client({ ...step, offices: [{
+    name: 'Barangay hall', access: 'InPerson', address: 'The barangay where the business is located',
+    website: null, hours: null, phone: null, email: null, mapsUrl: null, isVerified: false,
+  }] })
+  const html = render(cache, createElement(Auth, null, createElement(MemoryRouter, { initialEntries: ['/roadmap/steps/1'] },
+    createElement(Routes, null, createElement(Route, { path: '/roadmap/steps/:number', element: createElement(Page) })))))
+  assert.match(html, /Where to go[\s\S]*Barangay hall[\s\S]*Confirm before you go\./)
+  assert.match(html, /The barangay where the business is located/)
   cache.clear()
 })
 

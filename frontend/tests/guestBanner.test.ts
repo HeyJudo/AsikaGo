@@ -39,7 +39,7 @@ function client() {
   c.setQueryData(['roadmap-step', 1], {
     number: 1, totalSteps: 2, stepId: 'step-1', name: 'Register business', agency: 'Agency',
     description: 'Register your business.', actions: ['Prepare documents'], conditionNote: null,
-    previousNumber: null, nextNumber: 2, status: 'NotStarted', completedAt: null, requirements: [req('a'), req('b')],
+    previousNumber: null, nextNumber: 2, status: 'NotStarted', completedAt: null, requirements: [req('a'), req('b')], offices: [],
   })
   c.setQueryData(['roadmap-documents'], {
     totalCount: 2, preparedCount: 1,
