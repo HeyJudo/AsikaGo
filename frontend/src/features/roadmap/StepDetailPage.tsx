@@ -11,13 +11,13 @@ import {
   Info,
   ListChecks,
   LoaderCircle,
-  MapPin,
   Tag,
 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { FullPageError, FullPageLoader } from '@/components/PageStates'
 import { StepNotFound } from '@/features/roadmap/StepNotFound'
+import { WhereToGo } from '@/features/roadmap/WhereToGo'
 import { GuestBanner } from '@/features/auth/GuestBanner'
 import { type Requirement, useRoadmapStep, useUpdateRequirement, useUpdateStepStatus } from '@/lib/queries'
 
@@ -250,17 +250,7 @@ function StepDetailContent({ number }: { number: number }) {
           </ul>
         </section>
 
-        <section className="border-brand/40 rounded-2xl border bg-[#edf0fc] p-4 md:p-6">
-          <h2 className="text-navy mb-3 flex items-center gap-2.5 text-lg font-bold">
-            Where to go
-          </h2>
-          <div className="flex items-center gap-3">
-            <span className="bg-brand grid size-11 shrink-0 place-items-center rounded-full text-white">
-              <MapPin className="size-5" />
-            </span>
-            <p className="text-navy text-lg font-bold leading-snug">{step.agency}</p>
-          </div>
-        </section>
+        <WhereToGo offices={step.offices} agency={step.agency} />
 
         {/* Mark-done card: shown only when the step is not completed */}
         {!done && (
