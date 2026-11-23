@@ -30,7 +30,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { RadioGroup } from '@/components/ui/radio-group'
 import { ChoiceCard } from './ChoiceCard'
-import { NOT_SURE, NotSureHelper, answerOwner, type HelperAnswer } from './NotSureHelper'
+import { NOT_SURE, NotSureHelper, answerOwner, helperAfterPick, type HelperAnswer } from './NotSureHelper'
 import { RouteProgress } from './RouteProgress'
 
 type Field = 'businessName' | 'businessType' | 'categoryId' | 'registrationStatus'
@@ -335,6 +335,7 @@ export function AssessmentPage() {
               setHelper('ask')
             } else {
               setValue(field, value)
+              setHelper(helperAfterPick(helper))
             }
             clearError(field)
           }}

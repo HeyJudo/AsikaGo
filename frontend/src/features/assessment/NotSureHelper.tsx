@@ -16,6 +16,11 @@ export function answerOwner(answer: 'yes' | 'no', businessType: string) {
   return ONE_OWNER.includes(businessType) ? '' : businessType
 }
 
+// The helper after the user picks a real type. The Yes panel says we picked it, so it closes. No stays.
+export function helperAfterPick(helper: HelperAnswer | null) {
+  return helper === 'yes' ? null : helper
+}
+
 // Text from docs/qa/business-type-helper.md (US-012-AI-01). Copy exactly.
 const TEXT = {
   yesTitle: 'Sole Proprietorship fits you',

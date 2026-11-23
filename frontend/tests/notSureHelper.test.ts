@@ -29,6 +29,12 @@ test('No clears a one-owner type and keeps any other pick', () => {
   assert.equal(mod.answerOwner('no', ''), '')
 })
 
+test('picking a type closes the Yes panel and keeps No', () => {
+  assert.equal(mod.helperAfterPick('yes'), null)
+  assert.equal(mod.helperAfterPick('no'), 'no')
+  assert.equal(mod.helperAfterPick(null), null)
+})
+
 test('question only, nothing answered yet', () => {
   const html = render('ask')
   for (const text of ['Ikaw lang ba ang', 'may-ari?', 'Are you the only owner?']) assert.ok(html.includes(text), text)
