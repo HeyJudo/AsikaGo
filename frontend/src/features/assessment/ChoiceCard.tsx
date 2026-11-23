@@ -14,12 +14,15 @@ type Props = {
   selected: boolean
   index: number
   invalid?: boolean
+  // "Not sure" card: spans both columns and looks dashed until picked
+  notSure?: boolean
 }
 
 // Selectable card. Must be rendered inside a Radix RadioGroup (the hidden item keeps arrow-key behavior).
-export function ChoiceCard({ value, id, icon: Icon, title, description, selected, index, invalid }: Props) {
+export function ChoiceCard({ value, id, icon: Icon, title, description, selected, index, invalid, notSure }: Props) {
   return (
     <motion.div
+      className={notSure ? 'sm:col-span-2' : undefined}
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, delay: index * 0.04 }}
@@ -31,6 +34,7 @@ export function ChoiceCard({ value, id, icon: Icon, title, description, selected
         className={cn(
           'relative flex min-h-14 cursor-pointer items-start gap-3 rounded-2xl border-2 bg-white p-4 text-left transition-colors hover:border-brand/50 has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-brand/40',
           selected ? 'border-brand bg-brand/5' : 'border-border',
+          notSure && !selected && 'border-dashed',
           invalid && !selected && 'border-destructive',
         )}
       >

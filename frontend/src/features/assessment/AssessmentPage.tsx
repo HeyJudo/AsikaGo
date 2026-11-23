@@ -5,6 +5,7 @@ import {
   AlertCircle,
   ArrowRight,
   Building2,
+  CircleHelp,
   ClipboardList,
   Compass,
   FileCheck2,
@@ -29,6 +30,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { RadioGroup } from '@/components/ui/radio-group'
 import { ChoiceCard } from './ChoiceCard'
+import { NOT_SURE, NotSureHelper, answerOwner, helperAfterPick, type HelperAnswer } from './NotSureHelper'
 import { RouteProgress } from './RouteProgress'
 
 type Field = 'businessName' | 'businessType' | 'categoryId' | 'registrationStatus'
@@ -203,9 +205,17 @@ export function AssessmentPage() {
     if (ready && urlOutOfSync) setParams({ step }, { replace: true })
   }, [ready, urlOutOfSync, step, setParams])
 
+  // "Not sure" helper on the type step: null = closed. Leaving the step closes it.
+  const [helper, setHelper] = useState<HelperAnswer | null>(null)
+  // The "Not sure" card shows as picked while the helper is open and no real type is set
+  const notSurePicked = !!helper && !values.businessType
+
   // Direction of travel, derived while rendering
   const [travel, setTravel] = useState({ index: stepIndex, dir: 1 })
-  if (travel.index !== stepIndex) setTravel({ index: stepIndex, dir: stepIndex > travel.index ? 1 : -1 })
+  if (travel.index !== stepIndex) {
+    setTravel({ index: stepIndex, dir: stepIndex > travel.index ? 1 : -1 })
+    setHelper(null)
+  }
 
   function go(to: Step, replace = false) {
     setFocusField(false)
@@ -318,9 +328,15 @@ export function AssessmentPage() {
       <>
         <RadioGroup
           className={`mt-6 grid grid-cols-1 gap-3 ${cols}`}
-          value={values[field]}
+          value={field === 'businessType' && notSurePicked ? NOT_SURE : values[field]}
           onValueChange={(value) => {
-            setValue(field, value)
+            if (value === NOT_SURE) {
+              setValue(field, '')
+              setHelper('ask')
+            } else {
+              setValue(field, value)
+              setHelper(helperAfterPick(helper))
+            }
             clearError(field)
           }}
           aria-label={label}
@@ -452,19 +468,42 @@ export function AssessmentPage() {
               {choiceGroup(
                 'businessType',
                 'Business type',
-                options.businessTypes.map((type, i) => (
+                <>
+                  {options.businessTypes.map((type, i) => (
+                    <ChoiceCard
+                      key={type}
+                      value={type}
+                      id={`type-${type}`}
+                      icon={TYPE_ICONS[type] ?? User}
+                      title={type}
+                      description={TYPE_DESCRIPTIONS[type]}
+                      selected={values.businessType === type}
+                      index={i}
+                      invalid={!!errors.businessType}
+                    />
+                  ))}
                   <ChoiceCard
-                    key={type}
-                    value={type}
-                    id={`type-${type}`}
-                    icon={TYPE_ICONS[type] ?? User}
-                    title={type}
-                    description={TYPE_DESCRIPTIONS[type]}
-                    selected={values.businessType === type}
-                    index={i}
+                    value={NOT_SURE}
+                    id="type-not-sure"
+                    icon={CircleHelp}
+                    title="Not sure"
+                    description="Answer one question and we'll help you pick."
+                    selected={notSurePicked}
+                    index={options.businessTypes.length}
                     invalid={!!errors.businessType}
+                    notSure
                   />
-                )),
+                </>,
+              )}
+              {helper && (
+                <NotSureHelper
+                  answer={helper}
+                  onAnswer={(answer) => {
+                    setHelper(answer)
+                    setValue('businessType', answerOwner(answer, values.businessType))
+                    clearError('businessType')
+                  }}
+                />
               )}
               <Actions>{nextButton}</Actions>
             </form>
