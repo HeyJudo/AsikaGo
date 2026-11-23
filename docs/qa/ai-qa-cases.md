@@ -1,10 +1,5 @@
 # AI Q&A Test Set (US-013-AI-01, US-013-AI-02)
 
-**Ticket:** US-013-AI-01 (AB#114) · **Sprint:** 5 · **Author:** Michelle · **Status:** Draft for review by Jude
-**Used by:** US-013-BE-03 (prompt text), US-013-AI-02 (run against the real API)
-**Follows:** D21 (limits and guardrails), D22 (the assistant answers only from the user's roadmap rows)
-**Facts checked against:** `docs/research/seed-content-pasig.md` (RS-003-01), `docs/research/offices-pasig.md` (US-014-RS-01), `docs/research/registration-workflow.md` (RS-001-01)
-
 ## Run summary (US-013-AI-02)
 
 _Fill in after US-013-BE-03 merges and all 20 questions are run through the local API._
