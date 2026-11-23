@@ -22,7 +22,7 @@ export function ChoiceCard({ value, id, icon: Icon, title, description, selected
     <motion.div
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.06 }}
+      transition={{ duration: 0.2, delay: index * 0.04 }}
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.985 }}
     >

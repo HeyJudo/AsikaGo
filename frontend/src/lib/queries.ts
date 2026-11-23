@@ -11,6 +11,15 @@ export type StepDetail = components['schemas']['StepDetailResponse']
 export type Requirement = components['schemas']['RequirementResponse']
 type RequirementUpdate = { requirementId: string; isPrepared: boolean }
 export type Documents = components['schemas']['DocumentsResponse']
+export type AssessmentOptions = components['schemas']['AssessmentOptionsResponse']
+
+export function useAssessmentOptions() {
+  return useQuery<AssessmentOptions>({
+    queryKey: ['assessment', 'options'],
+    queryFn: () => apiFetch<AssessmentOptions>('/api/assessment/options'),
+    staleTime: Infinity, // seed data, so the early fetch in SignedInRedirect is reused, not repeated
+  })
+}
 
 // GET /api/me also creates the profiles row that business_profiles references.
 export function useMe() {

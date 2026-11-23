@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useSearchParams } from 'react-router'
 import {
   AlertCircle,
@@ -23,8 +23,7 @@ import {
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
 import { ApiError, apiFetch } from '@/lib/api'
-import { useBusinessProfile, type BusinessProfile } from '@/lib/queries'
-import type { components } from '@/lib/api-types'
+import { useAssessmentOptions, useBusinessProfile, type BusinessProfile } from '@/lib/queries'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -32,7 +31,6 @@ import { RadioGroup } from '@/components/ui/radio-group'
 import { ChoiceCard } from './ChoiceCard'
 import { RouteProgress } from './RouteProgress'
 
-type AssessmentOptions = components['schemas']['AssessmentOptionsResponse']
 type Field = 'businessName' | 'businessType' | 'categoryId' | 'registrationStatus'
 type Values = Record<Field, string>
 
@@ -103,21 +101,14 @@ function FieldError({ id, message }: { id: string; message: string }) {
   )
 }
 
-function useAssessmentOptions() {
-  return useQuery<AssessmentOptions>({
-    queryKey: ['assessment', 'options'],
-    queryFn: () => apiFetch<AssessmentOptions>('/api/assessment/options'),
-  })
-}
-
 function firstFocusable(root: HTMLElement | null) {
   return root?.querySelector<HTMLElement>('input, [role="radio"]') ?? null
 }
 
+// No exit animation: with mode="wait" it delayed every new screen. The enter slide still shows direction.
 const slide = {
   enter: (dir: number) => ({ opacity: 0, x: dir * 48 }),
-  center: { opacity: 1, x: 0, transition: { duration: 0.3, ease: 'easeOut' as const } },
-  exit: (dir: number) => ({ opacity: 0, x: dir * -48, transition: { duration: 0.15 } }),
+  center: { opacity: 1, x: 0, transition: { duration: 0.2, ease: 'easeOut' as const } },
 }
 
 // One screen. On mount focuses the first field (after a failed step) or the heading (screen readers announce it).
@@ -140,7 +131,7 @@ function StepFrame({
   }, [focusField])
 
   return (
-    <motion.div ref={rootRef} custom={dir} variants={slide} initial="enter" animate="center" exit="exit">
+    <motion.div ref={rootRef} custom={dir} variants={slide} initial="enter" animate="center">
       <h1 ref={headingRef} tabIndex={-1} className="mb-2 text-2xl font-bold text-navy outline-none">
         {title}
       </h1>

@@ -32,10 +32,13 @@ builder.Services.AddDbContext<AppDbContext>(options => options
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? ["http://localhost:5173"];
 
+// Every API call is preflighted (Authorization header). Without Max-Age, Chrome re-sends the
+// preflight after 5 s, doubling the round trips to Render. 2 h is Chrome's cap.
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
     .WithOrigins(allowedOrigins)
     .AllowAnyHeader()
-    .AllowAnyMethod()));
+    .AllowAnyMethod()
+    .SetPreflightMaxAge(TimeSpan.FromHours(2))));
 
 var app = builder.Build();
 
