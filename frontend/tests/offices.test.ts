@@ -86,3 +86,33 @@ test('no offices keeps the agency fallback', () => {
   assert.match(html, /Fallback agency/)
   assert.doesNotMatch(html, /<article|href=|N\/A/)
 })
+
+test('in-person offices with an address get a Show map button, and no map loads before it is tapped', () => {
+  const html = render([office])
+  assert.match(html, /Show map/)
+  assert.match(html, /aria-expanded="false"/)
+  // The controlled region exists (aria-controls target) but stays hidden and empty
+  assert.match(html, /<div id="[^"]+" hidden=""[^>]*><\/div>/)
+  assert.doesNotMatch(html, /<iframe/)
+})
+
+test('online offices and in-person offices without a maps link get no map', () => {
+  assert.doesNotMatch(render([{ ...office, access: 'Online' }]), /Show map/)
+  assert.doesNotMatch(render([{ ...office, address: 'The barangay where the business is located', mapsUrl: null }]), /Show map/)
+  assert.doesNotMatch(render([{ ...office, address: null }]), /Show map/)
+})
+
+test('the embed URL keeps the whole address in one q parameter and adds the city only when missing', async () => {
+  const { mapEmbedUrl } = await server.ssrLoadModule('/src/features/roadmap/WhereToGo.tsx')
+  assert.equal(mapEmbedUrl('A & B #1, Pasig City'), 'https://www.google.com/maps?q=A%20%26%20B%20%231%2C%20Pasig%20City&output=embed')
+  assert.equal(mapEmbedUrl('3rd Floor, Mutya ng Pasig Mega Market'),
+    'https://www.google.com/maps?q=3rd%20Floor%2C%20Mutya%20ng%20Pasig%20Mega%20Market%2C%20Pasig%20City&output=embed')
+})
+
+test('the map frame is titled with the office name and its overlay opens mapsUrl, hidden from screen readers', async () => {
+  const { MapFrame } = await server.ssrLoadModule('/src/features/roadmap/WhereToGo.tsx')
+  const html = renderToStaticMarkup(createElement(MapFrame, { name: office.name, address: office.address!, mapsUrl: office.mapsUrl! }))
+  assert.ok(html.includes('<iframe title="Map of BPLD, Annex 1" src="https://www.google.com/maps?q='))
+  assert.ok(html.includes('<a href="https://maps.app.goo.gl/57Xn2rwdErBwe13X8" target="_blank" rel="noopener noreferrer" aria-hidden="true" tabindex="-1"'))
+  assert.doesNotMatch(html, /referrerpolicy/i)
+})

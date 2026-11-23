@@ -1,6 +1,60 @@
-import { Building2, Clock, ExternalLink, Globe, Mail, MapPin, Phone, TriangleAlert } from 'lucide-react'
+import { useId, useState } from 'react'
+import { Building2, Clock, ExternalLink, Globe, Mail, Map as MapIcon, MapPin, Phone, TriangleAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { StepDetail } from '@/lib/queries'
+
+type Office = StepDetail['offices'][number]
+
+type MapProps = { name: string; address: string; mapsUrl: string }
+
+// Keyless Google Maps embed (no API key needed, checked for US-015-FE-01).
+// Adds the city when the address lacks it ("3rd Floor, Mutya ng Pasig Mega Market"), so the pin lands in Pasig.
+export function mapEmbedUrl(address: string) {
+  const query = /pasig city/i.test(address) ? address : `${address}, Pasig City`
+  return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`
+}
+
+export function MapFrame({ name, address, mapsUrl }: MapProps) {
+  return (
+    <>
+      <iframe title={`Map of ${name}`} src={mapEmbedUrl(address)} className="size-full border-0" />
+      {/* Tapping the map opens the maps app. Hidden from screen readers: "Open in Google Maps" below does the same. */}
+      <a href={mapsUrl} target="_blank" rel="noopener noreferrer" aria-hidden="true" tabIndex={-1} className="absolute inset-0" />
+    </>
+  )
+}
+
+// Loads the map only on the first tap, so step detail stays light on mobile data. Hiding keeps it loaded.
+function OfficeMap(props: MapProps) {
+  const [shown, setShown] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  const id = useId()
+  return (
+    <div className="py-1">
+      <Button
+        type="button"
+        variant="ghost"
+        className="text-brand hover:bg-brand/5 hover:text-brand min-h-11 rounded-full px-3 font-semibold"
+        aria-expanded={shown}
+        aria-controls={id}
+        onClick={() => {
+          setShown((s) => !s)
+          setLoaded(true)
+        }}
+      >
+        <MapIcon className="size-4" aria-hidden="true" />
+        {shown ? 'Hide map' : 'Show map'}
+      </Button>
+      <div id={id} hidden={!shown} className="bg-cream-deep relative mt-2 h-44 overflow-hidden rounded-xl">
+        {loaded && <MapFrame {...props} />}
+      </div>
+    </div>
+  )
+}
+
+function hasMap(office: Office): office is Office & { address: string; mapsUrl: string } {
+  return office.access === 'InPerson' && !!office.address && !!office.mapsUrl
+}
 
 function phoneHref(phone: string) {
   const [number, extension] = phone.split(/\s+local\s+/i)
@@ -57,6 +111,7 @@ export function WhereToGo({ offices, agency }: Pick<StepDetail, 'offices' | 'age
                       <span className="min-w-0 break-words">{office.address}</span>
                     </p>
                   )}
+                  {hasMap(office) && <OfficeMap name={office.name} address={office.address} mapsUrl={office.mapsUrl} />}
                   {office.hours && (
                     <p className="flex gap-2 py-1">
                       <Clock className="text-brand mt-0.5 size-4 shrink-0" aria-hidden="true" />
