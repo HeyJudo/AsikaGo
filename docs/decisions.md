@@ -14,7 +14,7 @@ docs are updated.
 | Backend layout | .NET 10, Minimal APIs, vertical feature slices. Two projects: `AsikaGo.Api` + `AsikaGo.Tests`. | One backlog story = one feature folder. The roadmap engine is a pure class, unit-testable without DB/HTTP. |
 | Frontend | Vite + TypeScript, React Router, TanStack Query, Tailwind + shadcn/ui. API types generated from the backend OpenAPI doc with `openapi-typescript`. | DTO changes break the frontend build, not production. |
 | Environments | One hosted Supabase project, `asikago-dev`, serves local dev and the deployed app. No separate prod project. | Academic project with no real users. No Docker required on team laptops. Migrations run only through CI (`migrate-db` job) after a merge to `main`; never run `dotnet ef database update` by hand. |
-| Hosting | Frontend on Vercel, API on Render (Docker). | Free tiers, auto-deploy from GitHub. Render sleeps after 15 min idle; warm it up before demos. |
+| Hosting | Frontend on Vercel, API on Render (Docker). | Free tiers, auto-deploy from GitHub. Render sleeps after 15 min idle. `.github/workflows/keep-warm.yml` pings `/health` every 10 min, 07:00-23:59 PH time. Before a demo, run it by hand from the Actions tab. |
 | Repo / process | GitHub monorepo, Azure Boards for tickets, GitHub Actions CI, GitHub Flow. | Install the Azure Boards GitHub app; `AB#123` in commits/PRs links the ticket. |
 
 ## Branching

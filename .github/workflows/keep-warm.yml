@@ -1,0 +1,17 @@
+name: Keep API warm
+
+# Render's free tier sleeps after 15 min idle, and the next visitor waits for a cold start.
+# Pings every 10 min from 07:00 to 23:59 Philippine time (UTC+8). Not 24/7, so the service
+# stays under the free tier's 750 instance hours a month with room to spare.
+# GitHub can delay scheduled runs, so a cold start can still happen now and then.
+on:
+  schedule:
+    - cron: '*/10 23,0-15 * * *'
+  workflow_dispatch: # run it by hand to warm the API before a demo
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: curl -fsS --max-time 90 --retry 2 https://asikago.onrender.com/health
