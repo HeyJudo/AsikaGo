@@ -23,6 +23,20 @@ public class HealthAndAuthTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
+    public async Task Preflight_IsCachedForTwoHours()
+    {
+        using var client = _factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Options, "/api/me");
+        request.Headers.Add("Origin", "http://localhost:5173");
+        request.Headers.Add("Access-Control-Request-Method", "GET");
+        request.Headers.Add("Access-Control-Request-Headers", "authorization,content-type");
+
+        var response = await client.SendAsync(request);
+
+        Assert.Equal("7200", Assert.Single(response.Headers.GetValues("Access-Control-Max-Age")));
+    }
+
+    [Fact]
     public async Task Me_WithoutToken_ReturnsUnauthorized()
     {
         using var client = _factory.CreateClient();

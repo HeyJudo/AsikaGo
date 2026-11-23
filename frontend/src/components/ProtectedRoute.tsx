@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router'
 import { useAuth } from '@/app/AuthProvider'
 import { FullPageError, FullPageLoader } from '@/components/PageStates'
-import { useBusinessProfile, useMe } from '@/lib/queries'
+import { useAssessmentOptions, useBusinessProfile, useMe } from '@/lib/queries'
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth()
@@ -19,6 +19,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export function SignedInRedirect() {
   const { data, isPending, isError, refetch } = useBusinessProfile()
+  // Start what the next screen waits on now, in parallel, instead of one request after another.
+  // ponytail: returning users heading to /my-business also fetch options, one small extra request.
+  useMe()
+  useAssessmentOptions()
 
   if (isPending) return <FullPageLoader />
   if (isError) return <FullPageError onRetry={() => void refetch()} />
