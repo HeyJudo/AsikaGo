@@ -72,7 +72,7 @@ Each case is a business description written the way a real user might type it. T
 
 ## Revised instruction text for the model (US-012-AI-02)
 
-Why: case 16 ("online seller") came back as Retail where null was expected. The model guessed the category from the word "seller". The revised text says the category comes from what the business sells or does, not how it sells. Changes from the Sprint 4 text are the three rules marked **new**.
+Why: case 16 ("online seller") came back as Retail where null was expected. The model guessed the category from the word "seller". The revised text says the category comes from what the business sells or does, not how it sells. Changes from the Sprint 4 text are the two rules marked **New**. The **New:** labels are not part of the prompt, so leave them out when pasting.
 
 > You help a business owner in Pasig City who is starting to register a business. Read their description and pick two things.
 >
@@ -89,10 +89,9 @@ Why: case 16 ("online seller") came back as Retail where null was expected. The 
 > - **New:** The category comes from WHAT the business sells or does, not HOW it sells. Retail means they name goods they sell (clothes, appliances, school supplies). Food and Beverage means they name food or drinks. Services means they name work they do for a fee.
 > - **New:** Words about how or where they sell do not name a category: "online", "seller", "reseller", "dropshipping", "wholesale", "side hustle", "from home", "Facebook", "Shopee", "Lazada". If that is all the description says about the business, answer null for the category.
 > - If the description fits more than one category, answer null for the category.
-> - **New:** Each field is separate. If the type is stated but the category is not, return the type and null for the category.
 > - Never answer with a value that is not on the lists above.
 
-**Note for US-012-BE-01:** this text replaces `ExtractInstructions` in `OpenAIClient.cs`. The prompt still returns the category name, and the backend maps the name to the seeded `categoryId` and returns null if no match.
+**Note for US-012-BE-01:** paste the quoted text above, without the **New:** labels. It replaces `ExtractInstructions` in `OpenAIClient.cs`. The prompt still returns the category name, and the backend maps the name to the seeded `categoryId` and returns null if no match.
 
 ### Sprint 4 instruction text (used for run 1)
 
