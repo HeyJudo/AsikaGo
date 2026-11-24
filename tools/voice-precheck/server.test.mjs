@@ -184,3 +184,22 @@ test("foreign Origin returns 403", async () => {
     server.close();
   }
 });
+
+async function forwardedName(query, contentType) {
+  const f = fakeFetch(200, { text: "x" });
+  const { server, base } = await start(f);
+  try {
+    await fetch(`${base}/transcribe${query}`, { method: "POST", headers: { "Content-Type": contentType }, body: Buffer.from([1]) });
+    return f.calls[0].init.body.get("file").name;
+  } finally {
+    server.close();
+  }
+}
+
+test("name query sets the extension", async () => {
+  assert.equal(await forwardedName("?name=memo.WAV", "application/octet-stream"), "audio.wav");
+});
+
+test("x-wav maps to wav", async () => {
+  assert.equal(await forwardedName("", "audio/x-wav"), "audio.wav");
+});

@@ -18,9 +18,11 @@ const MAX_RECORD_SECONDS = 60
 type Result = { text: string; seconds: number | null }
 type Extraction = { businessType: string; category: string }
 
-function extractError(e: unknown): string {
+function extractError(e: unknown, text: string): string {
   if (e instanceof ApiError) {
-    if (e.status === 400) return 'Too long for extraction (over 1000 characters)'
+    if (e.status === 400) {
+      return text.length > 1000 ? 'Too long for extraction (over 1000 characters)' : e.message
+    }
     if (e.status === 429) return 'Too many tries. Wait a minute.'
     if (e.status === 503) return 'The AI is busy. Try again.'
     return `Extraction failed (${e.status}).`
@@ -32,7 +34,6 @@ export function TranscribeCard() {
   const [recording, setRecording] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [transcribing, setTranscribing] = useState(false)
-  const [reading, setReading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<Result | null>(null)
   const [copied, setCopied] = useState(false)
@@ -53,7 +54,7 @@ export function TranscribeCard() {
     }
   }, [])
 
-  async function send(blob: Blob, localSeconds: number | null) {
+  async function send(blob: Blob, localSeconds: number | null, name?: string) {
     setTranscribing(true)
     setError(null)
     setResult(null)
@@ -62,7 +63,7 @@ export function TranscribeCard() {
     try {
       let res: Response
       try {
-        res = await fetch(`${VOICE_SERVER}/transcribe`, {
+        res = await fetch(`${VOICE_SERVER}/transcribe${name ? `?name=${encodeURIComponent(name)}` : ''}`, {
           method: 'POST',
           headers: { 'Content-Type': blob.type || 'application/octet-stream' },
           body: blob,
@@ -113,24 +114,7 @@ export function TranscribeCard() {
   }
 
   function onFile(file: File | undefined) {
-    if (!file) return
-    const url = URL.createObjectURL(file)
-    const audio = new Audio(url)
-    let finished = false
-    // Sends once: on metadata, on error, or after 3 s. Unknown duration is null.
-    const done = (seconds: number | null) => {
-      if (finished) return
-      finished = true
-      window.clearTimeout(wait)
-      URL.revokeObjectURL(url)
-      setReading(false)
-      void send(file, seconds)
-    }
-    const wait = window.setTimeout(() => done(null), 3000)
-    setReading(true)
-    setError(null)
-    audio.onloadedmetadata = () => done(Number.isFinite(audio.duration) ? audio.duration : null)
-    audio.onerror = () => done(null)
+    if (file) void send(file, null, file.name)
   }
 
   async function copy() {
@@ -175,13 +159,13 @@ export function TranscribeCard() {
       }
       setExtraction({ businessType: extract.businessType ?? 'none', category })
     } catch (e) {
-      setExtractErr(extractError(e))
+      setExtractErr(extractError(e, result.text))
     } finally {
       setExtracting(false)
     }
   }
 
-  const busy = recording || transcribing || reading
+  const busy = recording || transcribing
 
   return (
     <Card>
@@ -219,7 +203,6 @@ export function TranscribeCard() {
             </label>
           </Button>
         </div>
-        {reading && <p className="text-sm">Reading the file...</p>}
         {transcribing && <p className="text-sm">Transcribing...</p>}
         {error && (
           <Alert variant="destructive">
@@ -247,7 +230,7 @@ export function TranscribeCard() {
             </div>
             <div className="flex flex-wrap items-center gap-3">
               {hasSession ? (
-                <Button variant="outline" disabled={extracting} onClick={() => void check()}>
+                <Button variant="outline" disabled={extracting || !result.text.trim()} onClick={() => void check()}>
                   {extracting ? 'Checking...' : 'Check extraction'}
                 </Button>
               ) : (

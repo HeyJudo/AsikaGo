@@ -8,7 +8,9 @@ import { appendDelta, costUsd, formatTime, type Line } from './helpers'
 const VOICE_SERVER = 'http://127.0.0.1:4000'
 const NO_SERVER = "Can't reach the voice server. Start it with: node tools/voice-precheck/server.mjs"
 
-type Phase = 'idle' | 'connecting' | 'live' | 'ended'
+type Phase = 'idle' | 'connecting' | 'live' | 'stopping' | 'ended'
+
+const MAX_SESSION_SECONDS = 15 * 60
 
 export function TalkCard() {
   const [phase, setPhase] = useState<Phase>('idle')
@@ -23,6 +25,8 @@ export function TalkCard() {
   const stopTimer = useRef<number | undefined>(undefined)
   const connectTimer = useRef<number | undefined>(undefined)
   const startedAt = useRef(0)
+  const wentLive = useRef(false)
+  const stopping = useRef(false)
 
   function cleanup() {
     window.clearTimeout(stopTimer.current)
@@ -39,11 +43,11 @@ export function TalkCard() {
   // The timer is the cost source, so it runs only while the session is live.
   useEffect(() => {
     if (phase !== 'live') return
-    startedAt.current = Date.now()
-    const id = window.setInterval(
-      () => setSeconds(Math.floor((Date.now() - startedAt.current) / 1000)),
-      500,
-    )
+    const id = window.setInterval(() => {
+      const s = Math.floor((Date.now() - startedAt.current) / 1000)
+      setSeconds(s)
+      if (s >= MAX_SESSION_SECONDS) stop()
+    }, 500)
     return () => window.clearInterval(id)
   }, [phase])
 
@@ -56,6 +60,8 @@ export function TalkCard() {
     }
     if (event.type === 'session.started') {
       window.clearTimeout(connectTimer.current)
+      wentLive.current = true
+      startedAt.current = Date.now()
       setPhase('live')
     } else if (event.type === 'session.input_transcript.delta' && event.delta) {
       setLines((l) => appendDelta(l, 'You', event.delta!))
@@ -63,20 +69,31 @@ export function TalkCard() {
       setLines((l) => appendDelta(l, 'AsikaGo', event.delta!))
     } else if (event.type === 'session.closed') {
       if (event.usage) setUsage(JSON.stringify(event.usage))
-      cleanup()
-      setPhase('ended')
+      end(null)
     }
+  }
+
+  // Ends a session that went live: keeps the final seconds so duration and cost show.
+  function end(message: string | null) {
+    cleanup()
+    if (wentLive.current) setSeconds(Math.floor((Date.now() - startedAt.current) / 1000))
+    setError(message)
+    setPhase('ended')
   }
 
   // cleanup() nulls pcRef, so a drop after Stop, session.closed or an earlier failure is ignored.
   function drop(pc: RTCPeerConnection, message: string) {
     if (pcRef.current !== pc) return
+    if (stopping.current) return end(null)
+    if (wentLive.current) return end(message)
     cleanup()
     setError(message)
     setPhase('idle')
   }
 
   async function start() {
+    wentLive.current = false
+    stopping.current = false
     setError(null)
     setLines([])
     setSeconds(0)
@@ -129,12 +146,13 @@ export function TalkCard() {
   }
 
   function stop() {
+    if (stopping.current) return
+    stopping.current = true
+    setPhase('stopping')
     if (dcRef.current?.readyState === 'open') dcRef.current.send(JSON.stringify({ type: 'session.close' }))
     // Fallback if session.closed never arrives.
-    stopTimer.current = window.setTimeout(() => {
-      cleanup()
-      setPhase('ended')
-    }, 3000)
+    window.clearTimeout(stopTimer.current)
+    stopTimer.current = window.setTimeout(() => end(null), 3000)
   }
 
   return (
@@ -144,12 +162,15 @@ export function TalkCard() {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <audio ref={audioRef} autoPlay />
-        {phase === 'live' ? (
-          <div className="flex items-center gap-3">
-            <Button variant="destructive" onClick={stop}>
-              Stop
-            </Button>
-            <span className="text-navy font-medium">{formatTime(seconds)}</span>
+        {phase === 'live' || phase === 'stopping' ? (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-3">
+              <Button variant="destructive" disabled={phase === 'stopping'} onClick={stop}>
+                {phase === 'stopping' ? 'Stopping...' : 'Stop'}
+              </Button>
+              <span className="text-navy font-medium">{formatTime(seconds)}</span>
+            </div>
+            <p className="text-sm">Sessions stop by themselves at 15 minutes.</p>
           </div>
         ) : (
           <div>

@@ -46,19 +46,19 @@ _Fill in after all samples are transcribed._
 - Transcripts that match what was said (exact or only small differences): _ of _
 - Extractions still right from the transcript: _ of _
 - Kinds of speech that fail: _
-- Run: 5-10 business descriptions from 2-3 people, in Taglish, some with background noise. Each recording goes through the page's Transcribe card, then "Check extraction" sends the transcript to `POST /api/assistant/extract` on the local API.
+- Run: 5-10 business descriptions from 2-3 people, in Taglish, some with background noise. Write the expected type and category before checking extraction. Each recording goes through the page's Transcribe card, then "Check extraction" sends the transcript to `POST /api/assistant/extract` on the local API.
 
 ### Results
 
-| # | Speaker | Noise (yes / no) | What was said | Transcript | Extraction (type, category) | Extraction right (yes / no) | Seconds | Cost |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | | | | | | | | |
-| 2 | | | | | | | | |
-| 3 | | | | | | | | |
-| 4 | | | | | | | | |
-| 5 | | | | | | | | |
-| 6 | | | | | | | | |
-| 7 | | | | | | | | |
-| 8 | | | | | | | | |
-| 9 | | | | | | | | |
-| 10 | | | | | | | | |
+| # | Speaker | Noise (yes / no) | What was said | Expected (type, category) | Transcript | Extraction (type, category) | Extraction right (yes / no) | Seconds | Cost |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | | | | | | | | | |
+| 2 | | | | | | | | | |
+| 3 | | | | | | | | | |
+| 4 | | | | | | | | | |
+| 5 | | | | | | | | | |
+| 6 | | | | | | | | | |
+| 7 | | | | | | | | | |
+| 8 | | | | | | | | | |
+| 9 | | | | | | | | | |
+| 10 | | | | | | | | | |

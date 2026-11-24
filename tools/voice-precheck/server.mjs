@@ -6,7 +6,8 @@ import path from "node:path";
 
 const ORIGIN = "http://localhost:5173";
 const OPENAI = "https://api.openai.com/v1";
-const EXTENSIONS = ["webm", "mp4", "m4a", "mp3", "wav", "ogg"];
+const EXTENSIONS = ["flac", "mp3", "mp4", "mpeg", "mpga", "m4a", "ogg", "wav", "webm"];
+const SUBTYPES = { "x-wav": "wav", wave: "wav", "vnd.wave": "wav", "x-m4a": "m4a", mpeg: "mp3" };
 
 export function buildInstructions(md) {
   const start = md.indexOf("## 1.");
@@ -39,9 +40,11 @@ async function readBody(req) {
   return Buffer.concat(chunks);
 }
 
-function fileName(contentType) {
+function fileName(contentType, name) {
+  const named = /\.([a-z0-9]+)$/i.exec(name ?? "")?.[1].toLowerCase();
+  if (EXTENSIONS.includes(named)) return `audio.${named}`;
   const subtype = (contentType ?? "").split(";")[0].split("/")[1]?.trim();
-  const ext = subtype === "mpeg" ? "mp3" : subtype === "x-m4a" ? "m4a" : subtype;
+  const ext = SUBTYPES[subtype] ?? subtype;
   return `audio.${EXTENSIONS.includes(ext) ? ext : "webm"}`;
 }
 
@@ -63,10 +66,10 @@ export function createServer({ apiKey, instructions, fetch }) {
     return [200, { sdp: data.transport.sdp }];
   }
 
-  async function transcribe(body, contentType) {
+  async function transcribe(body, contentType, name) {
     const form = new FormData();
     form.append("model", "gpt-transcribe");
-    form.append("file", new Blob([body], { type: contentType ?? "audio/webm" }), fileName(contentType));
+    form.append("file", new Blob([body], { type: contentType ?? "audio/webm" }), fileName(contentType, name));
     const res = await fetch(`${OPENAI}/audio/transcriptions`, { method: "POST", headers: auth, body: form });
     const data = await res.json();
     if (!res.ok) return [502, { error: data.error?.message ?? `OpenAI returned ${res.status}` }];
@@ -90,10 +93,13 @@ export function createServer({ apiKey, instructions, fetch }) {
     let status = 404;
     let json = { error: "Not found" };
     try {
-      if (req.method === "POST" && (req.url === "/live" || req.url === "/transcribe")) {
+      const url = new URL(req.url, "http://localhost");
+      if (req.method === "POST" && (url.pathname === "/live" || url.pathname === "/transcribe")) {
         const body = await readBody(req);
         [status, json] =
-          req.url === "/live" ? await live(body) : await transcribe(body, req.headers["content-type"]);
+          url.pathname === "/live"
+            ? await live(body)
+            : await transcribe(body, req.headers["content-type"], url.searchParams.get("name"));
       }
     } catch (err) {
       status = err instanceof TooLarge ? 413 : 502;
