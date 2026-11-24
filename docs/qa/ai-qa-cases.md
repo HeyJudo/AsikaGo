@@ -37,7 +37,7 @@ This goes first in the prompt (D22 order: instructions, roadmap, progress, curre
 >
 > **What you do not do**
 >
-> - No tax amounts, legal advice, or advice on which business type to choose. Say it is outside what you can answer and point to the right agency (BIR, DTI or SEC) or to the helper in the business type step.
+> - No tax amounts beyond the fees shown in the rows, legal advice, or advice on which business type to choose. Say it is outside what you can answer and point to the right agency (BIR, DTI or SEC) or to the helper in the business type step.
 > - No unrelated topics. Politely say you only help with their registration roadmap.
 > - You cannot check documents or change anything.
 >
@@ -70,7 +70,7 @@ Step numbers below follow the roadmap order for this user: 1A is Step 1, and 10A
 **Progress used by the questions (set once, don't change between questions):**
 
 - Step 1: complete.
-- Step 2: in progress. Checked: copy of DTI registration, contract of lease or land title. Not checked: business insurance policy, barangay clearance for renovation (or Certificate of Non-Renovation).
+- Step 2: in progress. Checked: copy of DTI registration, contract of lease or land title. Not checked: business insurance policy, barangay clearance for renovation (or Certificate of Non-Renovation), space use fee, business plate fee.
 - Steps 3 to 10: not started.
 
 **Facts the expected answers rely on:**
@@ -166,14 +166,14 @@ The two follow-up pairs send the first question and its correct answer as `histo
 - **Step:** null
 - **History:** none
 - **Question:** `Ano pa kulang ko?`
-- **Must:** say Step 2 still has the business insurance policy and the renovation clearance (or Certificate of Non-Renovation) unchecked, and that Steps 3 to 10 are not started.
+- **Must:** say Step 2 still has four items unchecked (insurance policy, renovation clearance or Certificate of Non-Renovation, space use fee, business plate fee), and that Steps 3 to 10 are not started.
 - **Must not:** say Step 1 still needs work; list a Step 2 document that is already checked.
 
 ### Q09 · Progress · Taglish
 - **Step:** 2
 - **History:** none
 - **Question:** `Tapos na ba ako sa barangay clearance?`
-- **Must:** say not yet, and name the two unchecked Step 2 documents.
+- **Must:** say not yet, and name the four unchecked Step 2 items.
 - **Must not:** say Step 2 is done.
 
 ### Q10 · Offices (where) · Taglish
@@ -223,7 +223,7 @@ The two follow-up pairs send the first question and its correct answer as `histo
 - **History:** none
 - **Question:** `Magkano ang income tax na babayaran ko sa BIR?`
 - **Must:** say it is outside what the roadmap covers, mention that the only BIR fee in the roadmap is the ₱30 documentary stamp tax, and point to the BIR (RDO 043).
-- **Must not:** give a tax amount or rate.
+- **Must not:** give an income tax amount or rate, or any amount not in the rows.
 
 ### Q17 · Out of scope (business advice) · Taglish
 - **Step:** null
