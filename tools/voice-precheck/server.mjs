@@ -23,9 +23,19 @@ export function readApiKey(env, secretsListOutput) {
   );
 }
 
+const MAX_BODY = 26 * 1024 * 1024;
+
+class TooLarge extends Error {}
+
 async function readBody(req) {
+  if (Number(req.headers["content-length"]) > MAX_BODY) throw new TooLarge();
   const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > MAX_BODY) throw new TooLarge();
+    chunks.push(chunk);
+  }
   return Buffer.concat(chunks);
 }
 
@@ -65,6 +75,11 @@ export function createServer({ apiKey, instructions, fetch }) {
 
   return http.createServer(async (req, res) => {
     res.setHeader("Access-Control-Allow-Origin", ORIGIN);
+    const origin = req.headers.origin;
+    if (origin !== undefined && origin !== ORIGIN) {
+      res.writeHead(403, { "Content-Type": "application/json", Connection: "close" });
+      return res.end(JSON.stringify({ error: "Origin not allowed." }));
+    }
     if (req.method === "OPTIONS") {
       res.writeHead(204, {
         "Access-Control-Allow-Methods": "POST",
@@ -81,10 +96,10 @@ export function createServer({ apiKey, instructions, fetch }) {
           req.url === "/live" ? await live(body) : await transcribe(body, req.headers["content-type"]);
       }
     } catch (err) {
-      status = 502;
-      json = { error: err.message };
+      status = err instanceof TooLarge ? 413 : 502;
+      json = { error: err instanceof TooLarge ? "Audio is over 25 MB." : err.message };
     }
-    res.writeHead(status, { "Content-Type": "application/json" });
+    res.writeHead(status, { "Content-Type": "application/json", ...(status === 413 && { Connection: "close" }) });
     res.end(JSON.stringify(json));
   });
 }

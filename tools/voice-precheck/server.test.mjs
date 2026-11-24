@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import http from "node:http";
 import { readFileSync } from "node:fs";
 import { buildInstructions, readApiKey, createServer } from "./server.mjs";
 
@@ -141,6 +142,44 @@ test("unknown route is 404", async () => {
   try {
     const res = await fetch(`${base}/nope`, { method: "POST" });
     assert.equal(res.status, 404);
+  } finally {
+    server.close();
+  }
+});
+
+function rawPost(base, path, headers) {
+  return new Promise((resolve, reject) => {
+    const req = http.request(`${base}${path}`, { method: "POST", headers }, (res) => {
+      let text = "";
+      res.on("data", (d) => (text += d));
+      res.on("end", () => resolve({ status: res.statusCode, json: JSON.parse(text) }));
+    });
+    req.on("error", reject);
+    req.end("{}");
+  });
+}
+
+test("oversized body returns 413", async () => {
+  const f = fakeFetch(200, {});
+  const { server, base } = await start(f);
+  try {
+    const res = await rawPost(base, "/transcribe", { "Content-Length": String(27 * 1024 * 1024) });
+    assert.equal(res.status, 413);
+    assert.deepEqual(res.json, { error: "Audio is over 25 MB." });
+    assert.equal(f.calls.length, 0);
+  } finally {
+    server.close();
+  }
+});
+
+test("foreign Origin returns 403", async () => {
+  const f = fakeFetch(200, {});
+  const { server, base } = await start(f);
+  try {
+    const res = await rawPost(base, "/live", { Origin: "https://evil.example", "Content-Type": "text/plain" });
+    assert.equal(res.status, 403);
+    assert.deepEqual(res.json, { error: "Origin not allowed." });
+    assert.equal(f.calls.length, 0);
   } finally {
     server.close();
   }
