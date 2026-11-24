@@ -185,11 +185,11 @@ test("foreign Origin returns 403", async () => {
   }
 });
 
-async function forwardedName(query, contentType) {
+async function forwardedName(query, contentType, bytes = Buffer.from([1])) {
   const f = fakeFetch(200, { text: "x" });
   const { server, base } = await start(f);
   try {
-    await fetch(`${base}/transcribe${query}`, { method: "POST", headers: { "Content-Type": contentType }, body: Buffer.from([1]) });
+    await fetch(`${base}/transcribe${query}`, { method: "POST", headers: { "Content-Type": contentType }, body: bytes });
     return f.calls[0].init.body.get("file").name;
   } finally {
     server.close();
@@ -202,4 +202,18 @@ test("name query sets the extension", async () => {
 
 test("x-wav maps to wav", async () => {
   assert.equal(await forwardedName("", "audio/x-wav"), "audio.wav");
+});
+
+test("Ogg bytes with no type are named audio.ogg", async () => {
+  const bytes = Buffer.concat([Buffer.from("OggS"), Buffer.alloc(20)]);
+  assert.equal(await forwardedName("", "application/octet-stream", bytes), "audio.ogg");
+});
+
+test("bytes beat a wrong label", async () => {
+  const bytes = Buffer.concat([Buffer.from([0x1a, 0x45, 0xdf, 0xa3]), Buffer.alloc(20)]);
+  assert.equal(await forwardedName("?name=clip.wav", "audio/wav", bytes), "audio.webm");
+});
+
+test("unknown bytes fall back to the name", async () => {
+  assert.equal(await forwardedName("?name=memo.WAV", "application/octet-stream", Buffer.alloc(20)), "audio.wav");
 });

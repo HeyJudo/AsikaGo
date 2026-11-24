@@ -40,7 +40,21 @@ async function readBody(req) {
   return Buffer.concat(chunks);
 }
 
-function fileName(contentType, name) {
+// First bytes identify the container; browsers often send a wrong or generic Content-Type.
+function sniff(b) {
+  const at = (i, text) => b.subarray(i, i + text.length).toString("latin1") === text;
+  if (at(0, "OggS")) return "ogg";
+  if (b.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]))) return "webm";
+  if (at(0, "RIFF") && at(8, "WAVE")) return "wav";
+  if (at(0, "fLaC")) return "flac";
+  if (at(4, "ftyp")) return "mp4";
+  if (at(0, "ID3") || (b[0] === 0xff && (b[1] & 0xe0) === 0xe0)) return "mp3";
+  return undefined;
+}
+
+function fileName(contentType, name, bytes) {
+  const sniffed = sniff(bytes);
+  if (sniffed) return `audio.${sniffed}`;
   const named = /\.([a-z0-9]+)$/i.exec(name ?? "")?.[1].toLowerCase();
   if (EXTENSIONS.includes(named)) return `audio.${named}`;
   const subtype = (contentType ?? "").split(";")[0].split("/")[1]?.trim();
@@ -69,7 +83,7 @@ export function createServer({ apiKey, instructions, fetch }) {
   async function transcribe(body, contentType, name) {
     const form = new FormData();
     form.append("model", "gpt-transcribe");
-    form.append("file", new Blob([body], { type: contentType ?? "audio/webm" }), fileName(contentType, name));
+    form.append("file", new Blob([body], { type: contentType ?? "audio/webm" }), fileName(contentType, name, body));
     const res = await fetch(`${OPENAI}/audio/transcriptions`, { method: "POST", headers: auth, body: form });
     const data = await res.json();
     if (!res.ok) return [502, { error: data.error?.message ?? `OpenAI returned ${res.status}` }];
