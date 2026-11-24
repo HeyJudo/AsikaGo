@@ -21,10 +21,12 @@ export function TalkCard() {
   const dcRef = useRef<RTCDataChannel | null>(null)
   const micRef = useRef<MediaStream | null>(null)
   const stopTimer = useRef<number | undefined>(undefined)
+  const connectTimer = useRef<number | undefined>(undefined)
   const startedAt = useRef(0)
 
   function cleanup() {
     window.clearTimeout(stopTimer.current)
+    window.clearTimeout(connectTimer.current)
     micRef.current?.getTracks().forEach((t) => t.stop())
     pcRef.current?.close()
     micRef.current = null
@@ -53,6 +55,7 @@ export function TalkCard() {
       return
     }
     if (event.type === 'session.started') {
+      window.clearTimeout(connectTimer.current)
       setPhase('live')
     } else if (event.type === 'session.input_transcript.delta' && event.delta) {
       setLines((l) => appendDelta(l, 'You', event.delta!))
@@ -63,6 +66,14 @@ export function TalkCard() {
       cleanup()
       setPhase('ended')
     }
+  }
+
+  // cleanup() nulls pcRef, so a drop after Stop, session.closed or an earlier failure is ignored.
+  function drop(pc: RTCPeerConnection, message: string) {
+    if (pcRef.current !== pc) return
+    cleanup()
+    setError(message)
+    setPhase('idle')
   }
 
   async function start() {
@@ -79,6 +90,14 @@ export function TalkCard() {
       }
       const pc = new RTCPeerConnection()
       pcRef.current = pc
+      connectTimer.current = window.setTimeout(
+        () => drop(pc, "Couldn't connect to GPT-Live. Press Start to try again."),
+        15000,
+      )
+      const lost = 'The voice connection dropped. Press Start to try again.'
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === 'failed' || pc.connectionState === 'closed') drop(pc, lost)
+      }
       micRef.current.getTracks().forEach((t) => pc.addTrack(t, micRef.current!))
       pc.ontrack = (e) => {
         if (audioRef.current) audioRef.current.srcObject = e.streams[0]
@@ -86,6 +105,7 @@ export function TalkCard() {
       const dc = pc.createDataChannel('oai-events')
       dcRef.current = dc
       dc.onmessage = (e) => onEvent(String(e.data))
+      dc.onclose = () => drop(pc, lost)
       await pc.setLocalDescription(await pc.createOffer())
 
       let res: Response

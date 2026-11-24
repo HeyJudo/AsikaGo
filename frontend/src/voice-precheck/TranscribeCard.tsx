@@ -15,7 +15,7 @@ const VOICE_SERVER = 'http://127.0.0.1:4000'
 const NO_SERVER = "Can't reach the voice server. Start it with: node tools/voice-precheck/server.mjs"
 const MAX_RECORD_SECONDS = 60
 
-type Result = { text: string; seconds: number }
+type Result = { text: string; seconds: number | null }
 type Extraction = { businessType: string; category: string }
 
 function extractError(e: unknown): string {
@@ -32,6 +32,7 @@ export function TranscribeCard() {
   const [recording, setRecording] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [transcribing, setTranscribing] = useState(false)
+  const [reading, setReading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<Result | null>(null)
   const [copied, setCopied] = useState(false)
@@ -52,7 +53,7 @@ export function TranscribeCard() {
     }
   }, [])
 
-  async function send(blob: Blob, localSeconds: number) {
+  async function send(blob: Blob, localSeconds: number | null) {
     setTranscribing(true)
     setError(null)
     setResult(null)
@@ -115,12 +116,21 @@ export function TranscribeCard() {
     if (!file) return
     const url = URL.createObjectURL(file)
     const audio = new Audio(url)
-    const done = (seconds: number) => {
+    let finished = false
+    // Sends once: on metadata, on error, or after 3 s. Unknown duration is null.
+    const done = (seconds: number | null) => {
+      if (finished) return
+      finished = true
+      window.clearTimeout(wait)
       URL.revokeObjectURL(url)
+      setReading(false)
       void send(file, seconds)
     }
-    audio.onloadedmetadata = () => done(Number.isFinite(audio.duration) ? audio.duration : 0)
-    audio.onerror = () => done(0)
+    const wait = window.setTimeout(() => done(null), 3000)
+    setReading(true)
+    setError(null)
+    audio.onloadedmetadata = () => done(Number.isFinite(audio.duration) ? audio.duration : null)
+    audio.onerror = () => done(null)
   }
 
   async function copy() {
@@ -171,7 +181,7 @@ export function TranscribeCard() {
     }
   }
 
-  const busy = recording || transcribing
+  const busy = recording || transcribing || reading
 
   return (
     <Card>
@@ -209,6 +219,7 @@ export function TranscribeCard() {
             </label>
           </Button>
         </div>
+        {reading && <p className="text-sm">Reading the file...</p>}
         {transcribing && <p className="text-sm">Transcribing...</p>}
         {error && (
           <Alert variant="destructive">
@@ -228,8 +239,11 @@ export function TranscribeCard() {
               <Button variant="outline" size="sm" onClick={() => void copy()}>
                 {copied ? 'Copied' : 'Copy'}
               </Button>
-              <span>Duration: {formatTime(result.seconds)}</span>
-              <span>Cost ($0.0045 a minute): {costUsd(result.seconds, 0.0045)}</span>
+              <span>Duration: {result.seconds === null ? 'unknown' : formatTime(result.seconds)}</span>
+              <span>
+                Cost ($0.0045 a minute):{' '}
+                {result.seconds === null ? 'unknown' : costUsd(result.seconds, 0.0045)}
+              </span>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               {hasSession ? (
