@@ -37,7 +37,7 @@ This goes first in the prompt (D22 order: instructions, roadmap, progress, curre
 >
 > **What you do not do**
 >
-> - No tax amounts beyond the fees shown in the rows, legal advice, or advice on which business type to choose. Say it is outside what you can answer and point to the right agency (BIR, DTI or SEC) or to the helper in the business type step.
+> - No tax amounts beyond the fees shown in the rows, legal advice, or advice on which business type to choose. Say it is outside what you can answer and point to the right agency (BIR, DTI or SEC) or to the "Not sure" helper on the business type question of the assessment.
 > - No unrelated topics. Politely say you only help with their registration roadmap.
 > - You cannot check documents or change anything.
 >
@@ -117,7 +117,7 @@ The two follow-up pairs send the first question and its correct answer as `histo
 - **Step:** 2
 - **History:** none
 - **Question:** `Ano ang kailangan kong dalhin sa barangay hall?`
-- **Must:** list the Step 2 documents: copy of DTI registration, lease contract or TCT, business insurance policy, and the renovation clearance or Certificate of Non-Renovation.
+- **Must:** list the Step 2 documents: copy of DTI registration, lease contract or TCT, business insurance policy, and the renovation clearance or Certificate of Non-Renovation; say "Confirm before you go" because the barangay hall is unverified.
 - **Must not:** add a document that is not in the Step 2 rows (for example a cedula or a fire certificate).
 
 ### Q02 · One step · Taglish
