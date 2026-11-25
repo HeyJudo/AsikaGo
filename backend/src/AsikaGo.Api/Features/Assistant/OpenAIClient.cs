@@ -8,18 +8,18 @@ namespace AsikaGo.Api.Features.Assistant;
 public sealed record Extraction(string? BusinessType, string? Category);
 
 // Calls the OpenAI Responses API (D21). Any failure surfaces as OpenAIException; the endpoint turns it into a 503.
-public sealed class OpenAIClient(HttpClient http, IConfiguration config, ILogger<OpenAIClient> logger)
+public sealed class OpenAIClient(HttpClient http, IConfiguration config, IWebHostEnvironment environment, ILogger<OpenAIClient> logger)
 {
     public static readonly string[] BusinessTypes = ["Sole Proprietorship", "Partnership", "Corporation", "One Person Corporation"];
     public static readonly string[] Categories = ["Retail", "Food and Beverage", "Services"];
 
-    // Mich's draft from docs/qa/ai-extraction-cases.md (TE-003-AI-01). Fixed text only, the user's text goes in its own message.
+    // Revised instructions from docs/qa/ai-extraction-cases.md (US-012-AI-02).
     private const string ExtractInstructions = """
         You help a business owner in Pasig City who is starting to register a business. Read their description and pick two things.
 
-        1. Business type. Choose exactly one of: Sole Proprietorship, Partnership, Corporation, One Person Corporation.
+        **1. Business type.** Choose exactly one of: Sole Proprietorship, Partnership, Corporation, One Person Corporation.
 
-        2. Category. Choose exactly one of: Retail, Food and Beverage, Services.
+        **2. Category.** Choose exactly one of: Retail, Food and Beverage, Services.
 
         Rules:
 
@@ -27,19 +27,30 @@ public sealed class OpenAIClient(HttpClient http, IConfiguration config, ILogger
         - Pick a value only when the description says it clearly or it follows directly from what they wrote. Examples: "ako lang may-ari, sarili kong pangalan" means Sole Proprietorship. "kami ng kaibigan ko, partners" means Partnership.
         - If you are not sure about a field, answer null for that field. A wrong answer is worse than null.
         - Do not guess the business type from the kind of business. A bakery can be any of the four types.
+        - The category comes from WHAT the business sells or does, not HOW it sells. Retail means they name goods they sell (clothes, appliances, school supplies). Food and Beverage means they name food or drinks. Services means they name work they do for a fee.
+        - Words about how or where they sell do not name a category: "online", "seller", "reseller", "dropshipping", "wholesale", "side hustle", "from home", "Facebook", "Shopee", "Lazada". If that is all the description says about the business, answer null for the category.
         - If the description fits more than one category, answer null for the category.
+        - Each field is separate. If the type is stated but the category is not, return the type and null for the category.
         - Never answer with a value that is not on the lists above.
         """;
+
+    public static bool UsesFakeMode(IWebHostEnvironment environment, IConfiguration config) =>
+        environment.IsDevelopment() && string.IsNullOrWhiteSpace(config["OpenAI:ApiKey"]);
 
     public static void Configure(HttpClient http, IConfiguration config)
     {
         http.BaseAddress = new Uri("https://api.openai.com/v1/");
         http.Timeout = TimeSpan.FromSeconds(15);
-        http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", config["OpenAI:ApiKey"]);
+        var apiKey = config["OpenAI:ApiKey"];
+        if (!string.IsNullOrWhiteSpace(apiKey))
+            http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
     }
 
     public async Task<Extraction> ExtractAsync(string description, CancellationToken ct)
     {
+        if (UsesFakeMode(environment, config))
+            return new Extraction("Sole Proprietorship", "Retail");
+
         var body = new
         {
             model = config["OpenAI:Model"],
