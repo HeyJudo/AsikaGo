@@ -6,6 +6,7 @@ using AsikaGo.Api.Features.Roadmap;
 using AsikaGo.Api.Infrastructure;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,6 +42,14 @@ builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy
     .SetPreflightMaxAge(TimeSpan.FromHours(2))));
 
 var app = builder.Build();
+
+// The build-time OpenAPI generator runs this entry point with a mock server.
+if (app.Environment.IsProduction() && Assembly.GetEntryAssembly()?.GetName().Name != "GetDocument.Insider"
+    && string.IsNullOrWhiteSpace(app.Configuration["OpenAI:ApiKey"]))
+    throw new InvalidOperationException("OpenAI:ApiKey is required in Production. Set OpenAI__ApiKey before starting the API.");
+
+if (OpenAIClient.UsesFakeMode(app.Environment, app.Configuration))
+    app.Logger.LogInformation("OpenAI fake mode is on.");
 
 app.UseForwardedHeaders();
 app.UseExceptionHandler();

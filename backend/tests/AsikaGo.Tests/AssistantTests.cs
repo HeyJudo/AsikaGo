@@ -7,6 +7,7 @@ using AsikaGo.Api.Features.Assistant;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -101,6 +102,41 @@ public class AssistantTests(AssistantFactory factory) : IClassFixture<AssistantF
     }
 
     [Fact]
+    public async Task Extract_DevelopmentWithoutApiKey_ReturnsFakeAnswerWithoutCallingOpenAI()
+    {
+        using var fakeMode = factory.WithWebHostBuilder(builder => builder.ConfigureAppConfiguration((_, config) =>
+            config.AddInMemoryCollection(new Dictionary<string, string?> { ["OpenAI:ApiKey"] = "" })));
+        var previousCalls = factory.OpenAI.Requests.Count;
+        var previousLogs = factory.Logs.Count(line => line == "OpenAI fake mode is on.");
+        using var client = fakeMode.CreateClient();
+
+        using var response = await Extract(client, "online seller");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        using var scope = fakeMode.Services.CreateScope();
+        var retail = scope.ServiceProvider.GetRequiredService<AppDbContext>().BusinessCategories.Single(c => c.Name == "Retail");
+        Assert.Equal("Sole Proprietorship", body.GetProperty("businessType").GetString());
+        Assert.Equal(retail.Id, body.GetProperty("categoryId").GetGuid());
+        Assert.Equal(HttpStatusCode.OK, (await Extract(client)).StatusCode);
+        Assert.Equal(previousCalls, factory.OpenAI.Requests.Count);
+        Assert.Equal(previousLogs + 1, factory.Logs.Count(line => line == "OpenAI fake mode is on."));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void ProductionWithoutApiKey_FailsAtStartup(string apiKey)
+    {
+        using var production = factory.WithWebHostBuilder(builder => builder
+            .UseEnvironment("Production")
+            .ConfigureAppConfiguration((_, config) =>
+                config.AddInMemoryCollection(new Dictionary<string, string?> { ["OpenAI:ApiKey"] = apiKey })));
+
+        var exception = Assert.Throws<InvalidOperationException>(() => production.CreateClient());
+        Assert.Contains("OpenAI:ApiKey is required in Production", exception.Message);
+    }
+
+    [Fact]
     public async Task Extract_ReturnsTypeAndMappedCategoryId()
     {
         factory.OpenAI.Respond = () => FakeOpenAI.Answer("Sole Proprietorship", "Retail");
@@ -145,7 +181,11 @@ public class AssistantTests(AssistantFactory factory) : IClassFixture<AssistantF
         var input = body.GetProperty("input").EnumerateArray().ToList();
         Assert.Equal(2, input.Count);
         Assert.Equal("developer", input[0].GetProperty("role").GetString());
-        Assert.DoesNotContain(Description, input[0].GetProperty("content").GetString());
+        var instructions = input[0].GetProperty("content").GetString();
+        Assert.DoesNotContain(Description, instructions);
+        Assert.Contains("The category comes from WHAT the business sells or does, not HOW it sells.", instructions);
+        Assert.Contains("Words about how or where they sell do not name a category", instructions);
+        Assert.Contains("If the type is stated but the category is not, return the type and null for the category.", instructions);
         Assert.Equal("user", input[1].GetProperty("role").GetString());
         Assert.Equal(Description, input[1].GetProperty("content").GetString());
 
@@ -315,8 +355,9 @@ public class AssistantTests(AssistantFactory factory) : IClassFixture<AssistantF
     [Fact]
     public async Task Ask_WithoutToken_ReturnsUnauthorized()
     {
-        var factoryWithoutAuth = new WebApplicationFactory<Program>();
-        var client = factoryWithoutAuth.CreateClient();
+        using var baseFactory = new WebApplicationFactory<Program>();
+        using var factoryWithoutAuth = baseFactory.WithWebHostBuilder(builder => builder.UseEnvironment("Development"));
+        using var client = factoryWithoutAuth.CreateClient();
         var response = await client.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan kukunin ang cedula?" });
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
