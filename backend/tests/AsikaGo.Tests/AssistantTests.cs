@@ -680,6 +680,29 @@ public class AssistantTests(AssistantFactory factory) : IClassFixture<AssistantF
     }
 
     [Fact]
+    public async Task Ask_RelaysCapturedOpenAIStream()
+    {
+        // Real gpt-6.1-terra stream captured at the AB#117 live pass (2026-11-27). Expected values read from
+        // its response.output_text.done and response.completed events, not from our code.
+        var captured = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "Fixtures", "openai-ask-stream.txt"));
+        factory.OpenAI.Respond = () => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(captured, Encoding.UTF8, "text/event-stream"),
+        };
+        using var client = await ClientWithProfile();
+
+        var response = await client.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan kukunin ang cedula?" });
+
+        var events = await ReadSseEventsAsync(response);
+        Assert.Equal(20, events.Count(e => e.Event == "delta"));
+        Assert.Equal(
+            "Sa city o municipal hall, karaniwan sa Treasurer’s Office, kukuha ng cedula.",
+            string.Concat(events.Where(e => e.Event == "delta").Select(e => JsonDocument.Parse(e.Data).RootElement.GetProperty("text").GetString())));
+        Assert.Equal(("done", "{\"incomplete\":false}"), events[^1]);
+        Assert.Contains(factory.Logs, l => l.Contains("OpenAI call: 26 input, 24 output, 0 cached tokens"));
+    }
+
+    [Fact]
     public async Task Ask_RelaysDeltasThenDone()
     {
         factory.OpenAI.Respond = () => FakeOpenAI.Stream(
