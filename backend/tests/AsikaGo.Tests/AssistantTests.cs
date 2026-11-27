@@ -774,4 +774,156 @@ public class AssistantTests(AssistantFactory factory) : IClassFixture<AssistantF
             ],
             events);
     }
+
+    [Fact]
+    public async Task Ask_UpstreamErrorBeforeStream_Returns503()
+    {
+        factory.OpenAI.Respond = () => FakeOpenAI.Error(HttpStatusCode.InternalServerError, "server_error");
+        using var client = await ClientWithProfile();
+
+        var response = await client.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan?" });
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
+    }
+
+    [Fact]
+    public async Task Ask_Overloaded_RetriesOnceThenStreams()
+    {
+        var calls = 0;
+        var before = factory.OpenAI.Requests.Count(r => r.Request.RequestUri!.AbsolutePath.EndsWith("/responses", StringComparison.Ordinal));
+        factory.OpenAI.Respond = () => ++calls == 1
+            ? FakeOpenAI.Error(HttpStatusCode.ServiceUnavailable, "server_is_overloaded", "1")
+            : FakeOpenAI.Stream(FakeOpenAI.Delta("Sa barangay."), FakeOpenAI.Completed(200, 10, 0));
+        using var client = await ClientWithProfile();
+
+        var response = await client.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan?" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var events = await ReadSseEventsAsync(response);
+        Assert.Equal(
+            [
+                ("delta", "{\"text\":\"Sa barangay.\"}"),
+                ("done", "{\"incomplete\":false}"),
+            ],
+            events);
+        var after = factory.OpenAI.Requests.Count(r => r.Request.RequestUri!.AbsolutePath.EndsWith("/responses", StringComparison.Ordinal));
+        Assert.Equal(2, after - before);
+    }
+
+    [Fact]
+    public async Task Ask_NoFirstTokenInTime_Returns503()
+    {
+        using var shortTimeoutFactory = new ShortTimeoutAssistantFactory();
+        shortTimeoutFactory.OpenAI.Respond = () => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StreamContent(new HangingStream()),
+        };
+
+        using var client = shortTimeoutFactory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-User", Guid.NewGuid().ToString());
+        client.DefaultRequestHeaders.Add("X-Forwarded-For", $"10.2.{Random.Shared.Next(256)}.{Random.Shared.Next(256)}");
+        var profileResponse = await client.PutAsJsonAsync("/api/business-profile", new
+        {
+            businessType = "Sole Proprietorship",
+            categoryId = CategoryId("Retail"),
+            registrationStatus = "Started",
+        });
+        Assert.Equal(HttpStatusCode.OK, profileResponse.StatusCode);
+
+        using var guard = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+        var response = await client.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan?" }, guard.Token);
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
+    }
+
+    [Fact]
+    public async Task Ask_FailsAfterFirstDelta_SendsErrorEvent()
+    {
+        factory.OpenAI.Respond = () => FakeOpenAI.Stream(
+            FakeOpenAI.Delta("Sa"),
+            """{"type":"response.failed","response":{"error":{"message":"boom"}}}""");
+        using var client = await ClientWithProfile();
+
+        var response = await client.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan?" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var events = await ReadSseEventsAsync(response);
+        Assert.Equal(
+            [
+                ("delta", "{\"text\":\"Sa\"}"),
+                ("error", "{\"message\":\"The assistant stopped answering. Please try again.\"}"),
+            ],
+            events);
+        Assert.DoesNotContain(events, e => e.Event == "done");
+    }
+
+    [Fact]
+    public async Task Ask_StreamEndsWithoutCompleted_SendsErrorEvent()
+    {
+        factory.OpenAI.Respond = () => FakeOpenAI.Stream(FakeOpenAI.Delta("Sa"));
+        using var client = await ClientWithProfile();
+
+        var response = await client.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan?" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var events = await ReadSseEventsAsync(response);
+        Assert.Equal(
+            [
+                ("delta", "{\"text\":\"Sa\"}"),
+                ("error", "{\"message\":\"The assistant stopped answering. Please try again.\"}"),
+            ],
+            events);
+    }
+
+    [Fact]
+    public async Task Ask_MalformedLineBeforeFirstToken_Returns503()
+    {
+        factory.OpenAI.Respond = () => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("data: not-json\n\n", Encoding.UTF8, "text/event-stream"),
+        };
+        using var client = await ClientWithProfile();
+
+        var response = await client.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan?" });
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
+    }
+
+    private sealed class ShortTimeoutAssistantFactory : AssistantFactory
+    {
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        {
+            base.ConfigureWebHost(builder);
+            builder.UseSetting("OpenAI:FirstTokenTimeoutSeconds", "0.2");
+        }
+    }
+
+    private sealed class HangingStream : Stream
+    {
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override void Flush() { }
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            return 0;
+        }
+
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+            return 0;
+        }
+    }
 }

@@ -189,6 +189,19 @@ public static class AssistantEndpoints
         {
             hasFirst = await enumerator.MoveNextAsync();
         }
+        catch (OpenAIException)
+        {
+            await enumerator.DisposeAsync();
+            return TypedResults.Problem(
+                "The assistant is not available right now. Please try again.",
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                title: "Assistant unavailable");
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            await enumerator.DisposeAsync();
+            return Results.Empty;
+        }
         catch
         {
             await enumerator.DisposeAsync();
@@ -229,6 +242,11 @@ public static class AssistantEndpoints
                             await WriteChunkAsync(enumerator.Current);
                         }
                     }
+                }
+                catch (OpenAIException)
+                {
+                    if (!ct.IsCancellationRequested)
+                        await WriteEventAsync("error", new AssistantErrorPayload("The assistant stopped answering. Please try again."));
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested)
                 {

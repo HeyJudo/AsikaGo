@@ -171,38 +171,120 @@ public sealed class OpenAIClient(HttpClient http, IConfiguration config, IWebHos
         };
 
         var started = Stopwatch.GetTimestamp();
-        using var response = await http.PostAsJsonAsync("responses", body, ct);
-        await using var stream = await response.Content.ReadAsStreamAsync(ct);
-        using var reader = new StreamReader(stream);
+        // Configurable only so tests can shorten the 15 s first-token timeout (D21).
+        var firstTokenTimeout = TimeSpan.FromSeconds(config.GetValue<double?>("OpenAI:FirstTokenTimeoutSeconds") ?? 15);
+        using var firstTokenCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        firstTokenCts.CancelAfter(firstTokenTimeout);
+        var readToken = firstTokenCts.Token;
+        var receivedFirstChunk = false;
 
-        while (await reader.ReadLineAsync(ct) is { } line)
+        HttpResponseMessage response;
+        try
         {
-            if (!line.StartsWith("data: ", StringComparison.Ordinal))
-                continue;
-
-            var data = line["data: ".Length..].Trim();
-            if (data.Length == 0 || data == "[DONE]")
-                continue;
-
-            using var doc = JsonDocument.Parse(data);
-            var root = doc.RootElement;
-            var type = root.TryGetProperty("type", out var t) ? t.GetString() : null;
-
-            if (type is "response.output_text.delta" or "response.refusal.delta")
+            response = await PostWithOneRetryAsync(body, readToken, HttpCompletionOption.ResponseHeadersRead);
+            if (!response.IsSuccessStatusCode)
             {
-                if (root.TryGetProperty("delta", out var d) && d.GetString() is { Length: > 0 } delta)
-                    yield return new AskChunk(delta);
-            }
-            else if (type is "response.completed" or "response.incomplete")
-            {
-                var usage = root.TryGetProperty("response", out var resp)
-                    && resp.ValueKind == JsonValueKind.Object
-                    && resp.TryGetProperty("usage", out var u) ? u : default;
-                LogUsage(usage, started);
-                yield return new AskChunk(null, Incomplete: type == "response.incomplete");
-                yield break;
+                var status = (int)response.StatusCode;
+                response.Dispose();
+                throw new OpenAIException($"OpenAI returned {status}.");
             }
         }
+        catch (Exception e) when (IsRecoverableOpenAIFailure(e, ct))
+        {
+            throw LogAndWrapFailure(e, started);
+        }
+
+        using (response)
+        {
+            Stream stream;
+            try
+            {
+                stream = await response.Content.ReadAsStreamAsync(readToken);
+            }
+            catch (Exception e) when (IsRecoverableOpenAIFailure(e, ct))
+            {
+                throw LogAndWrapFailure(e, started);
+            }
+
+            await using (stream)
+            using (var reader = new StreamReader(stream))
+            {
+                while (true)
+                {
+                    string? line;
+                    try
+                    {
+                        line = await reader.ReadLineAsync(readToken);
+                    }
+                    catch (Exception e) when (IsRecoverableOpenAIFailure(e, ct))
+                    {
+                        throw LogAndWrapFailure(e, started);
+                    }
+
+                    if (line is null)
+                        throw LogAndWrapFailure(new OpenAIException("OpenAI stream ended before completing."), started);
+
+                    if (!line.StartsWith("data: ", StringComparison.Ordinal))
+                        continue;
+
+                    var data = line["data: ".Length..].Trim();
+                    if (data.Length == 0 || data == "[DONE]")
+                        continue;
+
+                    AskChunk? chunk;
+                    try
+                    {
+                        chunk = ParseStreamEvent(data, started);
+                    }
+                    catch (Exception e) when (IsRecoverableOpenAIFailure(e, ct))
+                    {
+                        throw LogAndWrapFailure(e, started);
+                    }
+
+                    if (chunk is null)
+                        continue;
+
+                    if (!receivedFirstChunk)
+                    {
+                        receivedFirstChunk = true;
+                        firstTokenCts.CancelAfter(Timeout.InfiniteTimeSpan);
+                        readToken = ct;
+                    }
+
+                    yield return chunk;
+                    if (chunk.Text is null)
+                        yield break;
+                }
+            }
+        }
+    }
+
+    private AskChunk? ParseStreamEvent(string data, long started)
+    {
+        using var doc = JsonDocument.Parse(data);
+        var root = doc.RootElement;
+        var type = root.TryGetProperty("type", out var t) ? t.GetString() : null;
+
+        if (type is "response.output_text.delta" or "response.refusal.delta")
+        {
+            if (root.TryGetProperty("delta", out var d) && d.GetString() is { Length: > 0 } delta)
+                return new AskChunk(delta);
+            return null;
+        }
+
+        if (type is "response.completed" or "response.incomplete")
+        {
+            var usage = root.TryGetProperty("response", out var resp)
+                && resp.ValueKind == JsonValueKind.Object
+                && resp.TryGetProperty("usage", out var u) ? u : default;
+            LogUsage(usage, started);
+            return new AskChunk(null, Incomplete: type == "response.incomplete");
+        }
+
+        if (type is "response.failed" or "error")
+            throw new OpenAIException($"OpenAI stream returned {type}.");
+
+        return null;
     }
 
     // Returns the model's output_text, or "{}" when it refused (no answer is a valid answer).
@@ -228,14 +310,22 @@ public sealed class OpenAIClient(HttpClient http, IConfiguration config, IWebHos
                 .Select(c => c.GetProperty("text").GetString())
                 .FirstOrDefault() ?? "{}";
         }
-        catch (Exception e) when (e is OpenAIException or HttpRequestException or JsonException or KeyNotFoundException or InvalidOperationException
-                                  || (e is TaskCanceledException && !ct.IsCancellationRequested))
+        catch (Exception e) when (IsRecoverableOpenAIFailure(e, ct))
         {
-            // Never log the description or the key: only what failed and how long it took.
-            logger.LogWarning("OpenAI call failed after {ElapsedMs} ms: {Error}",
-                (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds, e is OpenAIException ? e.Message : e.GetType().Name);
-            throw e as OpenAIException ?? new OpenAIException("OpenAI call failed.", e);
+            throw LogAndWrapFailure(e, started);
         }
+    }
+
+    private static bool IsRecoverableOpenAIFailure(Exception e, CancellationToken ct) =>
+        e is OpenAIException or HttpRequestException or JsonException or KeyNotFoundException or InvalidOperationException
+        || (e is OperationCanceledException && !ct.IsCancellationRequested);
+
+    private OpenAIException LogAndWrapFailure(Exception e, long started)
+    {
+        // Never log the description, question, history, or key: only what failed and how long it took.
+        logger.LogWarning("OpenAI call failed after {ElapsedMs} ms: {Error}",
+            (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds, e is OpenAIException ? e.Message : e.GetType().Name);
+        return e as OpenAIException ?? new OpenAIException("OpenAI call failed.", e);
     }
 
     private void LogUsage(JsonElement usage, long started)
@@ -250,9 +340,19 @@ public sealed class OpenAIClient(HttpClient http, IConfiguration config, IWebHos
         parent.ValueKind == JsonValueKind.Object && parent.TryGetProperty(name, out var value) ? value.GetInt32() : 0;
 
     // D21: the only retry is one on 503 server_is_overloaded with Retry-After <= 3 s. 429 and everything else fail at once.
-    private async Task<HttpResponseMessage> PostWithOneRetryAsync(object body, CancellationToken ct)
+    private async Task<HttpResponseMessage> PostWithOneRetryAsync(
+        object body, CancellationToken ct, HttpCompletionOption completionOption = HttpCompletionOption.ResponseContentRead)
     {
-        var response = await http.PostAsJsonAsync("responses", body, ct);
+        async Task<HttpResponseMessage> PostAsync()
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, "responses")
+            {
+                Content = JsonContent.Create(body),
+            };
+            return await http.SendAsync(request, completionOption, ct);
+        }
+
+        var response = await PostAsync();
         if (response.StatusCode != HttpStatusCode.ServiceUnavailable
             || response.Headers.RetryAfter?.Delta is not { } wait || wait > TimeSpan.FromSeconds(3)
             || !(await response.Content.ReadAsStringAsync(ct)).Contains("\"server_is_overloaded\""))
@@ -260,7 +360,7 @@ public sealed class OpenAIClient(HttpClient http, IConfiguration config, IWebHos
 
         response.Dispose();
         await Task.Delay(wait, ct);
-        return await http.PostAsJsonAsync("responses", body, ct);
+        return await PostAsync();
     }
 }
 
