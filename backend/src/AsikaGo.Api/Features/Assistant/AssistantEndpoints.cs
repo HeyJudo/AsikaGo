@@ -112,7 +112,7 @@ public static class AssistantEndpoints
     }
 
     private static async Task<IResult> Ask(
-        AskRequest request, HttpContext httpContext, CancellationToken ct)
+        AskRequest request, HttpContext httpContext, OpenAIClient openAI, AppDbContext db, CancellationToken ct)
     {
         var errors = new Dictionary<string, List<string>>();
 
@@ -177,40 +177,64 @@ public static class AssistantEndpoints
             return TypedResults.ValidationProblem(errors.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()));
         }
 
-        httpContext.Response.ContentType = "text/event-stream";
+        if (!Guid.TryParse(httpContext.User.FindFirst("sub")?.Value, out var userId))
+            return TypedResults.Unauthorized();
+
+        var context = await RoadmapPromptContext.LoadAsync(db, userId, request.StepNumber, ct);
+
+        IReadOnlyList<ChatMessageDto> history = request.History ?? [];
+        var enumerator = openAI.AskAsync(request.Question!, history, context!.Text, userId.ToString(), ct).GetAsyncEnumerator(ct);
+        bool hasFirst;
+        try
+        {
+            hasFirst = await enumerator.MoveNextAsync();
+        }
+        catch
+        {
+            await enumerator.DisposeAsync();
+            throw;
+        }
+
         httpContext.Response.Headers.CacheControl = "no-cache";
 
-        var streamResult = TypedResults.Stream(async stream =>
+        return TypedResults.Stream(async stream =>
         {
-            await using var writer = new StreamWriter(stream, new UTF8Encoding(false), leaveOpen: true);
-
-            async Task WriteEventAsync(string eventName, object payload)
+            await using (enumerator)
             {
-                await writer.WriteAsync("event: " + eventName + "\n");
-                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions(JsonSerializerDefaults.Web));
-                await writer.WriteAsync("data: " + json + "\n\n");
-                await writer.FlushAsync();
-            }
+                await using var writer = new StreamWriter(stream, new UTF8Encoding(false), leaveOpen: true);
 
-            try
-            {
-                await WriteEventAsync("delta", new AssistantDeltaPayload("Placeholder "));
-                if (ct.IsCancellationRequested) return;
+                async Task WriteEventAsync(string eventName, object payload)
+                {
+                    await writer.WriteAsync("event: " + eventName + "\n");
+                    var json = JsonSerializer.Serialize(payload, JsonSerializerOptions.Web);
+                    await writer.WriteAsync("data: " + json + "\n\n");
+                    await writer.FlushAsync();
+                }
 
-                await WriteEventAsync("delta", new AssistantDeltaPayload("answer "));
-                if (ct.IsCancellationRequested) return;
+                async Task WriteChunkAsync(AskChunk chunk)
+                {
+                    if (chunk.Text is not null)
+                        await WriteEventAsync("delta", new AssistantDeltaPayload(chunk.Text));
+                    else
+                        await WriteEventAsync("done", new AssistantDonePayload(chunk.Incomplete));
+                }
 
-                await WriteEventAsync("delta", new AssistantDeltaPayload("stream."));
-                if (ct.IsCancellationRequested) return;
-
-                await WriteEventAsync("done", new AssistantDonePayload(false));
-            }
-            catch (OperationCanceledException)
-            {
-                // Client disconnected quietly
+                try
+                {
+                    if (hasFirst)
+                    {
+                        await WriteChunkAsync(enumerator.Current);
+                        while (!ct.IsCancellationRequested && await enumerator.MoveNextAsync())
+                        {
+                            await WriteChunkAsync(enumerator.Current);
+                        }
+                    }
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    // Client disconnected quietly
+                }
             }
         }, contentType: "text/event-stream");
-
-        return streamResult;
     }
 }
