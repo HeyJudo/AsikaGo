@@ -28,6 +28,7 @@ public static class AssistantEndpoints
     private const int MaxQuestionLength = 1000;
     private const int MaxHistoryItems = 6;
     private const int MaxHistoryTextLength = 2000;
+    private const string FlaggedRefusal = "Pasensya na, hindi ko masasagot iyan. Pero matutulungan kita sa iyong registration roadmap.";
 
     public static IServiceCollection AddAssistant(this IServiceCollection services)
     {
@@ -112,7 +113,7 @@ public static class AssistantEndpoints
     }
 
     private static async Task<IResult> Ask(
-        AskRequest request, HttpContext httpContext, CancellationToken ct)
+        AskRequest request, HttpContext httpContext, OpenAIClient openAI, AppDbContext db, CancellationToken ct)
     {
         var errors = new Dictionary<string, List<string>>();
 
@@ -177,40 +178,118 @@ public static class AssistantEndpoints
             return TypedResults.ValidationProblem(errors.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()));
         }
 
-        httpContext.Response.ContentType = "text/event-stream";
+        if (!Guid.TryParse(httpContext.User.FindFirst("sub")?.Value, out var userId))
+            return TypedResults.Unauthorized();
+
+        RoadmapPromptContext? context;
+        try
+        {
+            context = await RoadmapPromptContext.LoadAsync(db, userId, request.StepNumber, ct);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return TypedResults.Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                detail: "Step not found in your roadmap.");
+        }
+
+        if (context is null)
+            return TypedResults.Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                detail: "You have no business profile yet.");
+
+        bool flagged;
+        try
+        {
+            flagged = await openAI.IsFlaggedAsync(request.Question!, ct);
+        }
+        catch (OpenAIException)
+        {
+            return AssistantUnavailable();
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return Results.Empty;
+        }
+
+        // A flagged question never reaches the model: it gets the refusal as a normal answer (Sprint 5 §4).
+        var chunks = flagged
+            ? new AskChunk[] { new(FlaggedRefusal), new(null) }.ToAsyncEnumerable()
+            : openAI.AskAsync(request.Question!, request.History ?? [], context.Text, userId.ToString(), ct);
+        var enumerator = chunks.GetAsyncEnumerator(ct);
+        bool hasFirst;
+        var streamStarted = false;
+        try
+        {
+            // Pull the first chunk before answering, so a failure up to here is still a 503 (D21).
+            hasFirst = await enumerator.MoveNextAsync();
+            streamStarted = true;
+        }
+        catch (OpenAIException)
+        {
+            return AssistantUnavailable();
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return Results.Empty;
+        }
+        finally
+        {
+            if (!streamStarted)
+                await enumerator.DisposeAsync();
+        }
+
         httpContext.Response.Headers.CacheControl = "no-cache";
 
-        var streamResult = TypedResults.Stream(async stream =>
+        return TypedResults.Stream(async stream =>
         {
-            await using var writer = new StreamWriter(stream, new UTF8Encoding(false), leaveOpen: true);
-
-            async Task WriteEventAsync(string eventName, object payload)
+            await using (enumerator)
             {
-                await writer.WriteAsync("event: " + eventName + "\n");
-                var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions(JsonSerializerDefaults.Web));
-                await writer.WriteAsync("data: " + json + "\n\n");
-                await writer.FlushAsync();
-            }
+                await using var writer = new StreamWriter(stream, new UTF8Encoding(false), leaveOpen: true);
 
-            try
-            {
-                await WriteEventAsync("delta", new AssistantDeltaPayload("Placeholder "));
-                if (ct.IsCancellationRequested) return;
+                async Task WriteChunkAsync(AskChunk chunk)
+                {
+                    if (chunk.Text is not null)
+                        await WriteEventAsync(writer, "delta", new AssistantDeltaPayload(chunk.Text));
+                    else
+                        await WriteEventAsync(writer, "done", new AssistantDonePayload(chunk.Incomplete));
+                }
 
-                await WriteEventAsync("delta", new AssistantDeltaPayload("answer "));
-                if (ct.IsCancellationRequested) return;
-
-                await WriteEventAsync("delta", new AssistantDeltaPayload("stream."));
-                if (ct.IsCancellationRequested) return;
-
-                await WriteEventAsync("done", new AssistantDonePayload(false));
-            }
-            catch (OperationCanceledException)
-            {
-                // Client disconnected quietly
+                try
+                {
+                    if (hasFirst)
+                    {
+                        await WriteChunkAsync(enumerator.Current);
+                        while (!ct.IsCancellationRequested && await enumerator.MoveNextAsync())
+                        {
+                            await WriteChunkAsync(enumerator.Current);
+                        }
+                    }
+                }
+                catch (OpenAIException)
+                {
+                    if (!ct.IsCancellationRequested)
+                        await WriteEventAsync(writer, "error", new AssistantErrorPayload("The assistant stopped answering. Please try again."));
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    // Client disconnected quietly
+                }
             }
         }, contentType: "text/event-stream");
+    }
 
-        return streamResult;
+    private static ProblemHttpResult AssistantUnavailable() =>
+        TypedResults.Problem(
+            "The assistant is not available right now. Please try again.",
+            statusCode: StatusCodes.Status503ServiceUnavailable,
+            title: "Assistant unavailable");
+
+    private static async Task WriteEventAsync(StreamWriter writer, string eventName, object payload)
+    {
+        await writer.WriteAsync("event: " + eventName + "\n");
+        var json = JsonSerializer.Serialize(payload, JsonSerializerOptions.Web);
+        await writer.WriteAsync("data: " + json + "\n\n");
+        await writer.FlushAsync();
     }
 }
