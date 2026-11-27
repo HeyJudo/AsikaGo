@@ -653,6 +653,95 @@ public class AssistantTests(AssistantFactory factory) : IClassFixture<AssistantF
     }
 
     [Fact]
+    public async Task Ask_SendsOnlyCallersRoadmapDocumentsAndProgress()
+    {
+        factory.OpenAI.Respond = () => FakeOpenAI.Stream(FakeOpenAI.Delta("OK"), FakeOpenAI.Completed(100, 5, 0));
+        using var caller = await ClientWithProfile();
+        using var other = Client();
+        var corporateStep = Guid.NewGuid();
+        var corporateDocument = Guid.NewGuid();
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            db.RegistrationSteps.Add(new RegistrationStep
+            {
+                Id = corporateStep, Name = "Other business SEC registration", Agency = "SEC",
+                Description = "Corporate registration.", Actions = "Register with SEC.",
+            });
+            db.Requirements.Add(new Requirement
+            {
+                Id = corporateDocument, StepId = BarangayId, Name = "Other business corporate certificate",
+            });
+            db.RoadmapRules.AddRange(
+                new RoadmapRule { Id = Guid.NewGuid(), StepId = corporateStep, SortOrder = 3, BusinessType = "Corporation", Effect = RoadmapRuleEffect.Include },
+                new RoadmapRule { Id = Guid.NewGuid(), StepId = BarangayId, RequirementId = corporateDocument, SortOrder = 2, BusinessType = "Corporation", Effect = RoadmapRuleEffect.Include });
+            await db.SaveChangesAsync();
+        }
+
+        var profile = await other.PutAsJsonAsync("/api/business-profile", new
+        {
+            businessType = "Corporation", categoryId = CategoryId("Retail"), registrationStatus = "Started",
+        });
+        Assert.Equal(HttpStatusCode.OK, profile.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await caller.PutAsJsonAsync("/api/roadmap/steps/1/status", new { completed = true })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await other.PutAsJsonAsync("/api/roadmap/steps/1/status", new { completed = true })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await other.PutAsJsonAsync($"/api/roadmap/requirements/{ValidIdReq}", new { isPrepared = true })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await other.PutAsJsonAsync($"/api/roadmap/requirements/{corporateDocument}", new { isPrepared = true })).StatusCode);
+
+        // Confirm the other user's distinct context exists before checking that none of it leaks.
+        var otherResponse = await other.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan?" });
+        Assert.Equal(HttpStatusCode.OK, otherResponse.StatusCode);
+        _ = await ReadSseEventsAsync(otherResponse);
+        var otherRaw = factory.OpenAI.Requests.Last(r => r.Request.RequestUri!.AbsolutePath.EndsWith("/responses", StringComparison.Ordinal)).Body;
+        using var otherBody = JsonDocument.Parse(otherRaw);
+        var otherContext = otherBody.RootElement.GetProperty("input")[1].GetProperty("content").GetString()!;
+        Assert.Contains("Other business SEC registration", otherContext);
+        Assert.Contains("Checked documents: Valid ID, Other business corporate certificate", otherContext);
+        Assert.Contains("Step 1: Barangay Clearance \u2014 Completed", otherContext);
+
+        var response = await caller.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan?" });
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        _ = await ReadSseEventsAsync(response);
+        var raw = factory.OpenAI.Requests.Last(r => r.Request.RequestUri!.AbsolutePath.EndsWith("/responses", StringComparison.Ordinal)).Body;
+        using var body = JsonDocument.Parse(raw);
+        var context = body.RootElement.GetProperty("input")[1].GetProperty("content").GetString()!;
+        Assert.Contains("Step 1: DTI Business Name\nAgency: DTI\nAction: Register online.", context);
+        Assert.Contains("Step 2: Barangay Clearance\nAgency: Barangay hall", context);
+        Assert.Contains("Requirement: Valid ID", context);
+        Assert.Contains("Step 1: DTI Business Name \u2014 Completed\nChecked documents: None", context);
+        Assert.Contains("Step 2: Barangay Clearance \u2014 NotStarted\nChecked documents: None", context);
+        var input = string.Join("\n", body.RootElement.GetProperty("input").EnumerateArray()
+            .Select(message => message.GetProperty("content").GetString()));
+        Assert.DoesNotContain("Other business SEC registration", input);
+        Assert.DoesNotContain("Other business corporate certificate", input);
+        Assert.DoesNotContain("Barangay Clearance \u2014 Completed", input);
+        Assert.DoesNotContain("Checked documents: Valid ID", input);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(2)]
+    public async Task Ask_CurrentStepContextAppearsOnlyWhenStepNumberIsSupplied(int? stepNumber)
+    {
+        factory.OpenAI.Respond = () => FakeOpenAI.Stream(FakeOpenAI.Delta("OK"), FakeOpenAI.Completed(100, 5, 0));
+        using var client = await ClientWithProfile();
+        var payload = new Dictionary<string, object> { ["question"] = "Saan?" };
+        if (stepNumber.HasValue) payload["stepNumber"] = stepNumber.Value;
+
+        var response = await client.PostAsJsonAsync("/api/assistant/ask", payload);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        _ = await ReadSseEventsAsync(response);
+        var raw = factory.OpenAI.Requests.Last(r => r.Request.RequestUri!.AbsolutePath.EndsWith("/responses", StringComparison.Ordinal)).Body;
+        using var body = JsonDocument.Parse(raw);
+        var context = body.RootElement.GetProperty("input")[1].GetProperty("content").GetString()!;
+        Assert.Contains("Step 2: Barangay Clearance", context);
+        if (stepNumber.HasValue)
+            Assert.EndsWith("Current step\nStep 2: Barangay Clearance", context);
+        else
+            Assert.DoesNotContain("Current step", context);
+    }
+
+    [Fact]
     public async Task Ask_SkipsBlankHistoryText()
     {
         factory.OpenAI.Respond = () => FakeOpenAI.Stream(FakeOpenAI.Delta("OK"), FakeOpenAI.Completed(100, 5, 0));
