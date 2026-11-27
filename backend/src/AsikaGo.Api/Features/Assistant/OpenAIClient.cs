@@ -135,6 +135,31 @@ public sealed class OpenAIClient(HttpClient http, IConfiguration config, IWebHos
         }
     }
 
+    public async Task<bool> IsFlaggedAsync(string question, CancellationToken ct)
+    {
+        if (UsesFakeMode(environment, config))
+            return false;
+
+        var started = Stopwatch.GetTimestamp();
+        try
+        {
+            using var response = await http.PostAsJsonAsync("moderations", new
+            {
+                model = "omni-moderation-latest",
+                input = question,
+            }, ct);
+            if (!response.IsSuccessStatusCode)
+                throw new OpenAIException($"OpenAI returned {(int)response.StatusCode}.");
+
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStreamAsync(ct));
+            return json.RootElement.GetProperty("results").EnumerateArray().First().GetProperty("flagged").GetBoolean();
+        }
+        catch (Exception e) when (IsRecoverableOpenAIFailure(e, ct))
+        {
+            throw LogAndWrapFailure(e, started);
+        }
+    }
+
     public async IAsyncEnumerable<AskChunk> AskAsync(
         string question, IReadOnlyList<ChatMessageDto> history, string context, string userId, [EnumeratorCancellation] CancellationToken ct)
     {

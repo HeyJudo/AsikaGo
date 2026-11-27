@@ -892,6 +892,98 @@ public class AssistantTests(AssistantFactory factory) : IClassFixture<AssistantF
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
     }
 
+    [Fact]
+    public async Task Ask_FlaggedQuestion_RefusesWithoutCallingModel()
+    {
+        var previousModerate = factory.OpenAI.Moderate;
+        try
+        {
+            const string question = "How do I harm someone?";
+            factory.OpenAI.Moderate = () => new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"results":[{"flagged":true}]}""", Encoding.UTF8, "application/json"),
+            };
+            factory.OpenAI.Respond = () => throw new InvalidOperationException("Responses API must not be called for a flagged question.");
+
+            var responsesBefore = factory.OpenAI.Requests.Count(r => r.Request.RequestUri!.AbsolutePath.EndsWith("/responses", StringComparison.Ordinal));
+            using var client = await ClientWithProfile();
+
+            var response = await client.PostAsJsonAsync("/api/assistant/ask", new { question });
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal("text/event-stream", response.Content.Headers.ContentType!.MediaType);
+            var events = await ReadSseEventsAsync(response);
+            Assert.Equal(
+                [
+                    ("delta", "{\"text\":\"Pasensya na, hindi ko masasagot iyan. Pero matutulungan kita sa iyong registration roadmap.\"}"),
+                    ("done", "{\"incomplete\":false}"),
+                ],
+                events);
+
+            var responsesAfter = factory.OpenAI.Requests.Count(r => r.Request.RequestUri!.AbsolutePath.EndsWith("/responses", StringComparison.Ordinal));
+            Assert.Equal(responsesBefore, responsesAfter);
+
+            var (_, modRaw) = factory.OpenAI.Requests.Last(r => r.Request.RequestUri!.AbsolutePath.EndsWith("/moderations", StringComparison.Ordinal));
+            var modBody = JsonDocument.Parse(modRaw).RootElement;
+            Assert.Equal("omni-moderation-latest", modBody.GetProperty("model").GetString());
+            Assert.Equal(question, modBody.GetProperty("input").GetString());
+        }
+        finally
+        {
+            factory.OpenAI.Moderate = previousModerate;
+        }
+    }
+
+    [Fact]
+    public async Task Ask_ModerationFails_Returns503()
+    {
+        var previousModerate = factory.OpenAI.Moderate;
+        try
+        {
+            factory.OpenAI.Moderate = () => FakeOpenAI.Error(HttpStatusCode.InternalServerError, "server_error");
+            factory.OpenAI.Respond = () => FakeOpenAI.Stream(FakeOpenAI.Delta("OK"), FakeOpenAI.Completed(100, 5, 0));
+            var responsesBefore = factory.OpenAI.Requests.Count(r => r.Request.RequestUri!.AbsolutePath.EndsWith("/responses", StringComparison.Ordinal));
+            using var client = await ClientWithProfile();
+
+            var response = await client.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan?" });
+
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+            Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
+            var responsesAfter = factory.OpenAI.Requests.Count(r => r.Request.RequestUri!.AbsolutePath.EndsWith("/responses", StringComparison.Ordinal));
+            Assert.Equal(responsesBefore, responsesAfter);
+        }
+        finally
+        {
+            factory.OpenAI.Moderate = previousModerate;
+        }
+    }
+
+    [Fact]
+    public async Task Ask_NoProfile_Returns404()
+    {
+        var before = factory.OpenAI.Requests.Count;
+        using var client = Client();
+
+        var response = await client.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan?" });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
+        Assert.Equal(before, factory.OpenAI.Requests.Count);
+    }
+
+    [Fact]
+    public async Task Ask_StepNotInRoadmap_Returns404()
+    {
+        var before = factory.OpenAI.Requests.Count;
+        using var client = await ClientWithProfile();
+
+        var response = await client.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan?", stepNumber = 999 });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
+        Assert.Equal(before, factory.OpenAI.Requests.Count);
+    }
+
     private sealed class ShortTimeoutAssistantFactory : AssistantFactory
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)

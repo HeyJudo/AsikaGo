@@ -180,10 +180,59 @@ public static class AssistantEndpoints
         if (!Guid.TryParse(httpContext.User.FindFirst("sub")?.Value, out var userId))
             return TypedResults.Unauthorized();
 
-        var context = await RoadmapPromptContext.LoadAsync(db, userId, request.StepNumber, ct);
+        RoadmapPromptContext? context;
+        try
+        {
+            context = await RoadmapPromptContext.LoadAsync(db, userId, request.StepNumber, ct);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return TypedResults.Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                detail: "Step not found in your roadmap.");
+        }
+
+        if (context is null)
+            return TypedResults.Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                detail: "You have no business profile yet.");
+
+        bool flagged;
+        try
+        {
+            flagged = await openAI.IsFlaggedAsync(request.Question!, ct);
+        }
+        catch (OpenAIException)
+        {
+            return AssistantUnavailable();
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return Results.Empty;
+        }
+
+        if (flagged)
+        {
+            httpContext.Response.Headers.CacheControl = "no-cache";
+            return TypedResults.Stream(async stream =>
+            {
+                await using var writer = new StreamWriter(stream, new UTF8Encoding(false), leaveOpen: true);
+                try
+                {
+                    await WriteEventAsync(writer, "delta", new AssistantDeltaPayload(
+                        "Pasensya na, hindi ko masasagot iyan. Pero matutulungan kita sa iyong registration roadmap."));
+                    if (!ct.IsCancellationRequested)
+                        await WriteEventAsync(writer, "done", new AssistantDonePayload(false));
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    // Client disconnected quietly
+                }
+            }, contentType: "text/event-stream");
+        }
 
         IReadOnlyList<ChatMessageDto> history = request.History ?? [];
-        var enumerator = openAI.AskAsync(request.Question!, history, context!.Text, userId.ToString(), ct).GetAsyncEnumerator(ct);
+        var enumerator = openAI.AskAsync(request.Question!, history, context.Text, userId.ToString(), ct).GetAsyncEnumerator(ct);
         bool hasFirst;
         try
         {
@@ -192,10 +241,7 @@ public static class AssistantEndpoints
         catch (OpenAIException)
         {
             await enumerator.DisposeAsync();
-            return TypedResults.Problem(
-                "The assistant is not available right now. Please try again.",
-                statusCode: StatusCodes.Status503ServiceUnavailable,
-                title: "Assistant unavailable");
+            return AssistantUnavailable();
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -216,20 +262,12 @@ public static class AssistantEndpoints
             {
                 await using var writer = new StreamWriter(stream, new UTF8Encoding(false), leaveOpen: true);
 
-                async Task WriteEventAsync(string eventName, object payload)
-                {
-                    await writer.WriteAsync("event: " + eventName + "\n");
-                    var json = JsonSerializer.Serialize(payload, JsonSerializerOptions.Web);
-                    await writer.WriteAsync("data: " + json + "\n\n");
-                    await writer.FlushAsync();
-                }
-
                 async Task WriteChunkAsync(AskChunk chunk)
                 {
                     if (chunk.Text is not null)
-                        await WriteEventAsync("delta", new AssistantDeltaPayload(chunk.Text));
+                        await WriteEventAsync(writer, "delta", new AssistantDeltaPayload(chunk.Text));
                     else
-                        await WriteEventAsync("done", new AssistantDonePayload(chunk.Incomplete));
+                        await WriteEventAsync(writer, "done", new AssistantDonePayload(chunk.Incomplete));
                 }
 
                 try
@@ -246,7 +284,7 @@ public static class AssistantEndpoints
                 catch (OpenAIException)
                 {
                     if (!ct.IsCancellationRequested)
-                        await WriteEventAsync("error", new AssistantErrorPayload("The assistant stopped answering. Please try again."));
+                        await WriteEventAsync(writer, "error", new AssistantErrorPayload("The assistant stopped answering. Please try again."));
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested)
                 {
@@ -254,5 +292,19 @@ public static class AssistantEndpoints
                 }
             }
         }, contentType: "text/event-stream");
+    }
+
+    private static ProblemHttpResult AssistantUnavailable() =>
+        TypedResults.Problem(
+            "The assistant is not available right now. Please try again.",
+            statusCode: StatusCodes.Status503ServiceUnavailable,
+            title: "Assistant unavailable");
+
+    private static async Task WriteEventAsync(StreamWriter writer, string eventName, object payload)
+    {
+        await writer.WriteAsync("event: " + eventName + "\n");
+        var json = JsonSerializer.Serialize(payload, JsonSerializerOptions.Web);
+        await writer.WriteAsync("data: " + json + "\n\n");
+        await writer.FlushAsync();
     }
 }
