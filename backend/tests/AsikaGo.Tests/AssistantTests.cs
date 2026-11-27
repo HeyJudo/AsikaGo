@@ -656,8 +656,10 @@ public class AssistantTests(AssistantFactory factory) : IClassFixture<AssistantF
     public async Task Ask_SendsOnlyCallersRoadmapDocumentsAndProgress()
     {
         factory.OpenAI.Respond = () => FakeOpenAI.Stream(FakeOpenAI.Delta("OK"), FakeOpenAI.Completed(100, 5, 0));
-        using var caller = await ClientWithProfile();
-        using var other = Client();
+        var callerId = Guid.NewGuid();
+        var otherId = Guid.NewGuid();
+        using var caller = await ClientWithProfile(callerId);
+        using var other = Client(otherId);
         var corporateStep = Guid.NewGuid();
         var corporateDocument = Guid.NewGuid();
         using (var scope = factory.Services.CreateScope())
@@ -694,6 +696,7 @@ public class AssistantTests(AssistantFactory factory) : IClassFixture<AssistantF
         _ = await ReadSseEventsAsync(otherResponse);
         var otherRaw = factory.OpenAI.Requests.Last(r => r.Request.RequestUri!.AbsolutePath.EndsWith("/responses", StringComparison.Ordinal)).Body;
         using var otherBody = JsonDocument.Parse(otherRaw);
+        Assert.Equal(otherId.ToString(), otherBody.RootElement.GetProperty("prompt_cache_key").GetString());
         var otherContext = otherBody.RootElement.GetProperty("input")[1].GetProperty("content").GetString()!;
         Assert.Contains("Other business SEC registration", otherContext);
         Assert.Contains("Checked documents: Valid ID, Other business corporate certificate", otherContext);
@@ -704,6 +707,7 @@ public class AssistantTests(AssistantFactory factory) : IClassFixture<AssistantF
         _ = await ReadSseEventsAsync(response);
         var raw = factory.OpenAI.Requests.Last(r => r.Request.RequestUri!.AbsolutePath.EndsWith("/responses", StringComparison.Ordinal)).Body;
         using var body = JsonDocument.Parse(raw);
+        Assert.Equal(callerId.ToString(), body.RootElement.GetProperty("prompt_cache_key").GetString());
         var context = body.RootElement.GetProperty("input")[1].GetProperty("content").GetString()!;
         Assert.Contains("Step 1: DTI Business Name\nAgency: DTI\nAction: Register online.", context);
         Assert.Contains("Step 2: Barangay Clearance\nAgency: Barangay hall", context);
@@ -724,15 +728,16 @@ public class AssistantTests(AssistantFactory factory) : IClassFixture<AssistantF
     public async Task Ask_CurrentStepContextAppearsOnlyWhenStepNumberIsSupplied(int? stepNumber)
     {
         factory.OpenAI.Respond = () => FakeOpenAI.Stream(FakeOpenAI.Delta("OK"), FakeOpenAI.Completed(100, 5, 0));
-        using var client = await ClientWithProfile();
-        var payload = new Dictionary<string, object> { ["question"] = "Saan?" };
-        if (stepNumber.HasValue) payload["stepNumber"] = stepNumber.Value;
+        var userId = Guid.NewGuid();
+        using var client = await ClientWithProfile(userId);
 
-        var response = await client.PostAsJsonAsync("/api/assistant/ask", payload);
+        // Sends "stepNumber": null like the chat sheet does off a step page (US-013-FE-01).
+        var response = await client.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan?", stepNumber });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         _ = await ReadSseEventsAsync(response);
         var raw = factory.OpenAI.Requests.Last(r => r.Request.RequestUri!.AbsolutePath.EndsWith("/responses", StringComparison.Ordinal)).Body;
         using var body = JsonDocument.Parse(raw);
+        Assert.Equal(userId.ToString(), body.RootElement.GetProperty("prompt_cache_key").GetString());
         var context = body.RootElement.GetProperty("input")[1].GetProperty("content").GetString()!;
         Assert.Contains("Step 2: Barangay Clearance", context);
         if (stepNumber.HasValue)
