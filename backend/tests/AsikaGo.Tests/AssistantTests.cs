@@ -984,6 +984,69 @@ public class AssistantTests(AssistantFactory factory) : IClassFixture<AssistantF
         Assert.Equal(before, factory.OpenAI.Requests.Count);
     }
 
+    private static HttpResponseMessage BrokenStream(string? firstEventJson, bool dropConnection) =>
+        new(HttpStatusCode.OK)
+        {
+            Content = new StreamContent(new HangingStream(
+                firstEventJson is null ? null : Encoding.UTF8.GetBytes($"event: x\ndata: {firstEventJson}\n\n"),
+                dropConnection)),
+        };
+
+    [Fact]
+    public async Task Ask_ConnectionDropsBeforeFirstToken_Returns503()
+    {
+        factory.OpenAI.Respond = () => BrokenStream(null, dropConnection: true);
+        using var client = await ClientWithProfile();
+
+        var response = await client.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan?" });
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Ask_ConnectionDropsAfterFirstDelta_SendsErrorEvent()
+    {
+        factory.OpenAI.Respond = () => BrokenStream(FakeOpenAI.Delta("Sa"), dropConnection: true);
+        using var client = await ClientWithProfile();
+
+        var response = await client.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan?" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            [
+                ("delta", "{\"text\":\"Sa\"}"),
+                ("error", "{\"message\":\"The assistant stopped answering. Please try again.\"}"),
+            ],
+            await ReadSseEventsAsync(response));
+    }
+
+    [Fact]
+    public async Task Ask_StallsAfterFirstDelta_SendsErrorEvent()
+    {
+        using var shortTimeoutFactory = new ShortTimeoutAssistantFactory();
+        shortTimeoutFactory.OpenAI.Respond = () => BrokenStream(FakeOpenAI.Delta("Sa"), dropConnection: false);
+        using var client = shortTimeoutFactory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Test-User", Guid.NewGuid().ToString());
+        client.DefaultRequestHeaders.Add("X-Forwarded-For", $"10.3.{Random.Shared.Next(256)}.{Random.Shared.Next(256)}");
+        var profileResponse = await client.PutAsJsonAsync("/api/business-profile", new
+        {
+            businessType = "Sole Proprietorship",
+            categoryId = CategoryId("Retail"),
+            registrationStatus = "Started",
+        });
+        Assert.Equal(HttpStatusCode.OK, profileResponse.StatusCode);
+
+        using var guard = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+        var response = await client.PostAsJsonAsync("/api/assistant/ask", new { question = "Saan?" }, guard.Token);
+
+        Assert.Equal(
+            [
+                ("delta", "{\"text\":\"Sa\"}"),
+                ("error", "{\"message\":\"The assistant stopped answering. Please try again.\"}"),
+            ],
+            await ReadSseEventsAsync(response));
+    }
+
     private sealed class ShortTimeoutAssistantFactory : AssistantFactory
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -993,8 +1056,11 @@ public class AssistantTests(AssistantFactory factory) : IClassFixture<AssistantF
         }
     }
 
-    private sealed class HangingStream : Stream
+    // Sends `prefix` (if any), then either hangs or drops the connection the way HttpClient reports it (IOException).
+    private sealed class HangingStream(byte[]? prefix = null, bool dropConnection = false) : Stream
     {
+        private byte[]? _prefix = prefix;
+
         public override bool CanRead => true;
         public override bool CanSeek => false;
         public override bool CanWrite => false;
@@ -1006,14 +1072,19 @@ public class AssistantTests(AssistantFactory factory) : IClassFixture<AssistantF
         public override void SetLength(long value) => throw new NotSupportedException();
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 
-        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-        {
-            await Task.Delay(Timeout.Infinite, cancellationToken);
-            return 0;
-        }
+        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+            ReadAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
 
         public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
         {
+            if (_prefix is { } bytes)
+            {
+                _prefix = null;
+                bytes.CopyTo(buffer);
+                return bytes.Length;
+            }
+            if (dropConnection)
+                throw new IOException("The response ended prematurely.");
             await Task.Delay(Timeout.Infinite, cancellationToken);
             return 0;
         }

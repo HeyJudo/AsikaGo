@@ -196,23 +196,24 @@ public sealed class OpenAIClient(HttpClient http, IConfiguration config, IWebHos
         };
 
         var started = Stopwatch.GetTimestamp();
-        // Configurable only so tests can shorten the 15 s first-token timeout (D21).
-        var firstTokenTimeout = TimeSpan.FromSeconds(config.GetValue<double?>("OpenAI:FirstTokenTimeoutSeconds") ?? 15);
-        using var firstTokenCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        firstTokenCts.CancelAfter(firstTokenTimeout);
-        var readToken = firstTokenCts.Token;
-        var receivedFirstChunk = false;
+        // D21: 15 s to the first token, and the same between chunks so a stalled stream ends in an error, not a hang.
+        // Configurable only so tests can shorten it.
+        var timeout = TimeSpan.FromSeconds(config.GetValue<double?>("OpenAI:FirstTokenTimeoutSeconds") ?? 15);
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeoutCts.CancelAfter(timeout);
 
         HttpResponseMessage response;
+        Stream stream;
         try
         {
-            response = await PostWithOneRetryAsync(body, readToken, HttpCompletionOption.ResponseHeadersRead);
+            response = await PostWithOneRetryAsync(body, timeoutCts.Token, HttpCompletionOption.ResponseHeadersRead);
             if (!response.IsSuccessStatusCode)
             {
                 var status = (int)response.StatusCode;
                 response.Dispose();
                 throw new OpenAIException($"OpenAI returned {status}.");
             }
+            stream = await response.Content.ReadAsStreamAsync(timeoutCts.Token);
         }
         catch (Exception e) when (IsRecoverableOpenAIFailure(e, ct))
         {
@@ -220,67 +221,35 @@ public sealed class OpenAIClient(HttpClient http, IConfiguration config, IWebHos
         }
 
         using (response)
+        await using (stream)
+        using (var reader = new StreamReader(stream))
         {
-            Stream stream;
-            try
+            while (true)
             {
-                stream = await response.Content.ReadAsStreamAsync(readToken);
+                // C# forbids yield inside a try with a catch, so reading and parsing live in one helper.
+                var chunk = await ReadNextChunkAsync(reader, started, timeoutCts.Token, ct);
+                timeoutCts.CancelAfter(timeout);
+                yield return chunk;
+                if (chunk.Text is null)
+                    yield break;
             }
-            catch (Exception e) when (IsRecoverableOpenAIFailure(e, ct))
+        }
+    }
+
+    private async Task<AskChunk> ReadNextChunkAsync(StreamReader reader, long started, CancellationToken readToken, CancellationToken ct)
+    {
+        try
+        {
+            while (await reader.ReadLineAsync(readToken) is { } line)
             {
-                throw LogAndWrapFailure(e, started);
+                if (line.StartsWith("data: ", StringComparison.Ordinal) && ParseStreamEvent(line["data: ".Length..], started) is { } chunk)
+                    return chunk;
             }
-
-            await using (stream)
-            using (var reader = new StreamReader(stream))
-            {
-                while (true)
-                {
-                    string? line;
-                    try
-                    {
-                        line = await reader.ReadLineAsync(readToken);
-                    }
-                    catch (Exception e) when (IsRecoverableOpenAIFailure(e, ct))
-                    {
-                        throw LogAndWrapFailure(e, started);
-                    }
-
-                    if (line is null)
-                        throw LogAndWrapFailure(new OpenAIException("OpenAI stream ended before completing."), started);
-
-                    if (!line.StartsWith("data: ", StringComparison.Ordinal))
-                        continue;
-
-                    var data = line["data: ".Length..].Trim();
-                    if (data.Length == 0 || data == "[DONE]")
-                        continue;
-
-                    AskChunk? chunk;
-                    try
-                    {
-                        chunk = ParseStreamEvent(data, started);
-                    }
-                    catch (Exception e) when (IsRecoverableOpenAIFailure(e, ct))
-                    {
-                        throw LogAndWrapFailure(e, started);
-                    }
-
-                    if (chunk is null)
-                        continue;
-
-                    if (!receivedFirstChunk)
-                    {
-                        receivedFirstChunk = true;
-                        firstTokenCts.CancelAfter(Timeout.InfiniteTimeSpan);
-                        readToken = ct;
-                    }
-
-                    yield return chunk;
-                    if (chunk.Text is null)
-                        yield break;
-                }
-            }
+            throw new OpenAIException("OpenAI stream ended before completing.");
+        }
+        catch (Exception e) when (IsRecoverableOpenAIFailure(e, ct))
+        {
+            throw LogAndWrapFailure(e, started);
         }
     }
 
@@ -342,7 +311,7 @@ public sealed class OpenAIClient(HttpClient http, IConfiguration config, IWebHos
     }
 
     private static bool IsRecoverableOpenAIFailure(Exception e, CancellationToken ct) =>
-        e is OpenAIException or HttpRequestException or JsonException or KeyNotFoundException or InvalidOperationException
+        e is OpenAIException or HttpRequestException or IOException or JsonException or KeyNotFoundException or InvalidOperationException
         || (e is OperationCanceledException && !ct.IsCancellationRequested);
 
     private OpenAIException LogAndWrapFailure(Exception e, long started)

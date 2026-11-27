@@ -28,6 +28,7 @@ public static class AssistantEndpoints
     private const int MaxQuestionLength = 1000;
     private const int MaxHistoryItems = 6;
     private const int MaxHistoryTextLength = 2000;
+    private const string FlaggedRefusal = "Pasensya na, hindi ko masasagot iyan. Pero matutulungan kita sa iyong registration roadmap.";
 
     public static IServiceCollection AddAssistant(this IServiceCollection services)
     {
@@ -211,47 +212,31 @@ public static class AssistantEndpoints
             return Results.Empty;
         }
 
-        if (flagged)
-        {
-            httpContext.Response.Headers.CacheControl = "no-cache";
-            return TypedResults.Stream(async stream =>
-            {
-                await using var writer = new StreamWriter(stream, new UTF8Encoding(false), leaveOpen: true);
-                try
-                {
-                    await WriteEventAsync(writer, "delta", new AssistantDeltaPayload(
-                        "Pasensya na, hindi ko masasagot iyan. Pero matutulungan kita sa iyong registration roadmap."));
-                    if (!ct.IsCancellationRequested)
-                        await WriteEventAsync(writer, "done", new AssistantDonePayload(false));
-                }
-                catch (OperationCanceledException) when (ct.IsCancellationRequested)
-                {
-                    // Client disconnected quietly
-                }
-            }, contentType: "text/event-stream");
-        }
-
-        IReadOnlyList<ChatMessageDto> history = request.History ?? [];
-        var enumerator = openAI.AskAsync(request.Question!, history, context.Text, userId.ToString(), ct).GetAsyncEnumerator(ct);
+        // A flagged question never reaches the model: it gets the refusal as a normal answer (Sprint 5 §4).
+        var chunks = flagged
+            ? new AskChunk[] { new(FlaggedRefusal), new(null) }.ToAsyncEnumerable()
+            : openAI.AskAsync(request.Question!, request.History ?? [], context.Text, userId.ToString(), ct);
+        var enumerator = chunks.GetAsyncEnumerator(ct);
         bool hasFirst;
+        var streamStarted = false;
         try
         {
+            // Pull the first chunk before answering, so a failure up to here is still a 503 (D21).
             hasFirst = await enumerator.MoveNextAsync();
+            streamStarted = true;
         }
         catch (OpenAIException)
         {
-            await enumerator.DisposeAsync();
             return AssistantUnavailable();
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
-            await enumerator.DisposeAsync();
             return Results.Empty;
         }
-        catch
+        finally
         {
-            await enumerator.DisposeAsync();
-            throw;
+            if (!streamStarted)
+                await enumerator.DisposeAsync();
         }
 
         httpContext.Response.Headers.CacheControl = "no-cache";
