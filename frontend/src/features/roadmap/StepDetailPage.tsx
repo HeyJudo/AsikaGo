@@ -19,6 +19,7 @@ import { FullPageError, FullPageLoader } from '@/components/PageStates'
 import { StepNotFound } from '@/features/roadmap/StepNotFound'
 import { WhereToGo } from '@/features/roadmap/WhereToGo'
 import { GuestBanner } from '@/features/auth/GuestBanner'
+import { AskChat } from '@/features/assistant/AskChat'
 import { type Requirement, useRoadmapStep, useUpdateRequirement, useUpdateStepStatus } from '@/lib/queries'
 
 function formatDate(iso: string): string {
@@ -128,7 +129,7 @@ function StepDetailContent({ number }: { number: number }) {
   )
 
   return (
-    <div className="bg-cream min-h-[calc(100svh-4rem)] px-6 py-4 md:px-8 md:py-6">
+    <AskChat stepNumber={Number(step.number)} className="bg-cream min-h-[calc(100svh-4rem)] px-6 py-4 md:px-8 md:py-6">
       <div className="mx-auto flex max-w-3xl flex-col gap-4">
         <Link
           to="/roadmap"
@@ -332,6 +333,6 @@ function StepDetailContent({ number }: { number: number }) {
           )}
         </nav>
       </div>
-    </div>
+    </AskChat>
   )
 }

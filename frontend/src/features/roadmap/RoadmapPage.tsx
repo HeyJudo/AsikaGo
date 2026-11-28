@@ -6,6 +6,7 @@ import { GuestBanner } from '@/features/auth/GuestBanner'
 import { Centered, FullPageError, FullPageLoader } from '@/components/PageStates'
 import { useRoadmap } from '@/lib/queries'
 import { RoadmapVisualizer } from '@/features/roadmap/RoadmapVisualizer'
+import { AskChat } from '@/features/assistant/AskChat'
 
 function NoStartIllustration() {
   return (
@@ -93,7 +94,7 @@ export function RoadmapPage() {
   }
 
   return (
-    <div className="bg-cream min-h-[calc(100svh-4rem)] px-6 py-8 md:px-8 md:py-12">
+    <AskChat className="bg-cream min-h-[calc(100svh-4rem)] px-6 py-8 md:px-8 md:py-12">
       <div className="mx-auto flex max-w-3xl flex-col gap-6">
         <GuestBanner />
 
@@ -273,6 +274,6 @@ export function RoadmapPage() {
           </div>
         </div>
       </div>
-    </div>
+    </AskChat>
   )
 }
