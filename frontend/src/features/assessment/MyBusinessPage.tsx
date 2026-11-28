@@ -10,6 +10,7 @@ import { useAuth } from '@/app/AuthProvider'
 import { useBusinessProfile, useRoadmap } from '@/lib/queries'
 import { MyBusinessRouteProgress } from './MyBusinessRouteProgress'
 import { useLinkGoogle } from '@/features/auth/useLinkGoogle'
+import { AskChat } from '@/features/assistant/AskChat'
 
 const list: Variants = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } }
 const item: Variants = {
@@ -65,7 +66,7 @@ export function MyBusinessPage() {
   const created = user?.created_at ? new Date(user.created_at).toLocaleDateString('en-PH', { dateStyle: 'long' }) : '—'
 
   return (
-    <div className="bg-cream min-h-[calc(100svh-4rem)] px-4 py-8 md:py-12">
+    <AskChat className="bg-cream min-h-[calc(100svh-4rem)] px-4 py-8 md:py-12">
       <motion.div variants={list} initial="hidden" animate="show" className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <motion.div variants={item} className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -153,6 +154,6 @@ export function MyBusinessPage() {
           </Card>
         </motion.div>
       </motion.div>
-    </div>
+    </AskChat>
   )
 }

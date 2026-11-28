@@ -22,6 +22,7 @@ before(async () => {
     Roadmap: (await load('/src/features/roadmap/RoadmapPage.tsx')).RoadmapPage,
     Step: (await load('/src/features/roadmap/StepDetailPage.tsx')).StepDetailPage,
     Documents: (await load('/src/features/progress/DocumentsPage.tsx')).DocumentsPage,
+    MyBusiness: (await load('/src/features/assessment/MyBusinessPage.tsx')).MyBusinessPage,
   }
 })
 after(async () => { await server?.close() })
@@ -45,12 +46,16 @@ function client() {
     totalCount: 2, preparedCount: 1,
     steps: [{ number: 1, name: 'Register business', status: 'NotStarted', requirements: [req('a'), req('b')] }],
   })
+  c.setQueryData(['business-profile'], {
+    businessName: 'Test shop', businessType: 'Sole Proprietorship', categoryName: 'Retail',
+    cityName: 'Pasig', registrationStatus: 'Planning',
+  })
   return c
 }
 
-function render(path: string, isAnonymous: boolean, element: ReactNode) {
+function render(path: string, isAnonymous: boolean, element: ReactNode, queryClient = client()) {
   const user = { id: 'u-1', is_anonymous: isAnonymous }
-  return renderToStaticMarkup(createElement(QueryClientProvider, { client: client() },
+  return renderToStaticMarkup(createElement(QueryClientProvider, { client: queryClient },
     createElement(mods.AuthContext.Provider, { value: { session: { user }, user, loading: false } },
       createElement(MemoryRouter, { initialEntries: [path] },
         createElement(Routes, null, createElement(Route, { path: '*', element }))))))
@@ -60,6 +65,7 @@ const pages = () => ({
   '/roadmap': createElement(mods.Roadmap),
   '/roadmap/documents': createElement(mods.Documents),
   '/roadmap/steps/1': createElement(Routes, null, createElement(Route, { path: 'roadmap/steps/:number', element: createElement(mods.Step) })),
+  '/my-business': createElement(mods.MyBusiness),
 })
 
 const SHARED = /Save your progress with Google so you don&#x27;t lose it\.[\s\S]*Save with Google/
@@ -80,11 +86,31 @@ test('guests see the shared text on the roadmap', () => {
   assert.doesNotMatch(html, /This is your roadmap preview/)
 })
 
-test('Google users see no banner on any of the three pages', () => {
+test('Google users see no banner on any of the four pages', () => {
   for (const [path, element] of Object.entries(pages())) {
     const html = render(path, false, element)
-    assert.match(html, /My roadmap|Your registration roadmap/, path)
+    assert.match(html, /My roadmap|Your registration roadmap|My Business/, path)
     assert.doesNotMatch(html, /Save with Google/, path)
+  }
+})
+
+test('guests and Google users can ask from roadmap, step detail, and My Business only', () => {
+  for (const guest of [true, false]) {
+    for (const [path, element] of Object.entries(pages())) {
+      const html = render(path, guest, element)
+      if (path === '/roadmap/documents') assert.doesNotMatch(html, /Ask a question/, path)
+      else assert.match(html, /Ask a question/, path)
+    }
+  }
+})
+
+test('chat stays hidden when the page has no business profile or valid step', () => {
+  const c = client()
+  c.setQueryData(['roadmap'], null)
+  c.setQueryData(['roadmap-step', 1], null)
+  c.setQueryData(['business-profile'], null)
+  for (const [path, element] of Object.entries(pages())) {
+    if (path !== '/roadmap/documents') assert.doesNotMatch(render(path, true, element, c), /Ask a question/, path)
   }
 })
 
